@@ -1,0 +1,12 @@
+{
+  "name": "pathpal",
+  "version": "1.0.0",
+  "description": "Pathpal Progressive Web App",
+  "scripts": {
+    "start": "npx serve -s . -l 10000"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
+

@@ -1,0 +1,30 @@
+services:
+  - type: static
+    name: pathpal
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /service-worker.js
+        name: Content-Type
+        value: application/javascript
+      - path: /service-worker.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /manifest.json
+        name: Content-Type
+        value: application/manifest+json
+      - path: /*.jpg
+        name: Content-Type
+        value: image/jpeg
+      - path: /*.png
+        name: Content-Type
+        value: image/png
+
