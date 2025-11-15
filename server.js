@@ -78,21 +78,21 @@ const htmlPages = [
 
 htmlPages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
-    res.sendFile(path.join(__dirname, page));
+    res.sendFile(path.join(__dirname, 'pages', page));
   });
   
   // Also handle without .html extension
   const route = page.replace('.html', '');
   if (route !== 'index') {
     app.get(`/${route}`, (req, res) => {
-      res.sendFile(path.join(__dirname, page));
+      res.sendFile(path.join(__dirname, 'pages', page));
     });
   }
 });
 
 // Serve index.html for root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'pages', 'index.html'));
 });
 
 // College Scorecard API endpoint
