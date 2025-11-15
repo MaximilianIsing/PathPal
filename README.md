@@ -1,6 +1,6 @@
 # Path Pal
 
-**v1.01**
+**v1.02**
 
 Path Pal is a Progressive Web App (PWA) that helps students plan their college journey with personalized recommendations, admission odds calculations, and AI-powered guidance.
 
@@ -47,6 +47,16 @@ Quick steps:
 3. Connect your GitHub repository
 4. Set `GPT_API_KEY` environment variable in Render dashboard
 5. Deploy!
+
+### Setting Up Custom Domain (pathpal.us)
+
+See [DOMAIN_SETUP.md](./DOMAIN_SETUP.md) for detailed instructions on connecting your GoDaddy domain to Render.
+
+Quick steps:
+1. Add custom domain in Render dashboard (Settings → Custom Domains)
+2. Configure DNS in GoDaddy (CNAME or A records)
+3. Wait for DNS propagation (5-15 minutes)
+4. SSL certificate will be automatically provisioned by Render
 
 ## Usage
 

@@ -170,17 +170,19 @@ body {
   margin: 0.75rem 0;
   background: var(--light-mint);
   border-radius: 12px;
-  padding: 0.75rem;
+  padding: 0.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 1;
+  max-height: 40vh;
+  overflow: hidden;
 }
 
 .browser-popup-image img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 40vh;
+  width: auto;
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
