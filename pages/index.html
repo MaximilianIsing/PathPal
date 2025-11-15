@@ -16,6 +16,14 @@
     <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet to get started.</p>
   </div>
 
+  <!-- Browser Mode Banner (shown when opened in browser, not PWA) -->
+  <div class="browser-banner" id="browser-banner">
+    <div class="browser-banner-content">
+      <h3>📱 Add to Home Screen</h3>
+      <p id="homescreen-instructions">Tap the menu button <span class="browser-icon">⋮</span> and select "Add to Home Screen" or "Install App"</p>
+    </div>
+  </div>
+
   <!-- Header -->
   <header>
     <div class="header-content container">
@@ -125,10 +133,68 @@
     </div>
   </footer>
 
+  <!-- Continue in Browser Button (shown when opened in browser, not PWA) -->
+  <div class="browser-continue" id="browser-continue">
+    <button class="btn-primary" onclick="dismissBrowserBanner()">Continue in Browser</button>
+  </div>
+
   <script src="/js/api.js"></script>
   <script src="/js/app.js"></script>
   <script>
-    // Load progress data
+    // Show browser banner if not in standalone mode and on mobile
+    function checkBrowserMode() {
+      if (isMobileDevice() && !isStandaloneMode()) {
+        // Check if user dismissed it
+        const dismissed = localStorage.getItem('browser-banner-dismissed');
+        if (!dismissed) {
+          const banner = document.getElementById('browser-banner');
+          const continueBtn = document.getElementById('browser-continue');
+          
+          if (banner) {
+            banner.style.display = 'block';
+            document.body.classList.add('has-browser-banner');
+          }
+          if (continueBtn) {
+            continueBtn.style.display = 'flex';
+            document.body.classList.add('has-browser-continue');
+          }
+          
+          // Update instructions based on platform
+          const instructions = document.getElementById('homescreen-instructions');
+          if (instructions) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            if (isIOS) {
+              instructions.innerHTML = 'Tap the Share button <span class="browser-icon">□↑</span> and select "Add to Home Screen"';
+            } else if (isAndroid) {
+              instructions.innerHTML = 'Tap the menu button <span class="browser-icon">⋮</span> and select "Add to Home screen" or "Install app"';
+            } else {
+              instructions.innerHTML = 'Look for the install button in your browser\'s address bar';
+            }
+          }
+        }
+      }
+    }
+
+    // Dismiss browser banner
+    function dismissBrowserBanner() {
+      const banner = document.getElementById('browser-banner');
+      const continueBtn = document.getElementById('browser-continue');
+      
+      if (banner) {
+        banner.style.display = 'none';
+        document.body.classList.remove('has-browser-banner');
+      }
+      if (continueBtn) {
+        continueBtn.style.display = 'none';
+        document.body.classList.remove('has-browser-continue');
+      }
+      
+      localStorage.setItem('browser-banner-dismissed', 'true');
+    }
+
+    // Load progress data and check browser mode
     document.addEventListener('DOMContentLoaded', () => {
       const profile = UserProfile.get();
       const savedColleges = SavedColleges.get();
@@ -146,6 +212,9 @@
       document.getElementById('profile-completion').textContent = completion + '%';
       document.getElementById('profile-progress').style.width = completion + '%';
       document.getElementById('saved-count').textContent = savedColleges.length;
+      
+      // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
+      setTimeout(checkBrowserMode, 100);
     });
   </script>
 </body>

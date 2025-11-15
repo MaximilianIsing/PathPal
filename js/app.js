@@ -16,6 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Detect if running as PWA (standalone mode)
+function isStandaloneMode() {
+  // Check for standalone mode
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    return true;
+  }
+  // iOS Safari
+  if (window.navigator.standalone === true) {
+    return true;
+  }
+  // Check if launched from homescreen (Android Chrome)
+  if (window.matchMedia('(display-mode: fullscreen)').matches) {
+    return true;
+  }
+  return false;
+}
+
 // Navigation menu toggle
 document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = document.querySelector('.menu-toggle');

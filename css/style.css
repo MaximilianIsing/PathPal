@@ -64,6 +64,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   width: 100%;
   max-width: 100vw;
   overscroll-behavior: none;
@@ -109,6 +110,82 @@ body {
   max-width: 500px;
 }
 
+/* Browser mode banner (shown when opened in browser, not PWA) */
+.browser-banner {
+  display: none;
+  background: linear-gradient(135deg, var(--primary-green), #0a6b5d);
+  color: var(--white);
+  padding: 1rem;
+  box-shadow: 0 2px 8px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+.browser-banner-content {
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.browser-banner-content h3 {
+  color: var(--white);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.browser-banner-content p {
+  color: var(--white);
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+.browser-icon {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+  margin: 0 0.25rem;
+}
+
+/* Continue in browser button */
+.browser-continue {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--white);
+  padding: 1rem;
+  box-shadow: 0 -2px 8px var(--shadow);
+  z-index: 998;
+  justify-content: center;
+  align-items: center;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* PWA safe area support for browser continue button */
+@supports (padding: max(0px)) {
+  .browser-continue {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+.browser-continue button {
+  width: 100%;
+  max-width: 400px;
+}
+
 /* Container */
 .container {
   max-width: 100%;
@@ -123,7 +200,7 @@ body {
 /* Header */
 header {
   background: var(--white);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   box-shadow: 0 2px 8px var(--shadow);
   position: sticky;
   top: 0;
@@ -132,28 +209,52 @@ header {
   max-width: 100vw;
   overflow-x: hidden;
   box-sizing: border-box;
+  min-height: auto;
+}
+
+/* Adjust header top position if browser banner is visible */
+body.has-browser-banner header {
+  top: 0;
+}
+
+body.has-browser-banner .browser-banner ~ header {
+  top: auto;
+}
+
+/* PWA safe area support for header */
+@supports (padding: max(0px)) {
+  header {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: auto;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: auto;
 }
 
 .logo img {
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
 }
 
 .logo h1 {
   color: var(--primary-green);
   font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .menu-toggle {
@@ -219,6 +320,11 @@ main {
   overflow-x: hidden;
   max-width: 100vw;
   position: relative;
+}
+
+/* Add bottom padding when browser continue button is visible */
+body.has-browser-continue main {
+  padding-bottom: calc(2rem + 80px);
 }
 
 /* Welcome Banner */
@@ -610,12 +716,22 @@ main {
 /* Footer */
 footer {
   background: var(--light-mint);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: center;
   color: var(--text-light);
   font-size: 0.9rem;
   overflow-x: hidden;
   max-width: 100vw;
+  min-height: auto;
+}
+
+/* PWA safe area support for footer */
+@supports (padding: max(0px)) {
+  footer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }
 
 /* Responsive adjustments */

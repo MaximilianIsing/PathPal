@@ -95,83 +95,169 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'pages', 'index.html'));
 });
 
-// College Scorecard API endpoint
-const COLLEGE_SCORECARD_API_KEY = process.env.COLLEGE_SCORECARD_API_KEY || '';
+// CSV file path
+const CSV_PATH = path.join(__dirname, 'data', 'us_universities_enriched.csv');
 
+// Cache for CSV data
+let collegeDataCache = null;
+let collegeDataCacheTime = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Simple CSV parser
+function parseCSV(csvText) {
+  const lines = csvText.split('\n').filter(line => line.trim());
+  if (lines.length === 0) return [];
+  
+  const headers = lines[0].split(',').map(h => h.trim());
+  const results = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let j = 0; j < lines[i].length; j++) {
+      const char = lines[i][j];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim()); // Last value
+    
+    if (values.length >= headers.length) {
+      const row = {};
+      headers.forEach((header, index) => {
+        let value = values[index] || '';
+        // Remove quotes if present
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        }
+        row[header] = value;
+      });
+      results.push(row);
+    }
+  }
+  
+  return results;
+}
+
+// Load college data from CSV
+function loadCollegeData() {
+  try {
+    const csvText = fs.readFileSync(CSV_PATH, 'utf8');
+    return parseCSV(csvText);
+  } catch (error) {
+    console.error('Error loading CSV file:', error);
+    return [];
+  }
+}
+
+// Get college data (with caching)
+function getCollegeData() {
+  const now = Date.now();
+  
+  if (!collegeDataCache || !collegeDataCacheTime || (now - collegeDataCacheTime) > CACHE_DURATION) {
+    collegeDataCache = loadCollegeData();
+    collegeDataCacheTime = now;
+    console.log(`Loaded ${collegeDataCache.length} colleges from CSV`);
+  }
+  
+  return collegeDataCache;
+}
+
+// Transform CSV row to API format
+function transformCollege(row, index) {
+  // Use ipeds_id as id if available, otherwise generate one
+  const id = row.ipeds_id || `csv-${index}`;
+  
+  // Combine city and state for location
+  const location = row.city && row.state 
+    ? `${row.city}, ${row.state}` 
+    : (row.city || row.state || 'Unknown');
+  
+  // Parse acceptance rate (should be decimal)
+  let acceptanceRate = null;
+  if (row.acceptance_rate) {
+    const parsed = parseFloat(row.acceptance_rate);
+    if (!isNaN(parsed)) acceptanceRate = parsed;
+  }
+  
+  // Parse numeric values
+  const parseNum = (val) => {
+    if (!val || val === '') return null;
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? null : parsed;
+  };
+  
+  return {
+    id: id,
+    name: row.name || 'Unknown',
+    location: location,
+    city: row.city || '',
+    state: row.state || '',
+    size: row.size_category || 'Unknown',
+    type: row.type || 'Unknown',
+    acceptanceRate: acceptanceRate,
+    satAverage: parseNum(row.sat_50th_percentile),
+    actMidpoint: parseNum(row.act_50th_percentile),
+    tuitionInState: parseNum(row.tuition_in_state),
+    tuitionOutState: parseNum(row.tuition_out_state),
+    graduationRate: parseNum(row.graduation_rate),
+    enrollment: parseNum(row.enrollment),
+    region: row.region || '',
+    popularMajors: row.popular_majors || '',
+    medianEarnings: parseNum(row.median_earnings_10_years),
+    campusSetting: row.campus_setting || '',
+    url: row.url || ''
+  };
+}
+
+// Colleges API endpoint
 app.get('/api/colleges', async (req, res) => {
   try {
     const { search, page = 1, per_page = 20 } = req.query;
     
-    if (!COLLEGE_SCORECARD_API_KEY) {
-      // Return mock data if API key not configured
-      return res.json({
-        results: [],
-        page: 1,
-        per_page: 20,
-        total: 0,
-        note: 'College Scorecard API key not configured. Using mock data.'
+    // Get all college data
+    let colleges = getCollegeData();
+    
+    // Filter by search term if provided (on raw CSV data)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      colleges = colleges.filter(row => {
+        const name = (row.name || '').toLowerCase();
+        const city = (row.city || '').toLowerCase();
+        const state = (row.state || '').toLowerCase();
+        return name.includes(searchLower) || city.includes(searchLower) || state.includes(searchLower);
       });
     }
-
-    let url = `https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${COLLEGE_SCORECARD_API_KEY}&page=${page}&per_page=${per_page}&fields=id,school.name,school.city,school.state,school.ownership,latest.admissions.admission_rate.overall,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.school.size,latest.admissions.sat_scores.average.overall,latest.admissions.act_scores.midpoint.cumulative,latest.school.locale`;
     
-    if (search) {
-      url += `&school.name=${encodeURIComponent(search)}`;
-    }
-
-    const response = await fetch(url);
+    // Transform to API format
+    const transformed = colleges.map((row, index) => transformCollege(row, index));
     
-    if (!response.ok) {
-      throw new Error(`College Scorecard API error: ${response.status}`);
-    }
-
-    const data = await response.json();
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const perPage = parseInt(per_page) || 20;
+    const start = (pageNum - 1) * perPage;
+    const end = start + perPage;
+    const paginated = transformed.slice(start, end);
     
-    // Transform data to match your format
-    const transformed = data.results.map(school => ({
-      id: school.id,
-      name: school['school.name'] || 'Unknown',
-      location: `${school['school.city'] || ''}, ${school['school.state'] || ''}`.trim(),
-      state: school['school.state'] || '',
-      city: school['school.city'] || '',
-      size: getSizeCategory(school['latest.school.size']),
-      type: getTypeFromOwnership(school['school.ownership']),
-      acceptanceRate: school['latest.admissions.admission_rate.overall'] || null,
-      tuitionInState: school['latest.cost.tuition.in_state'] || null,
-      tuitionOutState: school['latest.cost.tuition.out_of_state'] || null,
-      satAverage: school['latest.admissions.sat_scores.average.overall'] || null,
-      actMidpoint: school['latest.admissions.act_scores.midpoint.cumulative'] || null,
-      locale: school['latest.school.locale'] || null
-    }));
-
     res.json({
-      results: transformed,
-      page: parseInt(page),
-      per_page: parseInt(per_page),
-      total: data.metadata?.total || transformed.length
+      results: paginated,
+      page: pageNum,
+      per_page: perPage,
+      total: transformed.length
     });
   } catch (error) {
-    console.error('College Scorecard API error:', error);
+    console.error('Error fetching college data:', error);
     res.status(500).json({ error: 'Failed to fetch college data' });
   }
 });
-
-// Helper functions
-function getSizeCategory(enrollment) {
-  if (!enrollment) return 'Unknown';
-  if (enrollment < 5000) return 'Small';
-  if (enrollment < 15000) return 'Medium';
-  return 'Large';
-}
-
-function getTypeFromOwnership(ownership) {
-  const types = {
-    1: 'Public',
-    2: 'Private',
-    3: 'Private For-Profit'
-  };
-  return types[ownership] || 'Unknown';
-}
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
@@ -185,11 +271,13 @@ app.listen(PORT, '0.0.0.0', () => {
   } else {
     console.warn('⚠ Warning: GPT API key not configured. AI features will not work.');
   }
-  if (COLLEGE_SCORECARD_API_KEY) {
-    console.log('✓ College Scorecard API key configured');
+  
+  // Load college data on startup
+  const collegeCount = getCollegeData().length;
+  if (collegeCount > 0) {
+    console.log(`✓ Loaded ${collegeCount} colleges from CSV`);
   } else {
-    console.warn('⚠ Warning: College Scorecard API key not configured. Real college data not available.');
-    console.warn('  Get your free API key at: https://api.data.gov/signup/');
+    console.warn('⚠ Warning: No college data loaded from CSV. Check data/us_universities_enriched.csv');
   }
 });
 
