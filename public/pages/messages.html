@@ -94,7 +94,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -146,7 +146,7 @@
       
       try {
         // Get user profile for context
-        const profile = UserProfile.get();
+        const profile = await UserProfile.get();
         const context = [
           {
             role: 'system',

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="v1.02">
+  <meta name="description" content="v1.03">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/style.css">
@@ -19,8 +19,8 @@
   <!-- Browser Mode Popup (shown when opened in browser, not PWA) -->
   <div class="browser-popup" id="browser-popup">
     <div class="browser-popup-content">
-      <h2>Add to Home Screen</h2>
-      <p id="homescreen-instructions">Follow the steps below to add Path Pal to your home screen for the best experience.</p>
+      <h2>Add Path Pal to Home Screen</h2>
+      <p id="homescreen-instructions">Path Pal works best as a mobile app, add it to your home screen in 3 simple steps:</p>
       
       <!-- Guide Image -->
       <div class="browser-popup-image">
@@ -28,6 +28,7 @@
       </div>
       
       <div class="browser-popup-actions">
+        <p style="margin: 0 0 0.5rem 0; color: var(--primary-green); font-size: 1.1rem; text-align: center; font-style: italic;">Or</p>
         <button class="btn-primary" onclick="dismissBrowserBanner()">Continue in Browser</button>
       </div>
     </div>
@@ -66,7 +67,7 @@
       <!-- Welcome Banner -->
       <section class="welcome-banner">
         <h2>Welcome to Path Pal!</h2>
-        <p>v1.02</p>
+        <p>v1.03</p>
         <button class="btn-primary" onclick="window.location.href='/profile.html'">Start Your Journey</button>
       </section>
 
@@ -138,7 +139,7 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -167,15 +168,15 @@
               const isAndroid = /Android/.test(navigator.userAgent);
               
               if (isIOS) {
-                instructions.textContent = 'Tap the Share button and select "Add to Home Screen" to install Path Pal.';
+                instructions.innerHTML = 'Path Pal works best as a mobile app, add it to your home screen in 3 simple steps:<br><br>1. Tap the Share button (square with arrow pointing up) on your screen<br>2. Tap the "More" button<br>3. Tap the "Add to Home Screen" button on the bottom<br><br>You\'ll now have quick access to Path Pal from your home screen!';
                 guideImage.src = '/media/Guide.png';
                 guideImage.alt = 'iOS Add to Home Screen Guide';
               } else if (isAndroid) {
-                instructions.textContent = 'Tap the menu button and select "Add to Home screen" or "Install app" to install Path Pal.';
+                instructions.innerHTML = 'Path Pal works best as a mobile app, add it to your home screen in 3 simple steps:<br><br>1. Tap the menu button (three dots) in the top right of your browser<br>2. Select "Add to Home screen" or "Install app" from the menu<br>3. Tap "Add" or "Install" to confirm<br><br>You\'ll now have quick access to Path Pal from your home screen!';
                 guideImage.src = '/media/Guide.png';
                 guideImage.alt = 'Android Add to Home Screen Guide';
               } else {
-                instructions.textContent = 'Look for the install button in your browser\'s address bar to add Path Pal to your home screen.';
+                instructions.innerHTML = 'Path Pal works best as a mobile app, add it to your home screen in 3 simple steps:<br><br>1. Look for the install button or menu icon in your browser\'s address bar<br>2. Click "Install" or "Add to Home Screen" from the prompt<br>3. Confirm the installation when prompted<br><br>You\'ll now have quick access to Path Pal from your home screen!';
                 guideImage.src = '/media/Guide.png';
                 guideImage.alt = 'Add to Home Screen Guide';
               }
@@ -198,23 +199,30 @@
     }
 
     // Load progress data and check browser mode
-    document.addEventListener('DOMContentLoaded', () => {
-      const profile = UserProfile.get();
-      const savedColleges = SavedColleges.get();
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize user ID first
+      await initializeUserId();
       
-      // Calculate profile completion
-      let completion = 0;
-      if (profile.name) completion += 15;
-      if (profile.grade) completion += 10;
-      if (profile.gpa) completion += 15;
-      if (profile.sat || profile.act) completion += 15;
-      if (profile.majors && profile.majors.length > 0) completion += 15;
-      if (profile.activities && profile.activities.length > 0) completion += 15;
-      if (profile.careerGoals) completion += 15;
-      
-      document.getElementById('profile-completion').textContent = completion + '%';
-      document.getElementById('profile-progress').style.width = completion + '%';
-      document.getElementById('saved-count').textContent = savedColleges.length;
+      try {
+        const profile = await UserProfile.get();
+        const savedColleges = SavedColleges.get();
+        
+        // Calculate profile completion
+        let completion = 0;
+        if (profile.name) completion += 15;
+        if (profile.grade) completion += 10;
+        if (profile.gpa) completion += 15;
+        if (profile.sat || profile.act) completion += 15;
+        if (profile.majors && profile.majors.length > 0) completion += 15;
+        if (profile.activities && profile.activities.length > 0) completion += 15;
+        if (profile.careerGoals) completion += 15;
+        
+        document.getElementById('profile-completion').textContent = completion + '%';
+        document.getElementById('profile-progress').style.width = completion + '%';
+        document.getElementById('saved-count').textContent = savedColleges.length;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
       
       // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
       setTimeout(checkBrowserMode, 100);

@@ -95,7 +95,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -229,11 +229,15 @@
     }
 
     // Load major from profile if available
-    document.addEventListener('DOMContentLoaded', () => {
-      const profile = UserProfile.get();
-      if (profile.majors && profile.majors.length > 0) {
-        const majorSelect = document.getElementById('career-major');
-        const firstMajor = profile.majors[0];
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize user ID first
+      await initializeUserId();
+      
+      try {
+        const profile = await UserProfile.get();
+        if (profile.majors && profile.majors.length > 0) {
+          const majorSelect = document.getElementById('career-major');
+          const firstMajor = profile.majors[0];
         if (Array.from(majorSelect.options).some(opt => opt.value === firstMajor)) {
           majorSelect.value = firstMajor;
           loadCareerData();

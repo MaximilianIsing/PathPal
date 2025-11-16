@@ -86,7 +86,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -157,8 +157,8 @@
       `;
     }
 
-    function generateDefaultYear(year) {
-      const profile = UserProfile.get();
+    async function generateDefaultYear(year) {
+      const profile = await UserProfile.get();
       const majors = profile.majors || ['General Studies'];
       const major = majors[0];
 
@@ -237,7 +237,7 @@
       content.innerHTML = '<p class="loading">Generating personalized 4-year plan...</p>';
 
       try {
-        const profile = UserProfile.get();
+        const profile = await UserProfile.get();
         const message = `Create a personalized 4-year academic and activity plan for a ${profile.grade || 'high school/college'} student with the following profile: GPA: ${profile.gpa || 'not set'}, Major(s): ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide a detailed roadmap for each year with courses, activities, and important dates. Format as structured data.`;
 
         const response = await sendChatMessage(message);

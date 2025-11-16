@@ -159,44 +159,57 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
   <script src="/js/api.js"></script>
   <script src="/js/app.js"></script>
   <script>
-    // Load profile data
-    document.addEventListener('DOMContentLoaded', () => {
-      const profile = UserProfile.get();
+    // Initialize user ID on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize user ID first
+      await initializeUserId();
       
-      document.getElementById('name').value = profile.name || '';
-      document.getElementById('grade').value = profile.grade || '';
-      document.getElementById('gpa').value = profile.gpa || '';
-      document.getElementById('weighted').checked = profile.weighted !== false;
-      document.getElementById('sat').value = profile.sat || '';
-      document.getElementById('act').value = profile.act || '';
-      document.getElementById('psat').value = profile.psat || '';
-      document.getElementById('activities').value = profile.activities || '';
-      document.getElementById('career-goals').value = profile.careerGoals || '';
-      
-      // Load selected majors
-      if (profile.majors && profile.majors.length > 0) {
-        const majorsSelect = document.getElementById('majors');
-        Array.from(majorsSelect.options).forEach(option => {
-          if (profile.majors.includes(option.value)) {
-            option.selected = true;
-          }
-        });
-      }
-      
-      updateProfileName();
-      updateSelectedMajors();
-      
-      // Listen for changes
-      document.getElementById('majors').addEventListener('change', updateSelectedMajors);
-      document.getElementById('name').addEventListener('input', updateProfileName);
+      // Load profile data
+      loadProfile();
     });
+
+    async function loadProfile() {
+      try {
+        const profile = await UserProfile.get();
+        
+        document.getElementById('name').value = profile.name || '';
+        document.getElementById('grade').value = profile.grade || '';
+        document.getElementById('gpa').value = profile.gpa || '';
+        document.getElementById('weighted').checked = profile.weighted !== false;
+        document.getElementById('sat').value = profile.sat || '';
+        document.getElementById('act').value = profile.act || '';
+        document.getElementById('psat').value = profile.psat || '';
+        document.getElementById('activities').value = profile.activities || '';
+        document.getElementById('career-goals').value = profile.careerGoals || '';
+        
+        // Load selected majors
+        if (profile.majors && profile.majors.length > 0) {
+          const majorsSelect = document.getElementById('majors');
+          Array.from(majorsSelect.options).forEach(option => {
+            if (profile.majors.includes(option.value)) {
+              option.selected = true;
+            }
+          });
+        }
+        
+        updateProfileName();
+        updateSelectedMajors();
+        
+        // Listen for changes
+        document.getElementById('majors').addEventListener('change', updateSelectedMajors);
+        document.getElementById('name').addEventListener('input', updateProfileName);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        showNotification('Error loading profile. Using default values.', 'warning');
+      }
+    }
 
     function updateProfileName() {
       const name = document.getElementById('name').value || 'Student Name';
@@ -215,25 +228,30 @@
       }
     }
 
-    function saveProfile() {
-      const profile = {
-        name: document.getElementById('name').value,
-        grade: document.getElementById('grade').value,
-        gpa: document.getElementById('gpa').value,
-        weighted: document.getElementById('weighted').checked,
-        sat: document.getElementById('sat').value,
-        act: document.getElementById('act').value,
-        psat: document.getElementById('psat').value,
-        majors: Array.from(document.getElementById('majors').selectedOptions).map(o => o.value),
-        activities: document.getElementById('activities').value,
-        careerGoals: document.getElementById('career-goals').value
-      };
-      
-      UserProfile.save(profile);
-      showNotification('Profile saved successfully!', 'success');
-      
-      // Update profile name display
-      updateProfileName();
+    async function saveProfile() {
+      try {
+        const profile = {
+          name: document.getElementById('name').value,
+          grade: document.getElementById('grade').value,
+          gpa: document.getElementById('gpa').value,
+          weighted: document.getElementById('weighted').checked,
+          sat: document.getElementById('sat').value,
+          act: document.getElementById('act').value,
+          psat: document.getElementById('psat').value,
+          majors: Array.from(document.getElementById('majors').selectedOptions).map(o => o.value),
+          activities: document.getElementById('activities').value,
+          careerGoals: document.getElementById('career-goals').value
+        };
+        
+        await UserProfile.save(profile);
+        showNotification('Profile saved successfully!', 'success');
+        
+        // Update profile name display
+        updateProfileName();
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        showNotification('Error saving profile. Please try again.', 'error');
+      }
     }
   </script>
 </body>

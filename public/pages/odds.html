@@ -70,7 +70,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -82,9 +82,9 @@
       loadAITips();
     });
 
-    function loadSavedCollegesOdds() {
+    async function loadSavedCollegesOdds() {
       const savedColleges = SavedColleges.get();
-      const profile = UserProfile.get();
+      const profile = await UserProfile.get();
       const container = document.getElementById('odds-results');
 
       if (savedColleges.length === 0) {
@@ -125,7 +125,7 @@
     }
 
     async function loadAITips() {
-      const profile = UserProfile.get();
+      const profile = await UserProfile.get();
       const savedColleges = SavedColleges.get();
 
       if (!profile.name || savedColleges.length === 0) {

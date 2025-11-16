@@ -53,32 +53,101 @@ const Storage = {
   }
 };
 
-// User profile data management
+// Get or generate user ID
+function getUserId() {
+  let userId = Storage.get('userId', null);
+  if (!userId) {
+    // Generate a temporary ID (will be replaced by server on first request)
+    userId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    Storage.set('userId', userId);
+  }
+  return userId;
+}
+
+// Initialize user ID from server if needed
+async function initializeUserId() {
+  const existingUserId = Storage.get('userId', null);
+  if (!existingUserId || existingUserId.startsWith('temp_')) {
+    try {
+      const response = await fetch(`${API_BASE}/api/user-id`);
+      if (response.ok) {
+        const data = await response.json();
+        Storage.set('userId', data.user_id);
+        return data.user_id;
+      }
+    } catch (error) {
+      console.error('Error initializing user ID:', error);
+    }
+  }
+  return getUserId();
+}
+
+// User profile data management (server-side)
 const UserProfile = {
-  get() {
-    return Storage.get('userProfile', {
-      name: '',
-      grade: '',
-      gpa: '',
-      weighted: true,
-      sat: '',
-      act: '',
-      psat: '',
-      majors: [],
-      activities: [],
-      interests: [],
-      careerGoals: ''
-    });
+  async get() {
+    try {
+      const userId = getUserId();
+      const response = await fetch(`${API_BASE}/api/profile?user_id=${encodeURIComponent(userId)}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const profile = await response.json();
+      return profile;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      // Return default profile on error
+      return {
+        user_id: getUserId(),
+        name: '',
+        grade: '',
+        gpa: '',
+        weighted: true,
+        sat: '',
+        act: '',
+        psat: '',
+        majors: [],
+        activities: '',
+        interests: [],
+        careerGoals: ''
+      };
+    }
   },
   
-  save(profile) {
-    Storage.set('userProfile', profile);
+  async save(profile) {
+    try {
+      const userId = getUserId();
+      
+      // Ensure user_id is set
+      const profileData = {
+        ...profile,
+        user_id: userId
+      };
+      
+      const response = await fetch(`${API_BASE}/api/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save profile');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
   },
   
-  update(updates) {
-    const profile = this.get();
+  async update(updates) {
+    const profile = await this.get();
     const updated = { ...profile, ...updates };
-    this.save(updated);
+    await this.save(updated);
     return updated;
   }
 };

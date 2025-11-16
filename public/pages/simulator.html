@@ -101,7 +101,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -111,29 +111,36 @@
     let currentProfile = {};
     let simulatedProfile = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadCurrentProfile();
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize user ID first
+      await initializeUserId();
+      
+      await loadCurrentProfile();
     });
 
-    function loadCurrentProfile() {
-      currentProfile = UserProfile.get();
-      const savedColleges = SavedColleges.get();
-      
-      const container = document.getElementById('current-profile');
-      container.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-          <div><strong>GPA:</strong> ${currentProfile.gpa || 'Not set'}</div>
-          <div><strong>SAT:</strong> ${currentProfile.sat || 'Not set'}</div>
-          <div><strong>ACT:</strong> ${currentProfile.act || 'Not set'}</div>
-          <div><strong>Grade:</strong> ${currentProfile.grade || 'Not set'}</div>
-        </div>
-        <div><strong>Saved Colleges:</strong> ${savedColleges.length}</div>
-      `;
+    async function loadCurrentProfile() {
+      try {
+        currentProfile = await UserProfile.get();
+        const savedColleges = SavedColleges.get();
+        
+        const container = document.getElementById('current-profile');
+        container.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div><strong>GPA:</strong> ${currentProfile.gpa || 'Not set'}</div>
+            <div><strong>SAT:</strong> ${currentProfile.sat || 'Not set'}</div>
+            <div><strong>ACT:</strong> ${currentProfile.act || 'Not set'}</div>
+            <div><strong>Grade:</strong> ${currentProfile.grade || 'Not set'}</div>
+          </div>
+          <div><strong>Saved Colleges:</strong> ${savedColleges.length}</div>
+        `;
 
-      // Pre-fill with current values
-      if (currentProfile.gpa) document.getElementById('sim-gpa').value = currentProfile.gpa;
-      if (currentProfile.sat) document.getElementById('sim-sat').value = currentProfile.sat;
-      if (currentProfile.act) document.getElementById('sim-act').value = currentProfile.act;
+        // Pre-fill with current values
+        if (currentProfile.gpa) document.getElementById('sim-gpa').value = currentProfile.gpa;
+        if (currentProfile.sat) document.getElementById('sim-sat').value = currentProfile.sat;
+        if (currentProfile.act) document.getElementById('sim-act').value = currentProfile.act;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
     }
 
     function calculateSimulation() {

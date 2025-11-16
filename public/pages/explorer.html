@@ -114,7 +114,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -124,15 +124,18 @@
     let allColleges = [];
     let filteredColleges = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize user ID first
+      await initializeUserId();
+      
       allColleges = Colleges;
       filteredColleges = [...allColleges];
-      displayColleges(filteredColleges);
+      await displayColleges(filteredColleges);
     });
 
-    function displayColleges(colleges) {
+    async function displayColleges(colleges) {
       const container = document.getElementById('colleges-list');
-      const profile = UserProfile.get();
+      const profile = await UserProfile.get();
 
       if (colleges.length === 0) {
         container.innerHTML = '<div class="card"><p>No colleges match your filters. Try adjusting your search criteria.</p></div>';
@@ -178,12 +181,12 @@
       });
     }
 
-    function filterColleges() {
+    async function filterColleges() {
       const chanceFilter = document.getElementById('filter-chance').value;
       const regionFilter = document.getElementById('filter-region').value;
       const sizeFilter = document.getElementById('filter-size').value;
       const typeFilter = document.getElementById('filter-type').value;
-      const profile = UserProfile.get();
+      const profile = await UserProfile.get();
 
       filteredColleges = allColleges.filter(college => {
         // Chance filter
@@ -205,19 +208,19 @@
         return true;
       });
 
-      displayColleges(filteredColleges);
+      await displayColleges(filteredColleges);
     }
 
-    function resetFilters() {
+    async function resetFilters() {
       document.getElementById('filter-chance').value = '';
       document.getElementById('filter-region').value = '';
       document.getElementById('filter-size').value = '';
       document.getElementById('filter-type').value = '';
       filteredColleges = [...allColleges];
-      displayColleges(filteredColleges);
+      await displayColleges(filteredColleges);
     }
 
-    function saveCollege(collegeId) {
+    async function saveCollege(collegeId) {
       const college = allColleges.find(c => c.id === collegeId);
       if (!college) return;
       
@@ -225,11 +228,11 @@
       
       if (isSaved) {
         SavedColleges.remove(collegeId);
-        displayColleges(filteredColleges);
+        await displayColleges(filteredColleges);
         showNotification(`${college.name} removed from saved`, 'info');
       } else {
         SavedColleges.add(college);
-        displayColleges(filteredColleges);
+        await displayColleges(filteredColleges);
         showNotification(`${college.name} saved!`, 'success');
       }
     }
@@ -246,7 +249,7 @@
       container.innerHTML = '<p class="loading">Analyzing your profile...</p>';
 
       try {
-        const profile = UserProfile.get();
+        const profile = await UserProfile.get();
         const message = `Based on my profile (GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Grade: ${profile.grade || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}), recommend 5 colleges that would be a good fit. Format as a numbered list with brief reasoning for each.`;
         
         const response = await sendChatMessage(message);

@@ -46,3 +46,6 @@ coverage/
 # Render
 .render/
 
+# Storage (user data - accounts, etc.)
+storage/
+

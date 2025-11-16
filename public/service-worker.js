@@ -16,8 +16,8 @@ const urlsToCache = [
   '/js/api.js',
   '/manifest.json',
   '/media/logo/logo256x256.png',
-  '/fonts/Arvo/Arvo-Regular.ttf',
-  '/fonts/Arvo/Arvo-Bold.ttf'
+  '/media/fonts/Arvo/Arvo-Regular.ttf',
+  '/media/fonts/Arvo/Arvo-Bold.ttf'
 ];
 
 // Install service worker

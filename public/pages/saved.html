@@ -66,7 +66,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.02</p>
+      <p>&copy; 2025 Path Pal. v1.03</p>
     </div>
   </footer>
 
@@ -77,9 +77,9 @@
       loadSavedColleges();
     });
 
-    function loadSavedColleges() {
+    async function loadSavedColleges() {
       const savedColleges = SavedColleges.get();
-      const profile = UserProfile.get();
+      const profile = await UserProfile.get();
       const container = document.getElementById('saved-colleges-list');
 
       if (savedColleges.length === 0) {
