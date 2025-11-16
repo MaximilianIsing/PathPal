@@ -91,29 +91,159 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--white);
+  /* Graduate image (desktop only) with 60% primary green overlay */
+  background-image: linear-gradient(rgba(13, 140, 121, 0.6), rgba(13, 140, 121, 0.6)), url('/media/pc-view/Graduate.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   z-index: 10000;
   padding: 2rem;
   text-align: center;
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  font-family: 'Arvo', serif;
 }
 
 .desktop-message.show {
   display: flex;
 }
 
-.desktop-message h1 {
-  color: var(--primary-green);
-  margin-bottom: 1rem;
-  font-size: 2rem;
+.desktop-message-content {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  max-width: 550px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  font-family: 'Arvo', serif;
 }
 
-.desktop-message p {
-  color: var(--text-light);
-  font-size: 1.2rem;
-  max-width: 500px;
+.desktop-message-icon {
+  width: 120px;
+  height: 120px;
+  background: var(--light-mint);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 8px 24px rgba(13, 140, 121, 0.2);
+}
+
+.desktop-message-icon img {
+  width: 80px;
+  height: 80px;
+}
+
+.desktop-message-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-message-logo img {
+  width: 48px;
+  height: 48px;
+}
+
+.desktop-message-logo h1 {
+  color: var(--primary-green);
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-message h2 {
+  color: var(--primary-green);
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: bold;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-message > .desktop-message-content > p {
+  color: var(--text-dark);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 100%;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-message-actions {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--light-mint);
+  width: 100%;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-instructions {
+  color: var(--text-dark);
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0 0 1rem 0;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-steps {
+  text-align: left;
+  color: var(--text-dark);
+  font-size: 1rem;
+  line-height: 1.8;
+  margin: 0;
+  padding-left: 1.5rem;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-steps li {
+  margin-bottom: 0.5rem;
+  font-family: 'Arvo', serif;
+}
+
+.desktop-qr {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.desktop-qr img {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  background: var(--white);
+  padding: 0.75rem;
+  border: 2px solid rgba(13, 140, 121, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.desktop-footer-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.5rem 1.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-family: 'Arvo', serif;
+  box-sizing: border-box;
+}
+
+.desktop-footer-left,
+.desktop-footer-right {
+  opacity: 0.9;
 }
 
 /* Browser mode popup (full-page modal shown when opened in browser, not PWA) */

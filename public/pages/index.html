@@ -3,17 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="v1.03">
+  <meta name="description" content="v1.04">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/media/AppIcon.png">
+  <link rel="apple-touch-icon" href="/media/AppIcon.png">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
 </head>
 <body>
   <!-- Desktop Message -->
   <div class="desktop-message">
-    <h1><img src="/media/icons/Mobile256x256.png" alt="Mobile" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 0.5rem;"> Mobile App Required</h1>
-    <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet to get started.</p>
+    <div class="desktop-message-content">
+      <div class="desktop-message-icon">
+        <img src="/media/icons/Mobile256x256.png" alt="Mobile">
+      </div>
+      <div class="desktop-message-logo">
+        <img src="/media/logo/logo64x64.png" alt="Path Pal Logo">
+        <h1>Path Pal</h1>
+      </div>
+      <h2>Mobile App Required</h2>
+      <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet to get started.</p>
+      <div class="desktop-message-actions">
+        <p class="desktop-instructions">To access Path Pal:</p>
+        <ol class="desktop-steps">
+          <li>Open this URL on your mobile device</li>
+          <li>Or scan the QR code below</li>
+        </ol>
+        <div class="desktop-qr">
+          <img src="/media/pc-view/QR.png" alt="Scan to open Path Pal on your phone">
+        </div>
+      </div>
+    </div>
+    <div class="desktop-footer-bar">
+      <span class="desktop-footer-left">© Path Pal 2025</span>
+      <span class="desktop-footer-right">v1.04</span>
+    </div>
   </div>
 
   <!-- Browser Mode Popup (shown when opened in browser, not PWA) -->
@@ -67,7 +92,7 @@
       <!-- Welcome Banner -->
       <section class="welcome-banner">
         <h2>Welcome to Path Pal!</h2>
-        <p>v1.03</p>
+        <p>v1.04</p>
         <button class="btn-primary" onclick="window.location.href='/profile.html'">Start Your Journey</button>
       </section>
 
@@ -139,7 +164,7 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.03</p>
+      <p>&copy; 2025 Path Pal. v1.04</p>
     </div>
   </footer>
 
