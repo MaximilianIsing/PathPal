@@ -91,6 +91,7 @@ ${activitiesText}
  * @param {boolean} [student.weighted=true]        - Whether GPA is weighted.
  * @param {number|string} [student.sat]            - SAT total (400–1600).
  * @param {number|string} [student.act]            - ACT composite (1–36).
+ * @param {boolean} [student.testOptional=false]   - Whether student is applying test optional (exclude test scores).
  * @param {Array<{course:string, score:string|number}>} [student.apCourses] - AP courses with scores.
  * @param {string|Array<{hours:string, description:string}>} [student.activities] - Activities as string (legacy) or JSON array.
  * @returns {Promise<number>}                      - Promise resolving to a 0–100 score.
@@ -101,6 +102,7 @@ async function rateStudent(student) {
     weighted = true,
     sat,
     act,
+    testOptional = false,
     apCourses = [],
     activities = ''
   } = student || {};
@@ -129,27 +131,32 @@ async function rateStudent(student) {
   const gpaNorm = gpaNum > 0 ? Math.min(1, gpaNum / gpaMax) : 0;
 
   // Test score normalized to 0–1, using whichever is stronger (SAT or ACT)
-  const satNum = typeof sat === 'string' ? parseInt(sat, 10) : (sat || 0);
-  const actNum = typeof act === 'string' ? parseInt(act, 10) : (act || 0);
+  // If testOptional is true, skip test scores entirely (set testNorm to 0)
+  let testNorm = 0;
+  
+  if (!testOptional) {
+    const satNum = typeof sat === 'string' ? parseInt(sat, 10) : (sat || 0);
+    const actNum = typeof act === 'string' ? parseInt(act, 10) : (act || 0);
 
-  // If no test scores provided (all empty/0), treat as "Untaken" and assume average SAT score of 800
-  const isUntaken = (satNum === 0 || sat === '' || sat === null || sat === undefined) && 
-                     (actNum === 0 || act === '' || act === null || act === undefined);
+    // If no test scores provided (all empty/0), treat as "Untaken" and assume average SAT score of 800
+    const isUntaken = (satNum === 0 || sat === '' || sat === null || sat === undefined) && 
+                       (actNum === 0 || act === '' || act === null || act === undefined);
 
-  let satNorm = 0;
-  if (isUntaken) {
-    // Treat "Untaken" as SAT 800 (average score)
-    satNorm = Math.min(1, (800 - 400) / (1600 - 400)); // (800 - 400) / 1200 = 0.333...
-  } else if (satNum > 0) {
-    satNorm = Math.min(1, (satNum - 400) / (1600 - 400)); // 400–1600
+    let satNorm = 0;
+    if (isUntaken) {
+      // Treat "Untaken" as SAT 800 (average score)
+      satNorm = Math.min(1, (800 - 400) / (1600 - 400)); // (800 - 400) / 1200 = 0.333...
+    } else if (satNum > 0) {
+      satNorm = Math.min(1, (satNum - 400) / (1600 - 400)); // 400–1600
+    }
+
+    let actNorm = 0;
+    if (!isUntaken && actNum > 0) {
+      actNorm = Math.min(1, (actNum - 1) / (36 - 1)); // 1–36
+    }
+
+    testNorm = Math.max(satNorm, actNorm);
   }
-
-  let actNorm = 0;
-  if (!isUntaken && actNum > 0) {
-    actNorm = Math.min(1, (actNum - 1) / (36 - 1)); // 1–36
-  }
-
-  const testNorm = Math.max(satNorm, actNorm);
 
   // AP rigor: combine count and average score into a 0–1 measure
   const validAps = (apCourses || []).filter(c => c && c.course);
@@ -173,12 +180,26 @@ async function rateStudent(student) {
 
   // --- Weighted combination into a 0–100 score ---
   // Weights should sum to 1.0
-  const WEIGHTS = {
+  // If test optional, redistribute test weight proportionally to other components
+  let WEIGHTS = {
     gpa: 0.35,
     tests: 0.30,
     ap: 0.15,
     activities: 0.20
   };
+
+  // If test optional, redistribute the 30% test weight to other components
+  if (testOptional) {
+    const testWeight = WEIGHTS.tests;
+    const otherWeight = WEIGHTS.gpa + WEIGHTS.ap + WEIGHTS.activities; // 0.70
+    // Redistribute proportionally: each component gets its share of the test weight
+    WEIGHTS = {
+      gpa: WEIGHTS.gpa + (testWeight * (WEIGHTS.gpa / otherWeight)),
+      tests: 0, // No test weight
+      ap: WEIGHTS.ap + (testWeight * (WEIGHTS.ap / otherWeight)),
+      activities: WEIGHTS.activities + (testWeight * (WEIGHTS.activities / otherWeight))
+    };
+  }
 
   const composite =
     WEIGHTS.gpa * gpaNorm +

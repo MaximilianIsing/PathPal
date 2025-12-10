@@ -141,3 +141,71 @@ function signOut() {
   localStorage.removeItem('is_guest');
 }
 
+/**
+ * Request password reset code
+ * @param {string} email - User email
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function forgotPassword(email) {
+  try {
+    if (!email || !email.includes('@')) {
+      return { success: false, error: 'Please enter a valid email address' };
+    }
+
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase()
+      })
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return { success: false, error: 'An error occurred. Please try again.' };
+  }
+}
+
+/**
+ * Reset password with code
+ * @param {string} email - User email
+ * @param {string} code - Reset code
+ * @param {string} password - New password
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function resetPassword(email, code, password) {
+  try {
+    if (!email || !code || !password) {
+      return { success: false, error: 'All fields are required' };
+    }
+
+    if (password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters' };
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        code: code.trim(),
+        password_hash: passwordHash
+      })
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return { success: false, error: 'An error occurred. Please try again.' };
+  }
+}
+

@@ -61,6 +61,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
+  // Add page transition blur effect for all navigation links
+  const allNavLinks = document.querySelectorAll('a[href]');
+  allNavLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    const hasOnclick = link.getAttribute('onclick');
+    
+    // Skip external links, mailto, tel, anchors, and links with onclick handlers
+    if (href && 
+        !href.startsWith('http') && 
+        !href.startsWith('mailto:') && 
+        !href.startsWith('tel:') && 
+        !href.startsWith('#') &&
+        !hasOnclick) {
+      
+      link.addEventListener('click', (e) => {
+        try {
+          // Only apply transition if it's a different page
+          const currentPath = window.location.pathname;
+          let targetPath;
+          
+          // Handle relative and absolute paths
+          if (href.startsWith('/')) {
+            targetPath = href.split('?')[0]; // Remove query params
+          } else {
+            const url = new URL(link.href, window.location.origin);
+            targetPath = url.pathname;
+          }
+          
+          // Normalize paths (remove trailing slashes, handle index.html)
+          const normalizePath = (path) => {
+            path = path.replace(/\/$/, '') || '/';
+            if (path.endsWith('/index.html') || path === '/index.html') {
+              return '/';
+            }
+            return path;
+          };
+          
+          const normalizedCurrent = normalizePath(currentPath);
+          const normalizedTarget = normalizePath(targetPath);
+          
+          if (normalizedCurrent !== normalizedTarget) {
+            // Apply blur transition
+            document.body.classList.add('page-transitioning');
+          }
+        } catch (err) {
+          // If URL parsing fails, still apply blur for safety
+          document.body.classList.add('page-transitioning');
+        }
+      }, { passive: true });
+    }
+  });
+  
+  // Also handle programmatic navigation (window.location changes)
+  let lastLocation = window.location.href;
+  const checkLocationChange = () => {
+    if (window.location.href !== lastLocation) {
+      document.body.classList.add('page-transitioning');
+      lastLocation = window.location.href;
+    }
+  };
+  
+  // Check for location changes periodically (for programmatic navigation)
+  setInterval(checkLocationChange, 100);
+  
   // Set active nav link based on current page
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   navLinks.forEach(link => {
@@ -69,6 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
       link.classList.add('active');
     }
   });
+});
+
+// Remove blur transition on page load
+document.addEventListener('DOMContentLoaded', () => {
+  // Remove any transition class that might have persisted
+  document.body.classList.remove('page-transitioning');
+});
+
+// Also remove on page show (for back/forward navigation)
+window.addEventListener('pageshow', () => {
+  document.body.classList.remove('page-transitioning');
 });
 
 // Service Worker Registration

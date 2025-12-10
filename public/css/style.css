@@ -81,6 +81,13 @@ body {
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
+  transition: filter 0.4s ease;
+}
+
+/* Page transition blur effect */
+body.page-transitioning {
+  filter: blur(8px);
+  pointer-events: none;
 }
 
 /* Mobile detection message */

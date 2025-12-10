@@ -166,6 +166,9 @@
         <div class="form-group">
           <label for="password">Password</label>
           <input type="password" id="password" name="password" required autocomplete="current-password">
+          <div style="text-align: right; margin-top: 0.5rem;">
+            <a href="/pages/forgot-password.html" style="color: var(--primary-green); text-decoration: none; font-size: 0.9rem; font-family: 'Arvo', serif;">Forgot Password?</a>
+          </div>
         </div>
 
         <button type="submit" class="auth-button" id="submit-button">Sign In</button>
@@ -184,6 +187,16 @@
 
   <script src="/js/auth.js"></script>
   <script>
+    // Check if user is already logged in (not guest) and redirect to home
+    (function() {
+      const userId = getCurrentUserId();
+      const guest = isGuest();
+      if (userId && !guest) {
+        window.location.href = '/pages/index.html';
+        return;
+      }
+    })();
+
     const loginForm = document.getElementById('login-form');
     const errorMessage = document.getElementById('error-message');
     const submitButton = document.getElementById('submit-button');

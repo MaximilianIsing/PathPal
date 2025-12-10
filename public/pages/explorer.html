@@ -429,7 +429,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; Path Pal 2025 — v1.09.3</p>
+      <p>&copy; Path Pal 2025 — v1.09.04</p>
     </div>
   </footer>
 
@@ -876,13 +876,23 @@
 
           <div class="collapsible-content" id="content-${college.id}">
             <div class="info-section">
-            ${college.satAverage !== null ? `
+            ${college.sat25thPercentile !== null && college.sat75thPercentile !== null ? `
+            <div class="info-row">
+              <span class="info-label">SAT Range</span>
+              <span class="info-value">${formatNumber(college.sat25thPercentile)}-${formatNumber(college.sat75thPercentile)}</span>
+            </div>
+            ` : college.satAverage !== null ? `
             <div class="info-row">
               <span class="info-label">Avg SAT</span>
               <span class="info-value">${formatNumber(college.satAverage)}</span>
             </div>
             ` : ''}
-            ${college.actMidpoint !== null ? `
+            ${college.act25thPercentile !== null && college.act75thPercentile !== null ? `
+            <div class="info-row">
+              <span class="info-label">ACT Range</span>
+              <span class="info-value">${formatNumber(college.act25thPercentile)}-${formatNumber(college.act75thPercentile)}</span>
+            </div>
+            ` : college.actMidpoint !== null ? `
             <div class="info-row">
               <span class="info-label">Avg ACT</span>
               <span class="info-value">${formatNumber(college.actMidpoint)}</span>
@@ -898,6 +908,30 @@
             <div class="info-row">
               <span class="info-label">Out-of-State Tuition</span>
               <span class="info-value">${formatCurrency(college.tuitionOutState)}</span>
+            </div>
+            ` : ''}
+            ${college.numMajors !== null ? `
+            <div class="info-row">
+              <span class="info-label">Number of Majors</span>
+              <span class="info-value">${formatNumber(college.numMajors)}</span>
+            </div>
+            ` : ''}
+            ${college.testOptional ? `
+            <div class="info-row">
+              <span class="info-label">Test Optional</span>
+              <span class="info-value">Yes</span>
+            </div>
+            ` : ''}
+            ${college.gpaOptional ? `
+            <div class="info-row">
+              <span class="info-label">GPA Optional</span>
+              <span class="info-value">Yes</span>
+            </div>
+            ` : ''}
+            ${college.avgAfterAid !== null ? `
+            <div class="info-row">
+              <span class="info-label">Avg Cost After Aid</span>
+              <span class="info-value">${formatCurrency(college.avgAfterAid)}</span>
             </div>
             ` : ''}
             ${college.roomBoard !== null ? `
@@ -1113,15 +1147,27 @@
       details += `Size: ${college.size || 'N/A'}\n`;
       details += `Region: ${college.region || 'N/A'}\n`;
       if (college.acceptanceRate !== null) details += `Acceptance Rate: ${formatPercent(college.acceptanceRate)}\n`;
-      if (college.satAverage !== null) details += `Average SAT: ${formatNumber(college.satAverage)}\n`;
-      if (college.actMidpoint !== null) details += `Average ACT: ${formatNumber(college.actMidpoint)}\n`;
+      if (college.sat25thPercentile !== null && college.sat75thPercentile !== null) {
+        details += `SAT Range: ${formatNumber(college.sat25thPercentile)}-${formatNumber(college.sat75thPercentile)}\n`;
+      } else if (college.satAverage !== null) {
+        details += `Average SAT: ${formatNumber(college.satAverage)}\n`;
+      }
+      if (college.act25thPercentile !== null && college.act75thPercentile !== null) {
+        details += `ACT Range: ${formatNumber(college.act25thPercentile)}-${formatNumber(college.act75thPercentile)}\n`;
+      } else if (college.actMidpoint !== null) {
+        details += `Average ACT: ${formatNumber(college.actMidpoint)}\n`;
+      }
       if (college.tuitionInState !== null) details += `In-State Tuition: ${formatCurrency(college.tuitionInState)}\n`;
       if (college.tuitionOutState !== null) details += `Out-of-State Tuition: ${formatCurrency(college.tuitionOutState)}\n`;
+      if (college.avgAfterAid !== null) details += `Avg Cost After Aid: ${formatCurrency(college.avgAfterAid)}\n`;
       if (college.graduationRate !== null) details += `Graduation Rate: ${formatPercent(college.graduationRate)}\n`;
       if (college.enrollment !== null) details += `Enrollment: ${formatNumber(college.enrollment)}\n`;
+      if (college.numMajors !== null) details += `Number of Majors: ${formatNumber(college.numMajors)}\n`;
       if (college.popularMajors) details += `\nPopular Majors: ${college.popularMajors}\n`;
       if (college.medianEarnings !== null) details += `Median Earnings (10 years): ${formatCurrency(college.medianEarnings)}\n`;
       if (college.campusSetting) details += `Campus Setting: ${college.campusSetting}\n`;
+      if (college.testOptional) details += `Test Optional: Yes\n`;
+      if (college.gpaOptional) details += `GPA Optional: Yes\n`;
       
       // Calculate admission odds
       let oddsText;

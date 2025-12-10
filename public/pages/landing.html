@@ -261,7 +261,18 @@
     </div>
   </div>
 
+  <script src="/js/auth.js"></script>
   <script>
+    // Check if user is already logged in (not guest) and redirect to home
+    (function() {
+      const userId = getCurrentUserId();
+      const guest = isGuest();
+      if (userId && !guest) {
+        window.location.href = '/pages/index.html';
+        return;
+      }
+    })();
+
     // Set actual viewport height to account for mobile browser UI
     function setViewportHeight() {
       const vh = window.innerHeight * 0.01;

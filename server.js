@@ -4,6 +4,7 @@ const cors = require('cors');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 const { rateStudent, getAdmissionOdds } = require('./rate-system');
+const { fetchCollegeData, checkApiHealth } = require('./get-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -114,7 +115,7 @@ async function sendEmail(to, subject, html, text = null) {
 // API endpoint for GPT requests
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, context } = req.body;
+    const { message, context, responseLength = 'medium' } = req.body;
     const userId = req.headers['user-id'] || 'anonymous';
     const timestamp = new Date().toISOString();
     
@@ -129,6 +130,14 @@ app.post('/api/chat', async (req, res) => {
     if (!GPT_API_KEY) {
       return res.status(500).json({ error: 'GPT API key not configured' });
     }
+
+    // Map response length to max_tokens
+    const maxTokensMap = {
+      'short': 200,   // Brief, 1-2 sentences
+      'medium': 500,  // Moderate, 2-4 sentences
+      'long': 1000    // Detailed, 4+ sentences
+    };
+    const maxTokens = maxTokensMap[responseLength] || maxTokensMap['medium'];
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -150,7 +159,7 @@ app.post('/api/chat', async (req, res) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: maxTokens
       })
     });
 
@@ -206,13 +215,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'pages', 'landing.html'));
 });
 
-// CSV file path
-const CSV_PATH = path.join(__dirname, 'data', 'university_data.csv');
-
-// Cache for CSV data
+// Cache for college data from API
 let collegeDataCache = null;
 let collegeDataCacheTime = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 // Simple CSV parser
 function parseCSVLine(line) {
@@ -278,28 +284,117 @@ function parseCSV(csvText) {
   return results;
 }
 
-// Load college data from CSV
-function loadCollegeData() {
+// Load college data from API
+async function loadCollegeData() {
   try {
-    const csvText = fs.readFileSync(CSV_PATH, 'utf8');
-    return parseCSV(csvText);
+    const data = await fetchCollegeData();
+    return data;
   } catch (error) {
-    console.error('Error loading CSV file:', error);
-    return [];
+    console.error('Error loading college data from API:', error);
+    // Return cached data if available, otherwise empty array
+    return collegeDataCache || [];
   }
 }
 
 // Get college data (with caching)
 function getCollegeData() {
-  const now = Date.now();
-  
-  if (!collegeDataCache || !collegeDataCacheTime || (now - collegeDataCacheTime) > CACHE_DURATION) {
-    collegeDataCache = loadCollegeData();
-    collegeDataCacheTime = now;
-    console.log(`Loaded ${collegeDataCache.length} colleges from CSV`);
+  // Return cached data synchronously
+  // The cache will be refreshed asynchronously in the background
+  return collegeDataCache || [];
+}
+
+// Write college data to CSV file (for testing)
+function writeCollegeDataToCSV(data) {
+  try {
+    const csvPath = path.join(__dirname, 'college_data_export.csv');
+    
+    if (!data || data.length === 0) {
+      console.log('No data to write to CSV');
+      return;
+    }
+    
+    // Get all unique keys from all objects, preserving order from first object
+    const allKeys = new Set();
+    const headerOrder = [];
+    
+    // First, get keys from first object to preserve order
+    if (data.length > 0) {
+      Object.keys(data[0]).forEach(key => {
+        allKeys.add(key);
+        headerOrder.push(key);
+      });
+    }
+    
+    // Then add any keys from other objects that might be missing
+    data.forEach(row => {
+      Object.keys(row).forEach(key => {
+        if (!allKeys.has(key)) {
+          allKeys.add(key);
+          headerOrder.push(key);
+        }
+      });
+    });
+    
+    const headers = headerOrder;
+    
+    // Build CSV content
+    let csv = headers.join(',') + '\n';
+    
+    data.forEach(row => {
+      const values = headers.map(header => {
+        let value = row[header];
+        
+        // Handle null/undefined
+        if (value === null || value === undefined) {
+          value = '';
+        }
+        // Handle booleans
+        else if (typeof value === 'boolean') {
+          value = value ? 'true' : 'false';
+        }
+        // Handle arrays/objects
+        else if (typeof value === 'object') {
+          value = JSON.stringify(value);
+        }
+        // Convert to string
+        else {
+          value = String(value);
+        }
+        
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+          value = '"' + value.replace(/"/g, '""') + '"';
+        }
+        
+        return value;
+      });
+      csv += values.join(',') + '\n';
+    });
+    
+    fs.writeFileSync(csvPath, csv, 'utf8');
+    console.log(`✓ College data written to ${csvPath} (${data.length} rows)`);
+  } catch (error) {
+    console.error('Error writing college data to CSV:', error);
   }
-  
-  return collegeDataCache;
+}
+
+// Refresh college data cache
+async function refreshCollegeData() {
+  try {
+    const data = await loadCollegeData();
+    collegeDataCache = data;
+    collegeDataCacheTime = Date.now();
+    console.log(`✓ College data cache refreshed: ${data.length} colleges`);
+    
+    // Write to CSV for testing
+    writeCollegeDataToCSV(data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error refreshing college data:', error);
+    // Keep existing cache if refresh fails
+    return collegeDataCache || [];
+  }
 }
 
 // Transform CSV row to API format
@@ -334,9 +429,15 @@ function transformCollege(row, index) {
     state: row.state || '',
     size: row.size_category || 'Unknown',
     type: row.type || 'Unknown',
+    collegeYears: row.college_years || '',
+    collegePublicPrivate: row.college_public_private || '',
     acceptanceRate: acceptanceRate,
+    sat25thPercentile: parseNum(row.sat_25th_percentile),
     satAverage: parseNum(row.sat_50th_percentile),
+    sat75thPercentile: parseNum(row.sat_75th_percentile),
+    act25thPercentile: parseNum(row.act_25th_percentile),
     actMidpoint: parseNum(row.act_50th_percentile),
+    act75thPercentile: parseNum(row.act_75th_percentile),
     tuitionInState: parseNum(row.tuition_in_state),
     tuitionOutState: parseNum(row.tuition_out_state),
     roomBoard: parseNum(row.room_board),
@@ -344,14 +445,19 @@ function transformCollege(row, index) {
     retentionRate: parseNum(row.retention_rate),
     enrollment: parseNum(row.enrollment),
     studentFacultyRatio: parseNum(row.student_faculty_ratio),
+    numMajors: parseNum(row.num_majors),
+    collegeBoardCode: row.college_board_code || '',
     region: row.region || '',
     popularMajors: row.popular_majors || '',
     medianEarnings: parseNum(row.median_earnings_10_years),
     campusSetting: row.campus_setting || '',
-    testOptional: row.test_optional === 'True' || row.test_optional === 'true',
+    testOptional: row.test_optional === true || row.test_optional === 'True' || row.test_optional === 'true',
+    gpaOptional: row.gpa_optional === true || row.gpa_optional === 'True' || row.gpa_optional === 'true',
     applicationDeadline: row.application_deadline_fall || '',
     applicationFee: parseNum(row.application_fee),
     averageFinancialAid: parseNum(row.average_financial_aid),
+    avgAfterAid: parseNum(row.avg_after_aid),
+    avgAfterAidCosts: parseNum(row.avg_after_aid_costs),
     percentReceivingAid: parseNum(row.percent_receiving_aid),
     transferAcceptanceRate: parseNum(row.transfer_acceptance_rate),
     latitude: parseNum(row.latitude),
@@ -409,6 +515,8 @@ const ACCOUNTS_CSV_PATH = path.join(__dirname, 'storage', 'accounts.csv');
 const LOGINS_CSV_PATH = path.join(__dirname, 'storage', 'logins.csv');
 // Profile pictures CSV file path
 const PROFILE_PICTURES_CSV_PATH = path.join(__dirname, 'storage', 'profile_pictures.csv');
+// Password resets CSV file path
+const PASSWORD_RESETS_CSV_PATH = path.join(__dirname, 'storage', 'password_resets.csv');
 // Counselor messages CSV file path
 const COUNSELOR_CSV_PATH = path.join(__dirname, 'storage', 'counselor.csv');
 
@@ -420,7 +528,7 @@ if (!fs.existsSync(storageDir)) {
 
 // Initialize accounts CSV if it doesn't exist
 if (!fs.existsSync(ACCOUNTS_CSV_PATH)) {
-  const header = 'user_id,name,grade,gpa,weighted,sat,act,psat,majors,ap_courses,activities,interests,career_goals,rating,created_at,updated_at\n';
+  const header = 'user_id,name,grade,academic_type,gpa,weighted,academic_courses,test_optional,sat,act,psat,majors,ap_courses,activities,interests,career_goals,rating,created_at,updated_at\n';
   fs.writeFileSync(ACCOUNTS_CSV_PATH, header, 'utf8');
 }
 
@@ -434,6 +542,12 @@ if (!fs.existsSync(LOGINS_CSV_PATH)) {
 if (!fs.existsSync(PROFILE_PICTURES_CSV_PATH)) {
   const header = 'user_id,profile_picture_base64,updated_at\n';
   fs.writeFileSync(PROFILE_PICTURES_CSV_PATH, header, 'utf8');
+}
+
+// Initialize password resets CSV if it doesn't exist
+if (!fs.existsSync(PASSWORD_RESETS_CSV_PATH)) {
+  const header = 'email,reset_code,expires_at,created_at\n';
+  fs.writeFileSync(PASSWORD_RESETS_CSV_PATH, header, 'utf8');
 }
 
 // Initialize counselor messages CSV if it doesn't exist
@@ -582,7 +696,7 @@ function readAccounts() {
 // Write accounts to CSV
 function writeAccounts(accounts) {
   try {
-    const headers = ['user_id', 'name', 'grade', 'gpa', 'weighted', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'created_at', 'updated_at'];
+    const headers = ['user_id', 'name', 'grade', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'created_at', 'updated_at'];
     
     let csv = headers.join(',') + '\n';
     
@@ -591,7 +705,7 @@ function writeAccounts(accounts) {
         let value = account[header];
         
         // Handle arrays and objects
-        if (header === 'majors' || header === 'interests' || header === 'ap_courses' || header === 'activities') {
+        if (header === 'majors' || header === 'interests' || header === 'ap_courses' || header === 'activities' || header === 'academic_courses') {
           if (Array.isArray(value)) {
             value = JSON.stringify(value);
           } else if (value && typeof value === 'object') {
@@ -615,7 +729,7 @@ function writeAccounts(accounts) {
         }
         
         // Handle boolean
-        if (header === 'weighted') {
+        if (header === 'weighted' || header === 'test_optional') {
           value = value === true ? 'true' : 'false';
         }
         
@@ -659,8 +773,11 @@ function saveAccount(accountData) {
       user_id: accountData.user_id,
       name: accountData.name || '',
       grade: accountData.grade || '',
+      academic_type: accountData.academic_type || 'gpa',
       gpa: accountData.gpa || '',
       weighted: accountData.weighted !== undefined ? accountData.weighted : true,
+      academic_courses: Array.isArray(accountData.academic_courses) ? accountData.academic_courses : [],
+      test_optional: accountData.test_optional === true,
       sat: accountData.sat || '',
       act: accountData.act || '',
       psat: accountData.psat || '',
@@ -700,8 +817,10 @@ app.get('/api/profile', async (req, res) => {
         user_id: userId,
         name: '',
         grade: '',
+        academicType: 'gpa',
         gpa: '',
         weighted: true,
+        academicCourses: [],
         sat: '',
         act: '',
         psat: '',
@@ -728,8 +847,11 @@ app.get('/api/profile', async (req, res) => {
       user_id: account.user_id,
       name: account.name || '',
       grade: account.grade || '',
+      academicType: account.academic_type || 'gpa',
       gpa: account.gpa || '',
       weighted: account.weighted !== undefined ? account.weighted : true,
+      academicCourses: Array.isArray(account.academic_courses) ? account.academic_courses : [],
+      testOptional: account.test_optional === true,
       sat: account.sat || '',
       act: account.act || '',
       psat: account.psat || '',
@@ -758,11 +880,62 @@ app.post('/api/profile', async (req, res) => {
     // Compute a private rating for this student (not returned to client)
     let rating = null;
     try {
+      // Calculate GPA from academic courses if using courses mode
+      let calculatedGpa = profileData.gpa;
+      let isWeighted = profileData.weighted;
+      
+      if (profileData.academicType === 'courses' && profileData.academicCourses && profileData.academicCourses.length > 0) {
+        // Convert letter grades to GPA points
+        const gradeToPoints = {
+          'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+          'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+          'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+          'D+': 1.3, 'D': 1.0, 'D-': 0.7,
+          'F': 0.0
+        };
+        
+        // For weighted GPA, add 1.0 point for AP/Honors courses (we'll assume courses with "AP" or "Honors" in name are weighted)
+        const validCourses = profileData.academicCourses.filter(c => c && c.grade && c.grade !== '');
+        if (validCourses.length > 0) {
+          let totalPoints = 0;
+          let totalCourses = 0;
+          
+          validCourses.forEach(course => {
+            const grade = course.grade.trim();
+            const courseName = (course.courseName || '').toLowerCase();
+            let points = gradeToPoints[grade] || 0;
+            
+            // Check if it's an AP or Honors course for weighted GPA
+            const isWeightedCourse = courseName.includes('ap') || courseName.includes('honors') || courseName.includes('honor');
+            if (isWeightedCourse && points > 0) {
+              points += 1.0; // Add 1.0 for weighted courses (cap at 5.0 for A+)
+              points = Math.min(5.0, points);
+            }
+            
+            totalPoints += points;
+            totalCourses++;
+          });
+          
+          if (totalCourses > 0) {
+            calculatedGpa = (totalPoints / totalCourses).toFixed(2);
+            // If any course is weighted, assume overall GPA is weighted
+            const hasWeightedCourse = validCourses.some(c => {
+              const name = (c.courseName || '').toLowerCase();
+              return name.includes('ap') || name.includes('honors') || name.includes('honor');
+            });
+            if (hasWeightedCourse) {
+              isWeighted = true;
+            }
+          }
+        }
+      }
+      
       const calculatedRating = await rateStudent({
-        gpa: profileData.gpa,
-        weighted: profileData.weighted,
+        gpa: calculatedGpa,
+        weighted: isWeighted,
         sat: profileData.sat,
         act: profileData.act,
+        testOptional: profileData.testOptional === true,
         apCourses: profileData.apCourses || [],
         activities: profileData.activities || [] // Pass as array (rateStudent handles conversion)
       });
@@ -780,8 +953,11 @@ app.post('/api/profile', async (req, res) => {
       user_id: profileData.user_id,
       name: profileData.name || '',
       grade: profileData.grade || '',
+      academic_type: profileData.academicType || 'gpa',
       gpa: profileData.gpa || '',
       weighted: profileData.weighted !== undefined ? profileData.weighted : true,
+      academic_courses: Array.isArray(profileData.academicCourses) ? profileData.academicCourses : [],
+      test_optional: profileData.testOptional === true,
       sat: profileData.sat || '',
       act: profileData.act || '',
       psat: profileData.psat || '',
@@ -912,8 +1088,11 @@ app.post('/api/auth/signup', (req, res) => {
         user_id: userId,
         name: '',
         grade: '',
+        academic_type: 'gpa',
         gpa: '',
         weighted: true,
+        academic_courses: [],
+        test_optional: false,
         sat: '',
         act: '',
         psat: '',
@@ -957,6 +1136,190 @@ app.post('/api/auth/login', (req, res) => {
     }
   } catch (error) {
     console.error('Sign in error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Password reset functions
+function readPasswordResets() {
+  try {
+    if (!fs.existsSync(PASSWORD_RESETS_CSV_PATH)) {
+      return [];
+    }
+
+    const csvText = fs.readFileSync(PASSWORD_RESETS_CSV_PATH, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return [];
+    }
+
+    const headers = parseCSVLine(lines[0]);
+    const resets = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length === headers.length) {
+        const reset = {};
+        headers.forEach((header, index) => {
+          reset[header] = values[index] || '';
+        });
+        resets.push(reset);
+      }
+    }
+    
+    return resets;
+  } catch (error) {
+    console.error('Error reading password resets CSV:', error);
+    return [];
+  }
+}
+
+function writePasswordResets(resets) {
+  try {
+    const headers = ['email', 'reset_code', 'expires_at', 'created_at'];
+    let csv = headers.join(',') + '\n';
+    
+    resets.forEach(reset => {
+      const row = headers.map(header => {
+        let value = reset[header] || '';
+        // Escape quotes and wrap in quotes if contains comma or newline
+        if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+          value = '"' + value.replace(/"/g, '""') + '"';
+        }
+        return value;
+      });
+      csv += row.join(',') + '\n';
+    });
+    
+    fs.writeFileSync(PASSWORD_RESETS_CSV_PATH, csv, 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Error writing password resets CSV:', error);
+    return false;
+  }
+}
+
+function generateResetCode() {
+  // Generate a 6-digit code
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Forgot password endpoint
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const logins = readLogins();
+    const login = logins.find(l => l.email === email.toLowerCase().trim());
+    
+    if (!login) {
+      // Don't reveal that the email doesn't exist (security best practice)
+      return res.json({ success: true, message: 'If an account exists with this email, a reset code has been sent.' });
+    }
+
+    // Generate reset code
+    const resetCode = generateResetCode();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+
+    // Store reset code
+    const resets = readPasswordResets();
+    
+    // Remove any existing reset codes for this email
+    const filteredResets = resets.filter(r => r.email !== email.toLowerCase().trim());
+    
+    // Add new reset code
+    filteredResets.push({
+      email: email.toLowerCase().trim(),
+      reset_code: resetCode,
+      expires_at: expiresAt.toISOString(),
+      created_at: now.toISOString()
+    });
+    
+    writePasswordResets(filteredResets);
+
+    // Send email with reset code
+    if (emailTransporter) {
+      const emailHtml = `
+        <h2>Password Reset Request</h2>
+        <p>You requested to reset your password for your Path Pal account.</p>
+        <p style="font-size: 1.2em; font-weight: bold; color: #0d8c79; margin: 1.5em 0;">Your reset code is: <strong>${resetCode}</strong></p>
+        <p>This code will expire in 15 minutes.</p>
+        <p>If you didn't request this reset, you can safely ignore this email.</p>
+        <p style="color: #666; font-size: 0.9em; margin-top: 2em;">Sent from Path Pal at ${now.toLocaleString()}</p>
+      `;
+
+      await sendEmail(email, 'Path Pal Password Reset', emailHtml);
+    } else {
+      console.error('Email transporter not configured - cannot send reset code');
+      return res.status(500).json({ success: false, error: 'Email service is not configured. Please contact support.' });
+    }
+
+    res.json({ success: true, message: 'Reset code sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Reset password endpoint
+app.post('/api/auth/reset-password', (req, res) => {
+  try {
+    const { email, code, password_hash } = req.body;
+    
+    if (!email || !code || !password_hash) {
+      return res.status(400).json({ success: false, error: 'Email, code, and password are required' });
+    }
+
+    const resets = readPasswordResets();
+    const reset = resets.find(r => 
+      r.email === email.toLowerCase().trim() && 
+      r.reset_code === code.trim()
+    );
+
+    if (!reset) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired reset code' });
+    }
+
+    // Check if code has expired
+    const expiresAt = new Date(reset.expires_at);
+    const now = new Date();
+    
+    if (now > expiresAt) {
+      // Remove expired code
+      const filteredResets = resets.filter(r => 
+        !(r.email === email.toLowerCase().trim() && r.reset_code === code.trim())
+      );
+      writePasswordResets(filteredResets);
+      
+      return res.status(400).json({ success: false, error: 'Reset code has expired. Please request a new one.' });
+    }
+
+    // Update password in logins
+    const logins = readLogins();
+    const loginIndex = logins.findIndex(l => l.email === email.toLowerCase().trim());
+    
+    if (loginIndex === -1) {
+      return res.status(400).json({ success: false, error: 'User not found' });
+    }
+
+    logins[loginIndex].password_hash = password_hash;
+    writeLogins(logins);
+
+    // Remove used reset code
+    const filteredResets = resets.filter(r => 
+      !(r.email === email.toLowerCase().trim() && r.reset_code === code.trim())
+    );
+    writePasswordResets(filteredResets);
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({ success: false, error: 'An error occurred' });
   }
 });
@@ -1129,7 +1492,7 @@ app.post('/api/email/test', async (req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Path Pal server running on port ${PORT}`);
   if (GPT_API_KEY) {
     console.log('✓ GPT API key configured');
@@ -1137,13 +1500,29 @@ app.listen(PORT, '0.0.0.0', () => {
     console.warn('⚠ Warning: GPT API key not configured. AI features will not work.');
   }
   
+  // Check API health
+  const healthCheck = await checkApiHealth();
+  if (healthCheck.healthy) {
+    console.log(`✓ College data API health check: ${healthCheck.status}`);
+  } else {
+    console.warn(`⚠ College data API health check: ${healthCheck.status}`);
+  }
+  
   // Load college data on startup
+  await refreshCollegeData();
+  
   const collegeCount = getCollegeData().length;
   if (collegeCount > 0) {
-    console.log(`✓ Loaded ${collegeCount} colleges from CSV`);
+    console.log(`✓ Loaded ${collegeCount} colleges from API`);
   } else {
-    console.warn('⚠ Warning: No college data loaded from CSV. Check data/university_data.csv');
+    console.warn('⚠ Warning: No college data loaded from API');
   }
+  
+  // Set up 24-hour interval to refresh college data
+  setInterval(async () => {
+    console.log('Refreshing college data (24-hour interval)...');
+    await refreshCollegeData();
+  }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
   
   // Initialize accounts storage
   if (fs.existsSync(ACCOUNTS_CSV_PATH)) {
@@ -1167,6 +1546,22 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`✓ Profile pictures storage initialized with ${pictures.length} picture(s)`);
   } else {
     console.log('✓ Profile pictures storage initialized (empty)');
+  }
+
+  // Initialize password resets storage
+  if (fs.existsSync(PASSWORD_RESETS_CSV_PATH)) {
+    const resets = readPasswordResets();
+    // Clean up expired resets on startup
+    const now = new Date();
+    const activeResets = resets.filter(r => new Date(r.expires_at) > now);
+    if (activeResets.length < resets.length) {
+      writePasswordResets(activeResets);
+      console.log(`✓ Password resets storage initialized with ${activeResets.length} active reset(s) (cleaned up ${resets.length - activeResets.length} expired)`);
+    } else {
+      console.log(`✓ Password resets storage initialized with ${resets.length} active reset(s)`);
+    }
+  } else {
+    console.log('✓ Password resets storage initialized (empty)');
   }
 });
 

@@ -115,10 +115,18 @@
   </nav>
 
   <main style="position: fixed; top: 70px; bottom: 0; left: 0; right: 0; background: var(--light-mint); display: flex; flex-direction: column; margin: 0; padding: 0;">
-    <!-- Chat Header with Reload Button -->
-    <div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--white); border-bottom: 1px solid var(--border-color); margin: 0;">
-      <h2 style="color: var(--primary-green); margin: 0;">AI College Counselor</h2>
-      <button onclick="reloadChat()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px; margin: 0;" title="Reload Chat">
+    <!-- Chat Header with Reload Button and Response Length Selector -->
+    <div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--white); border-bottom: 1px solid var(--border-color); margin: 0; gap: 0.75rem;">
+      <h2 style="color: var(--primary-green); margin: 0; flex: 1; font-size: 1.25rem;">AI College Counselor</h2>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+        <label style="font-size: 0.75rem; color: var(--primary-green); font-family: 'Arvo', serif; font-weight: bold; margin: 0; text-align: center;">Response length</label>
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--light-mint); padding: 0.25rem; border-radius: 12px; border: 2px solid var(--primary-green);">
+          <button type="button" class="response-length-btn" data-length="short" onclick="setResponseLength('short')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap;">Short</button>
+          <button type="button" class="response-length-btn active" data-length="medium" onclick="setResponseLength('medium')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: var(--primary-green); color: var(--white); white-space: nowrap;">Medium</button>
+          <button type="button" class="response-length-btn" data-length="long" onclick="setResponseLength('long')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap;">Long</button>
+        </div>
+      </div>
+      <button onclick="reloadChat()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px; margin: 0; flex-shrink: 0; transition: all 0.2s;" title="Reload Chat" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
         <img src="/media/icons/Reload256x256.png" alt="Reload" style="width: 20px; height: 20px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
         <span style="display: none; font-size: 1.2rem; color: var(--primary-green);">↻</span>
       </button>
@@ -178,7 +186,7 @@
 
   <footer style="display: none;">
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.09.3</p>
+      <p>&copy; 2025 Path Pal. v1.09.04</p>
     </div>
   </footer>
 
@@ -191,6 +199,10 @@
       // Load chat history
       chatHistory = Storage.get('chatHistory', []);
       loadChatHistory();
+      
+      // Load response length preference and set active button
+      const savedLength = Storage.get('responseLength', 'medium');
+      setResponseLength(savedLength);
       
       // Check for question parameter in URL
       const urlParams = new URLSearchParams(window.location.search);
@@ -210,6 +222,28 @@
         document.getElementById('message-input').focus();
       }
     });
+
+    function setResponseLength(length) {
+      Storage.set('responseLength', length);
+      
+      // Update button states
+      const buttons = document.querySelectorAll('.response-length-btn');
+      buttons.forEach(btn => {
+        if (btn.dataset.length === length) {
+          btn.classList.add('active');
+          btn.style.background = 'var(--primary-green)';
+          btn.style.color = 'var(--white)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--primary-green)';
+        }
+      });
+    }
+
+    function getResponseLength() {
+      return Storage.get('responseLength', 'medium');
+    }
 
     function loadChatHistory() {
       const container = document.getElementById('chat-messages');
@@ -246,10 +280,22 @@
       try {
         // Get user profile for context
         const profile = await UserProfile.get();
+        const responseLength = getResponseLength();
+        
+        // Adjust system prompt based on response length
+        let lengthInstruction = '';
+        if (responseLength === 'short') {
+          lengthInstruction = 'Keep responses very brief (1-2 sentences maximum).';
+        } else if (responseLength === 'medium') {
+          lengthInstruction = 'Keep responses concise and to the point (2-4 sentences maximum unless the question requires more detail).';
+        } else {
+          lengthInstruction = 'Provide detailed, comprehensive responses (4+ sentences when appropriate).';
+        }
+        
         const context = [
           {
             role: 'system',
-            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. Keep all responses concise and to the point (2-4 sentences maximum unless the question requires more detail). The student's profile: Grade: ${profile.grade || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
+            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. ${lengthInstruction} The student's profile: Grade: ${profile.grade || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
           },
           ...chatHistory.slice(-4).map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -257,7 +303,7 @@
           }))
         ];
         
-        const response = await sendChatMessage(message, context);
+        const response = await sendChatMessage(message, context, responseLength);
         
         // Remove loading message
         removeMessage(loadingId);

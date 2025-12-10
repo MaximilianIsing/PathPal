@@ -87,23 +87,59 @@
         <h3>Academic Information</h3>
         
         <div class="form-group">
-          <label>
-            GPA
-            <span style="font-weight: normal; font-size: 0.8rem; color: var(--text-light); margin-left: 0.25rem;">
-              (approximate if unknown)
-            </span>
-          </label>
-          <input type="number" id="gpa" step="0.01" min="0" max="5" placeholder="e.g., 3.75">
+          <label>Academic Record Type</label>
+          <select id="academic-type">
+            <option value="gpa">GPA</option>
+            <option value="courses">Academic Courses</option>
+          </select>
         </div>
 
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="weighted" style="width: auto; margin-right: 0.5rem;">
-            Weighted GPA
-          </label>
+        <!-- GPA Section -->
+        <div id="gpa-section">
+          <div class="form-group">
+            <label>
+              GPA
+              <span style="font-weight: normal; font-size: 0.8rem; color: var(--text-light); margin-left: 0.25rem;">
+                (approximate if unknown)
+              </span>
+            </label>
+            <input type="number" id="gpa" step="0.01" min="0" max="5" placeholder="e.g., 3.75">
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="weighted" style="width: auto; margin-right: 0.5rem;">
+              Weighted GPA
+            </label>
+          </div>
         </div>
 
-        <div class="form-group">
+        <!-- Academic Courses Section -->
+        <div id="courses-section" style="display: none;">
+          <div class="form-group">
+            <label>Academic Courses</label>
+            <small style="display:block; margin-top:0.25rem; color: var(--text-light); margin-bottom: 0.75rem;">
+              Add your academic courses and their letter grades.
+            </small>
+          </div>
+
+          <div id="courses-table" style="margin-top: 0.5rem;">
+            <!-- Course rows will be rendered here -->
+          </div>
+
+          <!-- Pagination controls -->
+          <div id="courses-pagination" style="display: none; margin-top: 1rem; text-align: center; gap: 0.5rem; align-items: center; justify-content: center;">
+            <button type="button" id="courses-prev-btn" onclick="changeCoursesPage(-1)" style="padding: 0.5rem 1rem; background: var(--light-mint); border: 2px solid var(--primary-green); color: var(--primary-green); border-radius: 8px; cursor: pointer; font-family: 'Arvo', serif; font-weight: bold; font-size: 0.9rem;">← Prev</button>
+            <span id="courses-page-info" style="padding: 0 1rem; color: var(--text-dark); font-family: 'Arvo', serif; font-weight: bold;">Page 1</span>
+            <button type="button" id="courses-next-btn" onclick="changeCoursesPage(1)" style="padding: 0.5rem 1rem; background: var(--light-mint); border: 2px solid var(--primary-green); color: var(--primary-green); border-radius: 8px; cursor: pointer; font-family: 'Arvo', serif; font-weight: bold; font-size: 0.9rem;">Next →</button>
+          </div>
+
+          <button type="button" class="btn btn-secondary" id="add-course-btn" onclick="addCourseRow()" style="margin-top: 1rem; width: 100%;">
+            + Add Course
+          </button>
+        </div>
+
+        <div class="form-group" style="margin-top: 2rem;">
           <label>Test Type</label>
           <select id="test-type">
             <option value="">Select test</option>
@@ -185,6 +221,14 @@
           </div>
         </div>
 
+        <!-- Test Optional -->
+        <div class="form-group" style="margin-top: 1.5rem;">
+          <label>
+            <input type="checkbox" id="test-optional" style="width: auto; margin-right: 0.5rem;">
+            Applying Test Optional
+          </label>
+        </div>
+
         <!-- AP Courses -->
         <div class="form-group" style="margin-top: 1.5rem;">
           <label>AP Courses Taken</label>
@@ -264,7 +308,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 Path Pal. v1.09.3</p>
+      <p>&copy; 2025 Path Pal. v1.09.04</p>
     </div>
   </footer>
 
@@ -594,6 +638,222 @@
       container.innerHTML = html;
     }
 
+    // Course counter for unique IDs
+    let courseCounter = 0;
+    let allCourses = []; // Store all courses
+    let currentCoursesPage = 1;
+    const COURSES_PER_PAGE = 10;
+
+    // Make addCourseRow globally accessible
+    window.addCourseRow = function(courseData = null) {
+      const container = document.getElementById('courses-table');
+      if (!container) return;
+
+      const courseId = courseCounter++;
+      const gradeOptions = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+      const courseName = courseData ? (courseData.courseName || '') : '';
+      const grade = courseData ? (courseData.grade || '') : '';
+
+      // Add new course to allCourses array
+      const newCourse = {
+        id: courseId,
+        courseName: courseName,
+        grade: grade,
+        courseType: courseData ? (courseData.courseType || 'Regular') : 'Regular'
+      };
+      allCourses.push(newCourse);
+
+      // Check if we need to go to next page
+      const totalPages = Math.ceil(allCourses.length / COURSES_PER_PAGE);
+      if (allCourses.length > (currentCoursesPage * COURSES_PER_PAGE)) {
+        currentCoursesPage = totalPages;
+      }
+
+      renderCoursesPage();
+    };
+
+    function renderCoursesPage() {
+      const container = document.getElementById('courses-table');
+      if (!container) return;
+
+      // Clear container
+      container.innerHTML = '';
+
+      // Add header row if we have courses
+      if (allCourses.length > 0) {
+        const headerRow = document.createElement('div');
+        headerRow.className = 'form-row';
+        headerRow.style.cssText = 'display: flex; justify-content: flex-start; align-items: center; margin-bottom: 0.25rem; font-size: 0.8rem; color: var(--text-dark); font-weight: 600;';
+        headerRow.innerHTML = `
+          <div style="flex: 0 0 70px; max-width: 70px; margin-right: 0.25rem; text-align: center; white-space: nowrap;">Grade</div>
+          <div style="flex: 0 0 80px; max-width: 80px; margin-right: 0.25rem; text-align: center; white-space: nowrap;">Type</div>
+          <div style="flex: 1; margin-left: 0.25rem; text-align: center;">Course Name</div>
+          <div style="flex: 0 0 50px; max-width: 50px; margin-left: 0.5rem; text-align: center;"></div>
+        `;
+        container.appendChild(headerRow);
+      }
+
+      // Calculate which courses to show
+      const startIndex = (currentCoursesPage - 1) * COURSES_PER_PAGE;
+      const endIndex = startIndex + COURSES_PER_PAGE;
+      const coursesToShow = allCourses.slice(startIndex, endIndex);
+
+      // Render courses for current page
+      coursesToShow.forEach(course => {
+        const gradeOptions = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+        const courseTypeOptions = ['Regular', 'Honors', 'AP', 'College'];
+        
+        const row = document.createElement('div');
+        row.className = 'form-row';
+        row.id = `course-row-${course.id}`;
+        row.style.cssText = 'margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: flex-start;';
+
+        // Grade dropdown
+        const gradeSelect = document.createElement('select');
+        gradeSelect.id = `course-grade-${course.id}`;
+        gradeSelect.style.cssText = 'width: 100%; font-size: 0.85rem;';
+        gradeSelect.innerHTML = '<option value="">–</option>' + 
+          gradeOptions.map(opt => `<option value="${opt}"${opt === course.grade ? ' selected' : ''}>${opt}</option>`).join('');
+        gradeSelect.addEventListener('change', () => {
+          course.grade = gradeSelect.value;
+        });
+
+        const gradeDiv = document.createElement('div');
+        gradeDiv.className = 'form-group';
+        gradeDiv.style.cssText = 'flex: 0 0 70px; max-width: 70px; margin-right: 0.25rem;';
+        gradeDiv.appendChild(gradeSelect);
+
+        // Course type dropdown
+        const typeSelect = document.createElement('select');
+        typeSelect.id = `course-type-${course.id}`;
+        typeSelect.style.cssText = 'width: 100%; font-size: 0.85rem;';
+        typeSelect.innerHTML = courseTypeOptions.map(opt => 
+          `<option value="${opt}"${opt === (course.courseType || 'Regular') ? ' selected' : ''}>${opt}</option>`
+        ).join('');
+        typeSelect.addEventListener('change', () => {
+          course.courseType = typeSelect.value;
+        });
+
+        const typeDiv = document.createElement('div');
+        typeDiv.className = 'form-group';
+        typeDiv.style.cssText = 'flex: 0 0 80px; max-width: 80px; margin-right: 0.25rem;';
+        typeDiv.appendChild(typeSelect);
+
+        // Course name input
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.id = `course-name-${course.id}`;
+        nameInput.maxLength = 100;
+        nameInput.placeholder = 'Course name';
+        nameInput.value = course.courseName || '';
+        nameInput.style.cssText = 'width: 100%;';
+        nameInput.addEventListener('input', () => {
+          course.courseName = nameInput.value;
+        });
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'form-group';
+        nameDiv.style.cssText = 'flex: 1; margin-left: 0.25rem;';
+        nameDiv.appendChild(nameInput);
+
+        // Remove button - red X
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.innerHTML = '×';
+        removeBtn.style.cssText = 'flex: 0 0 40px; max-width: 40px; height: 40px; margin-left: 0.5rem; padding: 0; background: transparent; border: 2px solid #e74c3c; color: #e74c3c; border-radius: 50%; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.2s;';
+        removeBtn.onmouseover = function() {
+          this.style.background = '#e74c3c';
+          this.style.color = 'white';
+        };
+        removeBtn.onmouseout = function() {
+          this.style.background = 'transparent';
+          this.style.color = '#e74c3c';
+        };
+        removeBtn.onclick = () => removeCourseRow(course.id);
+
+        row.appendChild(gradeDiv);
+        row.appendChild(typeDiv);
+        row.appendChild(nameDiv);
+        row.appendChild(removeBtn);
+        container.appendChild(row);
+      });
+
+      // Update pagination controls
+      updateCoursesPagination();
+    }
+
+    function updateCoursesPagination() {
+      const pagination = document.getElementById('courses-pagination');
+      const pageInfo = document.getElementById('courses-page-info');
+      const prevBtn = document.getElementById('courses-prev-btn');
+      const nextBtn = document.getElementById('courses-next-btn');
+
+      if (!pagination) return;
+
+      const totalPages = Math.ceil(allCourses.length / COURSES_PER_PAGE);
+
+      if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+      }
+
+      pagination.style.display = 'flex';
+      pageInfo.textContent = `Page ${currentCoursesPage} of ${totalPages}`;
+      
+      prevBtn.disabled = currentCoursesPage === 1;
+      prevBtn.style.opacity = currentCoursesPage === 1 ? '0.5' : '1';
+      prevBtn.style.cursor = currentCoursesPage === 1 ? 'not-allowed' : 'pointer';
+      
+      nextBtn.disabled = currentCoursesPage === totalPages;
+      nextBtn.style.opacity = currentCoursesPage === totalPages ? '0.5' : '1';
+      nextBtn.style.cursor = currentCoursesPage === totalPages ? 'not-allowed' : 'pointer';
+    }
+
+    function changeCoursesPage(direction) {
+      const totalPages = Math.ceil(allCourses.length / COURSES_PER_PAGE);
+      const newPage = currentCoursesPage + direction;
+      
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentCoursesPage = newPage;
+        renderCoursesPage();
+      }
+    }
+
+    function removeCourseRow(courseId) {
+      // Remove from allCourses array
+      allCourses = allCourses.filter(c => c.id !== courseId);
+      
+      // Adjust page if needed
+      const totalPages = Math.ceil(allCourses.length / COURSES_PER_PAGE);
+      if (currentCoursesPage > totalPages && totalPages > 0) {
+        currentCoursesPage = totalPages;
+      } else if (totalPages === 0) {
+        currentCoursesPage = 1;
+      }
+      
+      renderCoursesPage();
+    }
+
+    function renderCourses(existing = []) {
+      allCourses = [];
+      courseCounter = 0;
+      currentCoursesPage = 1;
+
+      if (existing && existing.length > 0) {
+        existing.forEach(course => {
+          const courseId = courseCounter++;
+          allCourses.push({
+            id: courseId,
+            courseName: course.courseName || '',
+            grade: course.grade || '',
+            courseType: course.courseType || 'Regular'
+          });
+        });
+      }
+
+      renderCoursesPage();
+    }
+
     function getApCourseOptions() {
       return [
       'AP Art History',
@@ -719,8 +979,44 @@
         
         document.getElementById('name').value = profile.name || '';
         document.getElementById('grade').value = profile.grade || '';
-        document.getElementById('gpa').value = profile.gpa || '';
-        document.getElementById('weighted').checked = profile.weighted !== false;
+        
+        // Handle academic type (GPA vs Courses)
+        const academicType = profile.academicType || 'gpa';
+        const academicTypeSelect = document.getElementById('academic-type');
+        if (academicTypeSelect) {
+          academicTypeSelect.value = academicType;
+          // Show/hide appropriate sections
+          const gpaSection = document.getElementById('gpa-section');
+          const coursesSection = document.getElementById('courses-section');
+          if (academicType === 'courses') {
+            if (gpaSection) gpaSection.style.display = 'none';
+            if (coursesSection) coursesSection.style.display = 'block';
+          } else {
+            if (gpaSection) gpaSection.style.display = 'block';
+            if (coursesSection) coursesSection.style.display = 'none';
+          }
+        }
+        
+        // Load GPA if using GPA mode
+        if (academicType === 'gpa') {
+          document.getElementById('gpa').value = profile.gpa || '';
+          document.getElementById('weighted').checked = profile.weighted !== false;
+        }
+        
+        // Load courses if using courses mode
+        if (academicType === 'courses') {
+          const courses = profile.academicCourses || [];
+          renderCourses(courses);
+          // If no courses exist, add one empty course row
+          const container = document.getElementById('courses-table');
+          if (container && container.children.length === 0) {
+            addCourseRow();
+          }
+        }
+        
+        if (document.getElementById('test-optional')) {
+          document.getElementById('test-optional').checked = profile.testOptional === true;
+        }
         document.getElementById('career-goals').value = profile.careerGoals || '';
         
         // Initialize test section - load saved test type or default based on scores
@@ -947,6 +1243,29 @@
           });
         }
 
+        // Academic type change listener
+        const academicTypeSelectListener = document.getElementById('academic-type');
+        if (academicTypeSelectListener) {
+          academicTypeSelectListener.addEventListener('change', (e) => {
+            const type = e.target.value || 'gpa';
+            const gpaSection = document.getElementById('gpa-section');
+            const coursesSection = document.getElementById('courses-section');
+            if (type === 'courses') {
+              if (gpaSection) gpaSection.style.display = 'none';
+              if (coursesSection) coursesSection.style.display = 'block';
+              // If no courses exist, add one empty course row
+              const container = document.getElementById('courses-table');
+              if (container && container.children.length === 0) {
+                addCourseRow();
+              }
+            } else {
+              if (gpaSection) gpaSection.style.display = 'block';
+              if (coursesSection) coursesSection.style.display = 'none';
+            }
+          });
+        }
+
+
         // Test field listeners
         const testType = document.getElementById('test-type');
         if (testType) {
@@ -1117,12 +1436,31 @@
         };
         localStorage.setItem('test-scores', JSON.stringify(testScores));
 
+        // Collect academic courses if using courses mode
+        const academicType = document.getElementById('academic-type') ? document.getElementById('academic-type').value : 'gpa';
+        const academicCourses = [];
+        if (academicType === 'courses') {
+          // Collect from allCourses array (includes all pages)
+          allCourses.forEach(course => {
+            if (course.courseName && course.courseName.trim()) {
+              academicCourses.push({ 
+                courseName: course.courseName.trim(), 
+                grade: course.grade || '',
+                courseType: course.courseType || 'Regular'
+              });
+            }
+          });
+        }
+
         const profile = {
           name: document.getElementById('name').value,
           grade: document.getElementById('grade').value,
-          gpa: document.getElementById('gpa').value,
-          weighted: document.getElementById('weighted').checked,
+          academicType: academicType,
+          gpa: academicType === 'gpa' ? document.getElementById('gpa').value : '',
+          weighted: academicType === 'gpa' ? document.getElementById('weighted').checked : false,
+          academicCourses: academicCourses,
           testType: testType, // Save the test type selection
+          testOptional: document.getElementById('test-optional') ? document.getElementById('test-optional').checked : false,
           sat: satTotal || '',
           act: actComposite || '',
           psat: psatTotal || '',

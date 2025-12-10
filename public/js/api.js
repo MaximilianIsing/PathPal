@@ -3,7 +3,7 @@
 const API_BASE = '';
 
 // GPT Chat API
-async function sendChatMessage(message, context = []) {
+async function sendChatMessage(message, context = [], responseLength = 'medium') {
   try {
     const userId = getUserId();
     const response = await fetch(`${API_BASE}/api/chat`, {
@@ -12,7 +12,7 @@ async function sendChatMessage(message, context = []) {
         'Content-Type': 'application/json',
         'user-id': userId
       },
-      body: JSON.stringify({ message, context })
+      body: JSON.stringify({ message, context, responseLength })
     });
     
     if (!response.ok) {
