@@ -50,3 +50,4 @@ coverage/
 # Storage (user data - accounts, etc.)
 storage/
 
+use-backup.txt
