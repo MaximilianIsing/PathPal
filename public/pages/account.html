@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Account Settings - Path Pal">
+  <title>Account Settings - Path Pal</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+  <meta name="theme-color" content="#0d8c79">
+</head>
+<body>
+  <div class="desktop-message">
+    <h1><img src="/media/icons/Mobile256x256.png" alt="Mobile" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 0.5rem;"> Mobile App Required</h1>
+    <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet.</p>
+  </div>
+
+  <header>
+    <div class="header-content container">
+      <div class="logo">
+        <a href="/index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit;">
+        <img src="/media/logo/logo64x64.png" alt="Path Pal Logo">
+        <h1>Path Pal</h1>
+        </a>
+      </div>
+      <button class="menu-toggle" aria-label="Toggle menu"><img src="/media/icons/Hamburger128x128.png" alt="Menu" style="width: 24px; height: 24px;"></button>
+    </div>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="/index.html"><img src="/media/icons/Home256x256.png" alt="Home" class="nav-icon"> Home</a></li>
+      <li><a href="/profile.html"><img src="/media/icons/Profile256x256.png" alt="Profile" class="nav-icon"> My Profile</a></li>
+      <li><a href="/odds.html"><img src="/media/icons/Odds256x256.png" alt="Admissions Odds" class="nav-icon"> Admissions Odds</a></li>
+      <li><a href="/simulator.html"><img src="/media/icons/WhatIf256x256.png" alt="What If" class="nav-icon"> "What If" Simulator</a></li>
+      <li><a href="/explorer.html"><img src="/media/icons/Search256x256.png" alt="College Explorer" class="nav-icon"> College Explorer</a></li>
+      <li><a href="/career.html"><img src="/media/icons/DollarSign256x256.png" alt="Career & Salary Paths" class="nav-icon"> Career & Salary Paths</a></li>
+      <li><a href="/activities.html"><img src="/media/icons/Activity256x256.png" alt="Activities" class="nav-icon"> Activity & Internship Recs</a></li>
+      <li><a href="/planner.html"><img src="/media/icons/Calender256x256.png" alt="4-Year Planner" class="nav-icon"> 4-Year Planner</a></li>
+      <li><a href="/messages.html"><img src="/media/icons/Chat256x256.png" alt="AI Counselor" class="nav-icon"> AI Counselor</a></li>
+      <li><a href="/saved.html"><img src="/media/icons/Star256x256.png" alt="Saved Colleges" class="nav-icon"> Saved Colleges</a></li>
+      <li><a href="/account.html" class="active"><img src="/media/icons/SignOut256x256.png" alt="Account Options" class="nav-icon"> Account Options</a></li>
+      <li><a href="/team.html"><img src="/media/icons/Team256x256.png" alt="Our Team" class="nav-icon"> Our Team</a></li>
+      <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
+    </ul>
+    <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
+      v1.09.05
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h2 style="color: var(--primary-green); margin: 1rem 0;">Account Settings</h2>
+
+      <!-- Sign Out Section -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <h3>Sign Out</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">Sign out of your account</p>
+        
+        <button class="btn-primary" onclick="handleSignOut()" style="width: 100%; margin-top: 1rem;">Sign Out</button>
+      </div>
+
+      <!-- Reset Password Section -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <h3>Reset Password</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">Change your account password using an email verification code</p>
+        
+        <div id="reset-password-form">
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="new-password" placeholder="Enter new password (min 6 characters)">
+          </div>
+          
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" id="confirm-password" placeholder="Confirm new password">
+          </div>
+          
+          <!-- Email code section (hidden initially) -->
+          <div id="email-code-section" style="display: none;">
+            <div class="form-group">
+              <label>Verification Code</label>
+              <input type="text" id="reset-code" placeholder="Enter code from email" maxlength="10">
+              <small style="display: block; margin-top: 0.25rem; color: var(--text-light);">A verification code has been sent to your email</small>
+            </div>
+          </div>
+          
+          <button class="btn-primary" id="reset-password-btn" onclick="handleRequestCode()" style="width: 100%; margin-top: 1rem;">Send Verification Code</button>
+        </div>
+      </div>
+
+      <!-- Delete Account Section -->
+      <div class="card" style="margin-bottom: 1.5rem; border: 2px solid #e74c3c;">
+        <h3 style="color: #e74c3c;">Delete Account</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        
+        <div class="form-group">
+          <label>Enter your password to confirm</label>
+          <input type="password" id="delete-password" placeholder="Enter your password">
+        </div>
+        
+        <button class="btn-primary" onclick="handleDeleteAccount()" style="width: 100%; margin-top: 1rem; background: #e74c3c; border-color: #e74c3c;">Delete Account</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; Path Pal 2025 — College applications are hard... take a breath.</p>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Get user email from localStorage or API
+    async function getUserEmail() {
+      const userId = getCurrentUserId();
+      if (!userId) return null;
+      
+      try {
+        // Try to get email from accounts.csv via API
+        const response = await fetch(`/api/user/email?user_id=${encodeURIComponent(userId)}`);
+        if (response.ok) {
+          const data = await response.json();
+          return data.email || null;
+        }
+      } catch (error) {
+        console.error('Error fetching user email:', error);
+      }
+      
+      return null;
+    }
+
+    let resetPasswordEmail = null;
+
+    async function handleRequestCode() {
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (!newPassword || !confirmPassword) {
+        showNotification('Please fill in both password fields', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showNotification('New password must be at least 6 characters', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'error');
+        return;
+      }
+
+      // Get user email
+      const email = await getUserEmail();
+      if (!email) {
+        showNotification('Unable to retrieve your email. Please contact support.', 'error');
+        return;
+      }
+
+      resetPasswordEmail = email;
+
+      // Request password reset code
+      const forgotResult = await forgotPassword(email);
+      if (!forgotResult.success) {
+        showNotification(forgotResult.error || 'Failed to send verification code', 'error');
+        return;
+      }
+
+      // Show email code input section
+      document.getElementById('email-code-section').style.display = 'block';
+      document.getElementById('reset-code').focus();
+      
+      // Change button to "Reset Password"
+      const btn = document.getElementById('reset-password-btn');
+      btn.textContent = 'Reset Password';
+      btn.onclick = handleResetPassword;
+      
+      showNotification('Verification code sent to your email', 'success');
+    }
+
+    async function handleResetPassword() {
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      const resetCode = document.getElementById('reset-code').value;
+
+      if (!newPassword || !confirmPassword) {
+        showNotification('Please fill in both password fields', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showNotification('New password must be at least 6 characters', 'error');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'error');
+        return;
+      }
+
+      if (!resetCode || resetCode.trim() === '') {
+        showNotification('Please enter the verification code', 'error');
+        return;
+      }
+
+      if (!resetPasswordEmail) {
+        showNotification('Please request a verification code first', 'error');
+        return;
+      }
+
+      // Reset password with code
+      const resetResult = await resetPassword(resetPasswordEmail, resetCode.trim(), newPassword);
+      if (resetResult.success) {
+        showNotification('Password reset successfully!', 'success');
+        // Clear form and reset UI
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        document.getElementById('reset-code').value = '';
+        document.getElementById('email-code-section').style.display = 'none';
+        const btn = document.getElementById('reset-password-btn');
+        btn.textContent = 'Send Verification Code';
+        btn.onclick = handleRequestCode;
+        resetPasswordEmail = null;
+      } else {
+        showNotification(resetResult.error || 'Failed to reset password. Please check your code and try again.', 'error');
+      }
+    }
+
+    async function handleDeleteAccount() {
+      const password = document.getElementById('delete-password').value;
+      
+      if (!password) {
+        showNotification('Please enter your password to confirm', 'error');
+        return;
+      }
+
+      // Confirm deletion
+      const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.');
+      if (!confirmed) {
+        return;
+      }
+
+      // Get user email
+      const email = await getUserEmail();
+      if (!email) {
+        showNotification('Unable to retrieve your email. Please contact support.', 'error');
+        return;
+      }
+
+      // Verify password by attempting to sign in
+      const signInResult = await signIn(email, password);
+      if (!signInResult.success) {
+        showNotification('Password is incorrect', 'error');
+        return;
+      }
+
+      // Delete account
+      try {
+        const userId = getCurrentUserId();
+        if (!userId) {
+          showNotification('You must be logged in to delete your account', 'error');
+          return;
+        }
+        const response = await fetch('/api/account/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            password_hash: await hashPassword(password)
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification('Account deleted successfully', 'success');
+          // Sign out and redirect to login
+          signOut();
+          setTimeout(() => {
+            window.location.href = '/pages/login.html';
+          }, 1000);
+        } else {
+          showNotification(result.error || 'Failed to delete account', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+      }
+    }
+
+    function handleSignOut() {
+      signOut();
+      window.location.href = '/pages/login.html';
+    }
+  </script>
+</body>
+</html>
+

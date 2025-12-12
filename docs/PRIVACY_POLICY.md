@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: December 2025**
+**Last Updated: December 12th 2025**
 
 ## Introduction
 
@@ -23,9 +23,11 @@ When you create an account and use Path Pal, we may collect the following inform
   - AP courses and activities
   - Interests and extracurricular activities
 - **Profile Pictures**: If you choose to upload a profile picture
+- **Transcript Uploads**: If you choose to upload academic transcripts (images or PDF files) for automatic course extraction, we process these files to extract course information. Uploads are limited to 3 per day per user.
 - **Usage Data**: Information about how you interact with the Service, including:
   - Saved colleges
   - Messages sent to the AI counselor
+  - Transcript upload history (date and timestamp only, not the transcript content itself)
   - Preferences and settings
 
 ### Automatically Collected Information
@@ -43,6 +45,7 @@ We use the collected information for the following purposes:
    - Calculate admission odds based on your profile
    - Provide personalized college recommendations
    - Enable AI-powered counseling and guidance
+   - Process and extract course information from uploaded transcripts using AI vision technology
 
 2. **To Improve the Service**:
    - Analyze usage patterns to enhance user experience
@@ -62,7 +65,7 @@ We use the collected information for the following purposes:
 
 ### Storage Methods
 
-- **Server-Side Storage**: Your account information, profile data, and preferences are stored securely on our servers using CSV files and secure databases
+- **Server-Side Storage**: Your account information, profile data, and preferences are stored securely on our servers using CSV files and secure databases. Transcript upload metadata (user ID, date, and timestamp) is stored to track usage and enforce rate limits. The actual transcript images/PDFs are not stored after processing.
 - **Client-Side Storage**: Some data is stored locally on your device using browser localStorage for offline functionality
 
 ### Security Measures
@@ -80,12 +83,15 @@ However, no method of transmission over the Internet or electronic storage is 10
 
 ### OpenAI API
 
-Path Pal uses OpenAI's GPT-4 API to provide AI-powered features, including:
+Path Pal uses OpenAI's GPT-4 and GPT-4 Vision APIs to provide AI-powered features, including:
 - College recommendations
 - AI counseling and guidance
 - Personalized advice
+- Automatic course extraction from uploaded transcripts
 
-When you use these features, your messages and relevant profile information may be sent to OpenAI for processing. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
+When you use these features, your messages, relevant profile information, and uploaded transcript images may be sent to OpenAI for processing. Transcript images are processed using GPT-4 Vision to extract course information (course names, grades, and course types) and are not stored by OpenAI after processing. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
+
+**Transcript Processing**: When you upload a transcript, the image or PDF is converted to an image format, compressed to reduce file size, and sent to OpenAI's GPT-4 Vision API for processing. The transcript image itself is not stored on our servers after processing. We only store the extracted course information (course names, grades, and course types) in your profile. We track upload metadata (user ID, date, and timestamp) to enforce rate limiting (3 uploads per day per user) and for service improvement purposes.
 
 ### Email Services
 
@@ -111,7 +117,7 @@ You have the following rights regarding your personal information:
 
 2. **Correction**: You can update or correct your information at any time through your profile page.
 
-3. **Deletion**: You can request deletion of your account and associated data by contacting us at the email address provided below.
+3. **Deletion**: You can delete your account and associated data directly through the Account Settings page, or request deletion by contacting us at the email address provided below. This includes deletion of your profile information, transcript upload history, and all associated data.
 
 4. **Data Portability**: You can request a copy of your data in a portable format.
 

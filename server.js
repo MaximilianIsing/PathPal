@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase limit for transcript images
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Read GPT key from environment variable (for Render) or file (for local dev)
@@ -189,11 +189,203 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Read transcript uploads from CSV
+function readTranscriptUploads() {
+  try {
+    if (!fs.existsSync(TRANSCRIPT_UPLOADS_CSV_PATH)) {
+      return [];
+    }
+
+    const csvText = fs.readFileSync(TRANSCRIPT_UPLOADS_CSV_PATH, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return [];
+    }
+
+    const headers = parseCSVLine(lines[0]);
+    const uploads = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length === headers.length) {
+        const upload = {};
+        headers.forEach((header, index) => {
+          upload[header] = values[index] || '';
+        });
+        uploads.push(upload);
+      }
+    }
+    
+    return uploads;
+  } catch (error) {
+    console.error('Error reading transcript uploads CSV:', error);
+    return [];
+  }
+}
+
+// Write transcript uploads to CSV
+function writeTranscriptUploads(uploads) {
+  try {
+    const headers = ['user_id', 'date', 'timestamp'];
+    let csv = headers.join(',') + '\n';
+    
+    uploads.forEach(upload => {
+      const row = headers.map(header => {
+        let value = upload[header] || '';
+        if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+          value = '"' + value.replace(/"/g, '""') + '"';
+        }
+        return value;
+      });
+      csv += row.join(',') + '\n';
+    });
+    
+    fs.writeFileSync(TRANSCRIPT_UPLOADS_CSV_PATH, csv, 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Error writing transcript uploads CSV:', error);
+    return false;
+  }
+}
+
+// Check if user has exceeded daily upload limit
+function checkUploadLimit(userId) {
+  const uploads = readTranscriptUploads();
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  // Count uploads for this user today
+  const todayUploads = uploads.filter(upload => 
+    upload.user_id === userId && upload.date === today
+  );
+  
+  return todayUploads.length >= 3; // Limit is 3 per day
+}
+
+// Record transcript upload
+function recordTranscriptUpload(userId) {
+  const uploads = readTranscriptUploads();
+  const now = new Date();
+  const date = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const timestamp = now.toISOString();
+  
+  uploads.push({
+    user_id: userId,
+    date: date,
+    timestamp: timestamp
+  });
+  
+  writeTranscriptUploads(uploads);
+}
+
+// API endpoint for transcript processing with GPT Vision
+app.post('/api/transcript/process', async (req, res) => {
+  try {
+    const { image_base64 } = req.body;
+    const userId = req.headers['user-id'] || 'anonymous';
+    
+    if (!GPT_API_KEY) {
+      return res.status(500).json({ error: 'GPT API key not configured' });
+    }
+
+    if (!image_base64) {
+      return res.status(400).json({ error: 'Image is required' });
+    }
+
+    // Check upload limit (3 per day per user)
+    if (checkUploadLimit(userId)) {
+      return res.status(429).json({ 
+        error: 'Daily upload limit reached. You can upload up to 3 transcripts per day. Please try again tomorrow or enter courses manually.' 
+      });
+    }
+
+    // Remove data URL prefix if present
+    const base64Image = image_base64.replace(/^data:image\/[a-z]+;base64,/, '');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GPT_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o', // Using GPT-4o for vision capabilities
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at extracting academic course information from transcripts. Extract all courses with their names, grades (letter grades like A, B+, C-, etc.), and course types (Regular, Honors, AP, or College). Return ONLY a valid JSON array of objects, each with: courseName (string), grade (string like "A", "B+", "C-", etc.), and courseType (one of: "Regular", "Honors", "AP", "College"). Do not include any other text, just the JSON array.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Extract all academic courses from this transcript. For each course, provide the course name, letter grade (A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F), and course type (Regular, Honors, AP, or College). Return only a JSON array in this exact format: [{"courseName": "English 9", "grade": "A", "courseType": "Regular"}, {"courseName": "AP Calculus", "grade": "B+", "courseType": "AP"}]'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || 'API error' });
+    }
+
+    const content = data.choices[0].message.content;
+    
+    // Try to extract JSON from the response
+    let courses = [];
+    try {
+      // Remove any markdown code blocks if present
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        courses = JSON.parse(jsonMatch[0]);
+      } else {
+        courses = JSON.parse(content);
+      }
+      
+      // Validate and clean the courses
+      courses = courses.filter(course => {
+        return course.courseName && course.grade && course.courseType;
+      }).map(course => ({
+        courseName: course.courseName.trim(),
+        grade: course.grade.trim(),
+        courseType: course.courseType.trim()
+      }));
+    } catch (parseError) {
+      console.error('Error parsing GPT response:', parseError);
+      return res.status(500).json({ error: 'Failed to parse transcript data. Please try again or enter courses manually.' });
+    }
+
+    // Record successful upload
+    recordTranscriptUpload(userId);
+
+    res.json({ 
+      success: true,
+      courses: courses
+    });
+  } catch (error) {
+    console.error('Transcript processing error:', error);
+    res.status(500).json({ error: 'Failed to process transcript' });
+  }
+});
+
 // Serve all HTML pages
 const htmlPages = [
   'index.html', 'profile.html', 'odds.html', 'simulator.html', 
   'explorer.html', 'career.html', 'activities.html', 'planner.html', 
-  'messages.html', 'saved.html', 'team.html'
+  'messages.html', 'saved.html', 'team.html', 'account.html'
 ];
 
 htmlPages.forEach(page => {
@@ -519,6 +711,8 @@ const PROFILE_PICTURES_CSV_PATH = path.join(__dirname, 'storage', 'profile_pictu
 const PASSWORD_RESETS_CSV_PATH = path.join(__dirname, 'storage', 'password_resets.csv');
 // Counselor messages CSV file path
 const COUNSELOR_CSV_PATH = path.join(__dirname, 'storage', 'counselor.csv');
+// Transcript uploads CSV file path
+const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(__dirname, 'storage', 'transcript_uploads.csv');
 
 // Ensure storage directory exists
 const storageDir = path.join(__dirname, 'storage');
@@ -554,6 +748,12 @@ if (!fs.existsSync(PASSWORD_RESETS_CSV_PATH)) {
 if (!fs.existsSync(COUNSELOR_CSV_PATH)) {
   const header = 'timestamp,user_id,direction,message\n';
   fs.writeFileSync(COUNSELOR_CSV_PATH, header, 'utf8');
+}
+
+// Initialize transcript uploads CSV if it doesn't exist
+if (!fs.existsSync(TRANSCRIPT_UPLOADS_CSV_PATH)) {
+  const header = 'user_id,date,timestamp\n';
+  fs.writeFileSync(TRANSCRIPT_UPLOADS_CSV_PATH, header, 'utf8');
 }
 
 // Helper function to escape CSV values
@@ -1320,6 +1520,67 @@ app.post('/api/auth/reset-password', (req, res) => {
     res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
     console.error('Reset password error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Get user email by user_id
+app.get('/api/user/email', (req, res) => {
+  try {
+    const { user_id } = req.query;
+    
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'User ID is required' });
+    }
+
+    const logins = readLogins();
+    const login = logins.find(l => l.user_id === user_id);
+    
+    if (login) {
+      res.json({ success: true, email: login.email });
+    } else {
+      res.status(404).json({ success: false, error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Get user email error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Delete account endpoint
+app.post('/api/account/delete', (req, res) => {
+  try {
+    const { user_id, password_hash } = req.body;
+    
+    if (!user_id || !password_hash) {
+      return res.status(400).json({ success: false, error: 'User ID and password are required' });
+    }
+
+    // Verify password
+    const logins = readLogins();
+    const login = logins.find(l => l.user_id === user_id && l.password_hash === password_hash);
+    
+    if (!login) {
+      return res.status(401).json({ success: false, error: 'Invalid password' });
+    }
+
+    // Remove from logins
+    const filteredLogins = logins.filter(l => l.user_id !== user_id);
+    writeLogins(filteredLogins);
+
+    // Remove from accounts
+    const accounts = readAccounts();
+    const filteredAccounts = accounts.filter(a => a.user_id !== user_id);
+    writeAccounts(filteredAccounts);
+
+    // Remove profile picture
+    const pictures = readProfilePictures();
+    const filteredPictures = pictures.filter(p => p.user_id !== user_id);
+    writeProfilePictures(filteredPictures);
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
     res.status(500).json({ success: false, error: 'An error occurred' });
   }
 });

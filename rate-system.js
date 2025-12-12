@@ -132,6 +132,7 @@ async function rateStudent(student) {
 
   // Test score normalized to 0–1, using whichever is stronger (SAT or ACT)
   // If testOptional is true, skip test scores entirely (set testNorm to 0)
+  // IMPORTANT: Low test scores are heavily penalized using a curve that makes them much worse
   let testNorm = 0;
   
   if (!testOptional) {
@@ -147,12 +148,60 @@ async function rateStudent(student) {
       // Treat "Untaken" as SAT 800 (average score)
       satNorm = Math.min(1, (800 - 400) / (1600 - 400)); // (800 - 400) / 1200 = 0.333...
     } else if (satNum > 0) {
-      satNorm = Math.min(1, (satNum - 400) / (1600 - 400)); // 400–1600
+      // Linear normalization first
+      const linearNorm = Math.min(1, (satNum - 400) / (1600 - 400)); // 400–1600
+      
+      // Apply a curve that heavily penalizes low scores
+      // Scores below 1000 get exponentially worse
+      // Example: 500 SAT → linearNorm = 0.083, but curved = ~0.01 (almost nothing)
+      //          1000 SAT → linearNorm = 0.5, curved = ~0.25 (still penalized)
+      //          1400 SAT → linearNorm = 0.83, curved = ~0.75 (slightly penalized)
+      //          1600 SAT → linearNorm = 1.0, curved = 1.0 (full credit)
+      
+      if (satNum < 1000) {
+        // Very low scores: apply exponential penalty
+        // 500 → ~0.01, 600 → ~0.02, 700 → ~0.04, 800 → ~0.08, 900 → ~0.15
+        const below1000Ratio = satNum / 1000; // 0.5 for 500, 0.9 for 900
+        satNorm = Math.pow(below1000Ratio, 2.5) * 0.3; // Square root curve, then scale down
+      } else if (satNum < 1200) {
+        // Low scores: still penalized but less harshly
+        // 1000 → ~0.25, 1100 → ~0.35
+        const lowRangeNorm = (satNum - 1000) / 200; // 0-1 for 1000-1200 range
+        satNorm = 0.25 + (lowRangeNorm * 0.25); // 0.25 to 0.5
+      } else if (satNum < 1400) {
+        // Moderate scores: slight penalty
+        // 1200 → ~0.5, 1300 → ~0.65
+        const midRangeNorm = (satNum - 1200) / 200; // 0-1 for 1200-1400 range
+        satNorm = 0.5 + (midRangeNorm * 0.25); // 0.5 to 0.75
+      } else {
+        // High scores: full credit with slight boost
+        // 1400 → ~0.75, 1500 → ~0.9, 1600 → 1.0
+        const highRangeNorm = (satNum - 1400) / 200; // 0-1 for 1400-1600 range
+        satNorm = 0.75 + (highRangeNorm * 0.25); // 0.75 to 1.0
+      }
     }
 
     let actNorm = 0;
     if (!isUntaken && actNum > 0) {
-      actNorm = Math.min(1, (actNum - 1) / (36 - 1)); // 1–36
+      // Convert ACT to SAT equivalent for consistent curve application
+      // Rough conversion: ACT 36 ≈ SAT 1600, ACT 1 ≈ SAT 400
+      // Linear: ACT 18 ≈ SAT 1000, ACT 24 ≈ SAT 1200, ACT 30 ≈ SAT 1400
+      const actToSat = 400 + ((actNum - 1) / 35) * 1200;
+      
+      // Apply same curve as SAT
+      if (actToSat < 1000) {
+        const below1000Ratio = actToSat / 1000;
+        actNorm = Math.pow(below1000Ratio, 2.5) * 0.3;
+      } else if (actToSat < 1200) {
+        const lowRangeNorm = (actToSat - 1000) / 200;
+        actNorm = 0.25 + (lowRangeNorm * 0.25);
+      } else if (actToSat < 1400) {
+        const midRangeNorm = (actToSat - 1200) / 200;
+        actNorm = 0.5 + (midRangeNorm * 0.25);
+      } else {
+        const highRangeNorm = (actToSat - 1400) / 200;
+        actNorm = 0.75 + (highRangeNorm * 0.25);
+      }
     }
 
     testNorm = Math.max(satNorm, actNorm);
@@ -180,18 +229,19 @@ async function rateStudent(student) {
 
   // --- Weighted combination into a 0–100 score ---
   // Weights should sum to 1.0
+  // Increased test weight to 40% to properly penalize low scores
   // If test optional, redistribute test weight proportionally to other components
   let WEIGHTS = {
-    gpa: 0.35,
-    tests: 0.30,
+    gpa: 0.30,
+    tests: 0.40,  // Increased from 0.30 to 0.40 to heavily penalize low test scores
     ap: 0.15,
-    activities: 0.20
+    activities: 0.15  // Reduced from 0.20 to 0.15 to make room for higher test weight
   };
 
-  // If test optional, redistribute the 30% test weight to other components
+  // If test optional, redistribute the 40% test weight to other components
   if (testOptional) {
     const testWeight = WEIGHTS.tests;
-    const otherWeight = WEIGHTS.gpa + WEIGHTS.ap + WEIGHTS.activities; // 0.70
+    const otherWeight = WEIGHTS.gpa + WEIGHTS.ap + WEIGHTS.activities; // 0.60
     // Redistribute proportionally: each component gets its share of the test weight
     WEIGHTS = {
       gpa: WEIGHTS.gpa + (testWeight * (WEIGHTS.gpa / otherWeight)),
@@ -208,7 +258,34 @@ async function rateStudent(student) {
     WEIGHTS.activities * activitiesNorm;
 
   // Scale to 0–100 and round
-  const score = Math.round(composite * 100);
+  let score = Math.round(composite * 100);
+  
+  // Apply additional penalty for very low test scores (below 1000 SAT equivalent)
+  // This ensures that even with good GPA/activities, a terrible test score drags you down
+  if (!testOptional) {
+    const satNum = typeof sat === 'string' ? parseInt(sat, 10) : (sat || 0);
+    const actNum = typeof act === 'string' ? parseInt(act, 10) : (act || 0);
+    const isUntaken = (satNum === 0 || sat === '' || sat === null || sat === undefined) && 
+                       (actNum === 0 || act === '' || act === null || act === undefined);
+    
+    if (!isUntaken) {
+      let testScore = 0;
+      if (satNum > 0) {
+        testScore = satNum;
+      } else if (actNum > 0) {
+        // Convert ACT to SAT equivalent
+        testScore = 400 + ((actNum - 1) / 35) * 1200;
+      }
+      
+      // Apply severe penalty for scores below 1000
+      if (testScore > 0 && testScore < 1000) {
+        // Penalty multiplier: 500 SAT = 0.5x, 600 = 0.6x, 700 = 0.7x, 800 = 0.8x, 900 = 0.9x
+        const penaltyMultiplier = 0.5 + ((testScore - 400) / 600) * 0.4; // 0.5 to 0.9
+        score = Math.round(score * penaltyMultiplier);
+      }
+    }
+  }
+  
   return score;
 }
 
@@ -402,6 +479,11 @@ function getAdmissionOdds(studentScore, collegeScore, acceptanceRate) {
   const normalizedDelta = delta / 50; // Normalize to -1 to 1 range
   const sigmoidDelta = (normalizedDelta / (1 + Math.abs(normalizedDelta) * sigmoidFactor)) * 50;
   odds = baseOdds + (sigmoidDelta * deltaMultiplier);
+  
+  // Give slightly higher odds than calculated (as requested - boost by ~5-10%)
+  // This makes the system more optimistic
+  const optimismBoost = 1.08; // 8% boost
+  odds = odds * optimismBoost;
 
   // If acceptance rate is provided, use it as a constraint
   // The odds should not exceed the acceptance rate by too much, and should scale with it
