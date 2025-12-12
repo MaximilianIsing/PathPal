@@ -533,13 +533,32 @@
       return { category: 'reach', label: 'Reach' };
     }
 
-    function isProfileComplete(profile) {
-      // Profile is complete if it has rating or has at least GPA or test scores
-      if (profile.rating !== null && profile.rating !== undefined) {
-        return true;
+    // Calculate profile completion (0–100)
+    function calculateProfileCompletion(profile) {
+      const testType = profile.testType || localStorage.getItem('test-type') || '';
+      
+      let completion = 0;
+      if (profile.name) completion += 15;
+      if (profile.grade) completion += 15;
+      // Academic section: either GPA or academic courses
+      if (profile.academicType === 'courses') {
+        if (profile.academicCourses && profile.academicCourses.length > 0) completion += 15;
+      } else {
+        if (profile.gpa) completion += 15;
       }
-      // Check if we have enough data to calculate a rating
-      return !!(profile.gpa || profile.sat || profile.act);
+      // SAT/ACT counts if scores exist OR if "Untaken" is selected (testType === 'UNTAKEN')
+      if (profile.sat || profile.act || testType === 'UNTAKEN') completion += 15;
+      if (profile.majors && profile.majors.length > 0) completion += 20;
+      // AP courses and activities always count as complete (even if 0), so not included in calculation
+      if (profile.careerGoals) completion += 20;
+      
+      if (completion > 100) completion = 100;
+      return completion;
+    }
+
+    function isProfileComplete(profile) {
+      // Profile is 100% complete if all required fields are filled
+      return calculateProfileCompletion(profile) === 100;
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -730,8 +749,9 @@
 
         // Chance filter (using actual admission odds)
         if (chanceFilter) {
-          // Skip filter if profile incomplete or college rating missing
-          if (studentRating === null || studentRating === undefined || college.rating === null || college.rating === undefined) {
+          // Skip filter if profile is not 100% complete or college rating missing
+          const isComplete = isProfileComplete(studentProfile);
+          if (!isComplete || studentRating === null || studentRating === undefined || college.rating === null || college.rating === undefined) {
             return false; // Hide colleges when we can't calculate odds
           }
           const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
@@ -808,9 +828,11 @@
 
       pageColleges.forEach(college => {
         // Calculate admission odds
+        // Only show odds if profile is 100% complete
         let odds;
         let oddsDisplay;
-        if (studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
+        const isComplete = isProfileComplete(studentProfile);
+        if (isComplete && studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
           odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
           oddsDisplay = odds + '%';
         } else {
@@ -1173,12 +1195,14 @@
       if (college.gpaOptional) details += `GPA Optional: Yes\n`;
       
       // Calculate admission odds
+      // Only show odds if profile is 100% complete
       let oddsText;
-      if (studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
+      const isComplete = isProfileComplete(studentProfile);
+      if (isComplete && studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
         const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
         oddsText = `${odds}%`;
       } else {
-        oddsText = 'N/A (Complete your profile to see admission odds)';
+        oddsText = 'N/A';
       }
       details += `\n\nYour Admission Odds: ${oddsText}`;
 

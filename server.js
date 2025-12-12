@@ -842,6 +842,12 @@ function readAccounts() {
         }
         
         try {
+          account.academic_courses = account.academic_courses ? JSON.parse(account.academic_courses) : [];
+        } catch (e) {
+          account.academic_courses = [];
+        }
+        
+        try {
           account.interests = account.interests ? JSON.parse(account.interests) : [];
         } catch (e) {
           account.interests = [];

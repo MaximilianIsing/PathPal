@@ -316,7 +316,12 @@
         let completion = 0;
         if (profile.name) completion += 15;
           if (profile.grade) completion += 15;
-        if (profile.gpa) completion += 15;
+        // Academic section: either GPA or academic courses
+        if (profile.academicType === 'courses') {
+          if (profile.academicCourses && profile.academicCourses.length > 0) completion += 15;
+        } else {
+          if (profile.gpa) completion += 15;
+        }
           // SAT/ACT counts if scores exist OR if "Untaken" is selected (testType === 'UNTAKEN')
           if (profile.sat || profile.act || testType === 'UNTAKEN') completion += 15;
           if (profile.majors && profile.majors.length > 0) completion += 20;

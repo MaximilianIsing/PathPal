@@ -768,6 +768,16 @@
             });
           });
 
+          // Set academic type to 'courses' and show courses section
+          const academicTypeSelect = document.getElementById('academic-type');
+          const gpaSection = document.getElementById('gpa-section');
+          const coursesSection = document.getElementById('courses-section');
+          if (academicTypeSelect) {
+            academicTypeSelect.value = 'courses';
+            if (gpaSection) gpaSection.style.display = 'none';
+            if (coursesSection) coursesSection.style.display = 'block';
+          }
+
           // Render the courses
           renderCoursesPage();
           
