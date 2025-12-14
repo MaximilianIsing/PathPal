@@ -44,7 +44,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.12
+      v1.13
     </div>
   </nav>
 
@@ -62,12 +62,6 @@
       <!-- Saved Colleges List -->
       <div id="saved-colleges-list">
         <p class="loading">Loading saved colleges...</p>
-      </div>
-
-      <!-- Progress Tracking -->
-      <div class="card" id="progress-card" style="display: none;">
-        <h3>Application Progress</h3>
-        <div id="progress-content"></div>
       </div>
     </div>
   </main>
@@ -193,7 +187,6 @@
             </button>
           </div>
         `;
-        document.getElementById('progress-card').style.display = 'none';
         return;
       }
 
@@ -221,8 +214,7 @@
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
             <div style="flex: 1;">
               <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${college.name}</h4>
-              <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.25rem;"><img src="/media/icons/Location128x128.png" alt="Location" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 0.25rem;"> ${college.location}</p>
-              <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.25rem;">${college.type} • ${college.size}</p>
+              <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.25rem;">${college.type || 'Unknown'} • ${college.size || 'Unknown'}</p>
               <p style="color: var(--text-light); font-size: 0.9rem;">Acceptance Rate: ${Math.round(college.acceptanceRate * 1000) /10}%</p>
             </div>
             <span class="badge badge-${category.category}">${category.label}</span>
@@ -266,8 +258,6 @@
         
         container.appendChild(card);
       });
-
-      loadProgressTracking(savedColleges);
     }
 
     function removeCollege(collegeId) {
@@ -285,63 +275,7 @@
       statuses[id] = status;
       Storage.set('applicationStatuses', statuses);
       
-      // Update the progress tracking without reloading everything
-      const savedColleges = SavedColleges.get();
-      loadProgressTracking(savedColleges);
       showNotification('Application status updated!', 'success');
-    }
-
-    function loadProgressTracking(savedColleges) {
-      const card = document.getElementById('progress-card');
-      const container = document.getElementById('progress-content');
-      const statuses = Storage.get('applicationStatuses', {});
-
-      const stats = {
-        'not-started': 0,
-        'in-progress': 0,
-        'submitted': 0,
-        'accepted': 0,
-        'rejected': 0,
-        'waitlisted': 0
-      };
-
-      savedColleges.forEach(college => {
-        const collegeIdStr = String(college.id);
-        const status = statuses[collegeIdStr] || 'not-started';
-        stats[status] = (stats[status] || 0) + 1;
-      });
-
-      const total = savedColleges.length;
-      const completed = stats.submitted + stats.accepted + stats.rejected + stats.waitlisted;
-      const completionRate = total > 0 ? (completed / total) * 100 : 0;
-
-      container.innerHTML = `
-        <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center;">
-          <div style="font-size: 2rem; font-weight: bold; color: var(--primary-green);">${completionRate.toFixed(0)}%</div>
-          <div style="color: var(--text-light); font-size: 0.9rem;">Applications Completed</div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
-          <div style="padding: 0.75rem; background: var(--light-mint); border-radius: 8px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-green);">${stats.accepted}</div>
-            <div style="font-size: 0.85rem; color: var(--text-light);">Accepted</div>
-          </div>
-          <div style="padding: 0.75rem; background: var(--light-mint); border-radius: 8px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning);">${stats['in-progress']}</div>
-            <div style="font-size: 0.85rem; color: var(--text-light);">In Progress</div>
-          </div>
-          <div style="padding: 0.75rem; background: var(--light-mint); border-radius: 8px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-green);">${stats.submitted}</div>
-            <div style="font-size: 0.85rem; color: var(--text-light);">Submitted</div>
-          </div>
-          <div style="padding: 0.75rem; background: var(--light-mint); border-radius: 8px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-light);">${stats['not-started']}</div>
-            <div style="font-size: 0.85rem; color: var(--text-light);">Not Started</div>
-          </div>
-        </div>
-      `;
-
-      card.style.display = 'block';
     }
 
     // Check for updates

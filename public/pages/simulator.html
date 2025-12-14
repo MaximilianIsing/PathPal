@@ -44,7 +44,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.12
+      v1.13
     </div>
   </nav>
 
@@ -71,16 +71,52 @@
           <input type="number" id="sim-gpa" step="0.01" min="0" max="5" placeholder="Enter new GPA">
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>SAT Score</label>
-            <input type="number" id="sim-sat" min="400" max="1600" placeholder="Enter new SAT">
-          </div>
-          <div class="form-group">
-            <label>ACT Score</label>
-            <input type="number" id="sim-act" min="1" max="36" placeholder="Enter new ACT">
+        <div class="form-group" id="test-score-group">
+          <label id="test-score-label">
+            New Test Score
+            <span id="previous-score-text" style="color: var(--text-light); font-weight: normal; margin-left: 0.5rem;"></span>
+          </label>
+          <input type="number" id="sim-test-score" placeholder="Enter new test score">
+          <!-- Test type selector (shown only for PSAT/Untaken profiles) -->
+          <div id="test-type-selector" style="display: none; margin-top: 0.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: normal;">Test Type:</label>
+            <div style="display: flex; gap: 0.75rem;">
+              <label class="test-type-button" id="test-type-sat-label">
+                <input type="radio" name="test-type" value="SAT" id="test-type-sat" checked style="display: none;">
+                SAT
+              </label>
+              <label class="test-type-button" id="test-type-act-label">
+                <input type="radio" name="test-type" value="ACT" id="test-type-act" style="display: none;">
+                ACT
+              </label>
+            </div>
           </div>
         </div>
+        <style>
+          .test-type-button {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: var(--light-mint);
+            color: var(--primary-green);
+            border: 2px solid var(--primary-green);
+            border-radius: 8px;
+            font-family: 'Arvo', serif;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            display: block;
+          }
+          .test-type-button:hover {
+            background: var(--primary-green);
+            color: var(--white);
+          }
+          .test-type-button.active {
+            background: var(--primary-green);
+            color: var(--white);
+          }
+        </style>
 
         <div class="form-group">
           <label>Additional Activities/Internships</label>
@@ -120,6 +156,31 @@
     let simulatedProfile = null;
     let currentProfileRating = null;
     let simulatedProfileRating = null;
+
+    // Validation function for test scores (accessible globally)
+    function validateTestScore(input, testType) {
+      if (!input || !input.value) return;
+      
+      let value = parseFloat(input.value);
+      if (isNaN(value)) {
+        input.value = '';
+        return;
+      }
+
+      if (testType === 'SAT') {
+        // Round to nearest multiple of 10
+        value = Math.round(value / 10) * 10;
+        // Clamp to 400-1600
+        value = Math.max(400, Math.min(1600, value));
+        input.value = value;
+      } else if (testType === 'ACT') {
+        // Round to nearest integer
+        value = Math.round(value);
+        // Clamp to 1-36
+        value = Math.max(1, Math.min(36, value));
+        input.value = value;
+      }
+    }
 
     // Client-side implementation of getAdmissionOdds (from rate-system.js)
     function getAdmissionOdds(studentScore, collegeScore, acceptanceRate, options = {}) {
@@ -288,6 +349,115 @@
       await initializeUserId();
       
       await loadCurrentProfile();
+      
+      // Add listener for test type selector (for PSAT/Untaken profiles)
+      const testTypeRadios = document.querySelectorAll('input[name="test-type"]');
+      const testScoreInput = document.getElementById('sim-test-score');
+      const testScoreLabel = document.getElementById('test-score-label');
+      const previousScoreText = document.getElementById('previous-score-text');
+      const satLabel = document.getElementById('test-type-sat-label');
+      const actLabel = document.getElementById('test-type-act-label');
+      
+      // Determine current test type
+      function getCurrentTestType() {
+        const profileTestType = currentProfile.testType || 
+                                (currentProfile.sat ? 'SAT' : 
+                                 currentProfile.act ? 'ACT' : 
+                                 currentProfile.psat ? 'PSAT' : 'UNTAKEN');
+        const testTypeSelector = document.getElementById('test-type-selector');
+        if (testTypeSelector.style.display === 'block') {
+          const selectedRadio = document.querySelector('input[name="test-type"]:checked');
+          return selectedRadio ? selectedRadio.value : 'SAT';
+        }
+        return profileTestType;
+      }
+      
+      // Add input validation listener - validate on blur to allow typing
+      testScoreInput.addEventListener('blur', () => {
+        const testType = getCurrentTestType();
+        if (testType === 'SAT' || testType === 'ACT') {
+          validateTestScore(testScoreInput, testType);
+        }
+      });
+      
+      // Also validate on change event (for spinner controls)
+      testScoreInput.addEventListener('change', () => {
+        const testType = getCurrentTestType();
+        if (testType === 'SAT' || testType === 'ACT') {
+          validateTestScore(testScoreInput, testType);
+        }
+      });
+      
+      // Update button states function
+      function updateButtonStates() {
+        const satRadio = document.getElementById('test-type-sat');
+        if (satRadio.checked) {
+          satLabel.classList.add('active');
+          actLabel.classList.remove('active');
+        } else {
+          actLabel.classList.add('active');
+          satLabel.classList.remove('active');
+        }
+      }
+      
+      testTypeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const selectedType = e.target.value;
+          updateButtonStates();
+          
+          // Update label text (keeping the previous score text element)
+          const labelBase = testScoreLabel.childNodes[0];
+          if (labelBase && labelBase.nodeType === 3) {
+            labelBase.textContent = `New ${selectedType} Score`;
+          } else {
+            testScoreLabel.innerHTML = `New ${selectedType} Score<span id="previous-score-text" style="color: var(--text-light); font-weight: normal; margin-left: 0.5rem;"></span>`;
+          }
+          
+          // Update previous score text (none for PSAT/Untaken)
+          const prevScore = document.getElementById('previous-score-text');
+          if (prevScore) prevScore.textContent = '';
+          
+          if (selectedType === 'SAT') {
+            testScoreInput.placeholder = 'Enter new SAT (400-1600, multiples of 10)';
+            testScoreInput.setAttribute('min', '400');
+            testScoreInput.setAttribute('max', '1600');
+            testScoreInput.setAttribute('step', '10');
+          } else if (selectedType === 'ACT') {
+            testScoreInput.placeholder = 'Enter new ACT (1-36)';
+            testScoreInput.setAttribute('min', '1');
+            testScoreInput.setAttribute('max', '36');
+            testScoreInput.setAttribute('step', '1');
+          }
+          
+          // Validate and correct current value if needed
+          if (testScoreInput.value) {
+            validateTestScore(testScoreInput, selectedType);
+          }
+        });
+      });
+      
+      // Handle label clicks - clicking label will check the nested radio
+      if (satLabel) {
+        satLabel.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('test-type-sat').checked = true;
+          document.getElementById('test-type-sat').dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+      if (actLabel) {
+        actLabel.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('test-type-act').checked = true;
+          document.getElementById('test-type-act').dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+      
+      // Initial button state update after profile loads
+      setTimeout(() => {
+        if (document.getElementById('test-type-selector').style.display === 'block') {
+          updateButtonStates();
+        }
+      }, 100);
     });
 
     async function loadCurrentProfile() {
@@ -307,10 +477,92 @@
           <div><strong>Saved Colleges:</strong> ${savedColleges.length}</div>
         `;
 
-        // Pre-fill with current values
+        // Pre-fill GPA
         if (currentProfile.gpa) document.getElementById('sim-gpa').value = currentProfile.gpa;
-        if (currentProfile.sat) document.getElementById('sim-sat').value = currentProfile.sat;
-        if (currentProfile.act) document.getElementById('sim-act').value = currentProfile.act;
+
+        // Determine test type from profile
+        const testType = currentProfile.testType || 
+                        (currentProfile.sat ? 'SAT' : 
+                         currentProfile.act ? 'ACT' : 
+                         currentProfile.psat ? 'PSAT' : 'UNTAKEN');
+
+        const testScoreInput = document.getElementById('sim-test-score');
+        const testScoreLabel = document.getElementById('test-score-label');
+        const previousScoreText = document.getElementById('previous-score-text');
+        const testTypeSelector = document.getElementById('test-type-selector');
+
+        // Helper function to update button active states
+        function updateTestTypeButtons() {
+          const satRadio = document.getElementById('test-type-sat');
+          const actRadio = document.getElementById('test-type-act');
+          const satLabel = document.getElementById('test-type-sat-label');
+          const actLabel = document.getElementById('test-type-act-label');
+          
+          if (satRadio.checked) {
+            satLabel.classList.add('active');
+            actLabel.classList.remove('active');
+          } else {
+            actLabel.classList.add('active');
+            satLabel.classList.remove('active');
+          }
+        }
+
+        // Re-get previousScoreText in case it was recreated
+        const prevScoreEl = document.getElementById('previous-score-text');
+        
+        // If profile is PSAT or UNTAKEN, show test type selector
+        if (testType === 'PSAT' || testType === 'UNTAKEN') {
+          testTypeSelector.style.display = 'block';
+          // Default to SAT if no preference
+          document.getElementById('test-type-sat').checked = true;
+          // Set initial button active state will be handled by DOMContentLoaded listener
+          // Set initial values for SAT (default)
+          testScoreLabel.innerHTML = `New SAT Score<span id="previous-score-text" style="color: var(--text-light); font-weight: normal; margin-left: 0.5rem;"></span>`;
+          // No previous score for PSAT/Untaken
+          const prevScore = document.getElementById('previous-score-text');
+          if (prevScore) prevScore.textContent = '';
+          testScoreInput.placeholder = 'Enter new SAT (400-1600, multiples of 10)';
+          testScoreInput.setAttribute('min', '400');
+          testScoreInput.setAttribute('max', '1600');
+          testScoreInput.setAttribute('step', '10');
+        } else {
+          // Profile has SAT or ACT - determine automatically
+          testTypeSelector.style.display = 'none';
+          if (testType === 'SAT') {
+            testScoreLabel.innerHTML = `New SAT Score<span id="previous-score-text" style="color: var(--text-light); font-weight: normal; margin-left: 0.5rem;"></span>`;
+            const prevScore = document.getElementById('previous-score-text');
+            if (currentProfile.sat && prevScore) {
+              prevScore.textContent = `(previously ${currentProfile.sat})`;
+              testScoreInput.value = currentProfile.sat;
+            } else if (prevScore) {
+              prevScore.textContent = '';
+            }
+            testScoreInput.placeholder = 'Enter new SAT (400-1600, multiples of 10)';
+            testScoreInput.setAttribute('min', '400');
+            testScoreInput.setAttribute('max', '1600');
+            testScoreInput.setAttribute('step', '10');
+          } else if (testType === 'ACT') {
+            testScoreLabel.innerHTML = `New ACT Score<span id="previous-score-text" style="color: var(--text-light); font-weight: normal; margin-left: 0.5rem;"></span>`;
+            const prevScore = document.getElementById('previous-score-text');
+            if (currentProfile.act && prevScore) {
+              prevScore.textContent = `(previously ${currentProfile.act})`;
+              testScoreInput.value = currentProfile.act;
+            } else if (prevScore) {
+              prevScore.textContent = '';
+            }
+            testScoreInput.placeholder = 'Enter new ACT (1-36)';
+            testScoreInput.setAttribute('min', '1');
+            testScoreInput.setAttribute('max', '36');
+            testScoreInput.setAttribute('step', '1');
+          }
+          
+          // Validate initial value if present
+          if (testScoreInput.value && (testType === 'SAT' || testType === 'ACT')) {
+            setTimeout(() => {
+              validateTestScore(testScoreInput, testType);
+            }, 0);
+          }
+        }
       } catch (error) {
         console.error('Error loading profile:', error);
       }
@@ -327,12 +579,30 @@
       const container = document.getElementById('simulation-results');
       container.innerHTML = '<h3 style="color: var(--primary-green); margin: 1rem 0;">Simulation Results</h3><div class="loading">Calculating odds...</div>';
 
-      // Create simulated profile
+      // Determine test type from profile or selector
+      const profileTestType = currentProfile.testType || 
+                              (currentProfile.sat ? 'SAT' : 
+                               currentProfile.act ? 'ACT' : 
+                               currentProfile.psat ? 'PSAT' : 'UNTAKEN');
+      
+      const testTypeSelector = document.getElementById('test-type-selector');
+      let selectedTestType = profileTestType;
+      
+      // If test type selector is visible (PSAT/UNTAKEN), use selected value
+      if (testTypeSelector.style.display === 'block') {
+        const selectedRadio = document.querySelector('input[name="test-type"]:checked');
+        selectedTestType = selectedRadio ? selectedRadio.value : 'SAT';
+      }
+      
+      // Get the new test score value
+      const newTestScore = document.getElementById('sim-test-score').value;
+      
+      // Create simulated profile with appropriate test score
       simulatedProfile = {
         ...currentProfile,
         gpa: document.getElementById('sim-gpa').value || currentProfile.gpa,
-        sat: document.getElementById('sim-sat').value || currentProfile.sat,
-        act: document.getElementById('sim-act').value || currentProfile.act,
+        sat: selectedTestType === 'SAT' ? (newTestScore || currentProfile.sat) : currentProfile.sat,
+        act: selectedTestType === 'ACT' ? (newTestScore || currentProfile.act) : currentProfile.act,
         activities: document.getElementById('sim-activities').value || currentProfile.activities
       };
 
@@ -446,6 +716,7 @@
       simulatedProfile = null;
       loadCurrentProfile();
       document.getElementById('sim-activities').value = '';
+      document.getElementById('sim-test-score').value = '';
       document.getElementById('simulation-results').innerHTML = '';
       document.getElementById('next-steps').style.display = 'none';
     }
@@ -460,8 +731,25 @@
       try {
         const changes = [];
         if (simulatedProfile.gpa !== currentProfile.gpa) changes.push(`GPA from ${currentProfile.gpa || 'N/A'} to ${simulatedProfile.gpa}`);
-        if (simulatedProfile.sat !== currentProfile.sat) changes.push(`SAT from ${currentProfile.sat || 'N/A'} to ${simulatedProfile.sat}`);
-        if (simulatedProfile.act !== currentProfile.act) changes.push(`ACT from ${currentProfile.act || 'N/A'} to ${simulatedProfile.act}`);
+        
+        // Check for test score changes
+        const profileTestType = currentProfile.testType || 
+                                (currentProfile.sat ? 'SAT' : 
+                                 currentProfile.act ? 'ACT' : 
+                                 currentProfile.psat ? 'PSAT' : 'UNTAKEN');
+        const testTypeSelector = document.getElementById('test-type-selector');
+        let selectedTestType = profileTestType;
+        if (testTypeSelector.style.display === 'block') {
+          const selectedRadio = document.querySelector('input[name="test-type"]:checked');
+          selectedTestType = selectedRadio ? selectedRadio.value : 'SAT';
+        }
+        
+        if (selectedTestType === 'SAT' && simulatedProfile.sat !== currentProfile.sat) {
+          changes.push(`SAT from ${currentProfile.sat || 'N/A'} to ${simulatedProfile.sat}`);
+        } else if (selectedTestType === 'ACT' && simulatedProfile.act !== currentProfile.act) {
+          changes.push(`ACT from ${currentProfile.act || 'N/A'} to ${simulatedProfile.act}`);
+        }
+        
         if (simulatedProfile.activities) changes.push('added new activities');
 
         const message = `Based on these changes to my profile: ${changes.join(', ')}, what should I focus on next to maximize my admission chances? Provide 3-5 specific, actionable recommendations.`;

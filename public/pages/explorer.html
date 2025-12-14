@@ -324,7 +324,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.12
+      v1.13
     </div>
   </nav>
 
@@ -351,14 +351,9 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Region</label>
-            <select id="filter-region">
-              <option value="">All Regions</option>
-              <option value="Northeast">Northeast</option>
-              <option value="Southeast">Southeast</option>
-              <option value="Midwest">Midwest</option>
-              <option value="Southwest">Southwest</option>
-              <option value="West">West</option>
+            <label id="avg-score-filter-label">Average Score</label>
+            <select id="filter-avg-score">
+              <option value="">All Scores</option>
             </select>
           </div>
           <div class="form-group">
@@ -636,6 +631,41 @@
       return calculateProfileCompletion(profile) === 100;
     }
 
+    function populateAvgScoreFilter() {
+      // Determine test type from profile
+      const testType = studentProfile?.testType || 
+                      (studentProfile?.sat ? 'SAT' : 
+                       studentProfile?.act ? 'ACT' : 
+                       studentProfile?.psat ? 'PSAT' : 'UNTAKEN');
+      const useTestType = (testType === 'PSAT' || testType === 'UNTAKEN') ? 'SAT' : testType;
+      
+      const filterSelect = document.getElementById('filter-avg-score');
+      const filterLabel = document.getElementById('avg-score-filter-label');
+      
+      // Clear existing options except "All Scores"
+      filterSelect.innerHTML = '<option value="">All Scores</option>';
+      
+      if (useTestType === 'SAT') {
+        filterLabel.textContent = 'Average SAT Score';
+        const satThresholds = [1000, 1100, 1200, 1300, 1400, 1500];
+        satThresholds.forEach(threshold => {
+          const option = document.createElement('option');
+          option.value = threshold.toString();
+          option.textContent = `< ${threshold}`;
+          filterSelect.appendChild(option);
+        });
+      } else if (useTestType === 'ACT') {
+        filterLabel.textContent = 'Average ACT Score';
+        const actThresholds = [18, 20, 22, 24, 26, 28, 30, 32];
+        actThresholds.forEach(threshold => {
+          const option = document.createElement('option');
+          option.value = threshold.toString();
+          option.textContent = `< ${threshold}`;
+          filterSelect.appendChild(option);
+        });
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       await initializeUserId();
       // Load student profile to get rating
@@ -646,9 +676,13 @@
         studentRating = (studentProfile.rating !== null && studentProfile.rating !== undefined && studentProfile.rating !== '') 
           ? studentProfile.rating 
           : null;
+        // Populate average score filter based on test type
+        populateAvgScoreFilter();
       } catch (error) {
         console.error('Error loading profile:', error);
         studentRating = null;
+        // Still populate filter even if profile load fails (will default to SAT)
+        populateAvgScoreFilter();
       }
       await loadColleges();
     });
@@ -808,7 +842,7 @@
     function applyFilters() {
       const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
       const chanceFilter = document.getElementById('filter-chance').value;
-      const regionFilter = document.getElementById('filter-region').value;
+      const avgScoreFilter = document.getElementById('filter-avg-score').value;
       const sizeFilter = document.getElementById('filter-size').value;
       const typeFilter = document.getElementById('filter-type').value;
       const testOptionalFilter = document.getElementById('filter-test-optional').value;
@@ -844,8 +878,24 @@
           if (category.category !== chanceFilter) return false;
         }
 
-        // Region filter
-        if (regionFilter && college.region !== regionFilter) return false;
+        // Average score filter
+        if (avgScoreFilter && studentProfile) {
+          // Determine test type from profile
+          const testType = studentProfile.testType || 
+                          (studentProfile.sat ? 'SAT' : 
+                           studentProfile.act ? 'ACT' : 
+                           studentProfile.psat ? 'PSAT' : 'UNTAKEN');
+          const useTestType = (testType === 'PSAT' || testType === 'UNTAKEN') ? 'SAT' : testType;
+          
+          const threshold = parseInt(avgScoreFilter);
+          if (useTestType === 'SAT') {
+            const avgSAT = college.sat50thPercentile || college.satAverage;
+            if (avgSAT === null || avgSAT === undefined || avgSAT >= threshold) return false;
+          } else if (useTestType === 'ACT') {
+            const avgACT = college.act50thPercentile || college.actMidpoint;
+            if (avgACT === null || avgACT === undefined || avgACT >= threshold) return false;
+          }
+        }
 
         // Size filter
         if (sizeFilter && college.size !== sizeFilter) return false;
@@ -882,7 +932,7 @@
     function resetFilters() {
       document.getElementById('search-input').value = '';
       document.getElementById('filter-chance').value = '';
-      document.getElementById('filter-region').value = '';
+      document.getElementById('filter-avg-score').value = '';
       document.getElementById('filter-size').value = '';
       document.getElementById('filter-type').value = '';
       document.getElementById('filter-test-optional').value = '';
@@ -967,12 +1017,9 @@
             <div style="flex: 1;">
               <h4 class="college-name" style="margin-bottom: 0.25rem;">${college.name}</h4>
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; font-size: 0.8rem; color: var(--text-light);">
-                <span>${college.location || 'N/A'}</span>
-                <span>•</span>
                 <span>${college.type || 'N/A'}</span>
                 <span>•</span>
                 <span>${college.size || 'N/A'}</span>
-                ${college.region ? `<span>•</span><span>${college.region}</span>` : ''}
               </div>
             </div>
           </div>
@@ -1263,10 +1310,8 @@
       const formatPercent = (num) => num !== null && num !== undefined && num !== '' ? (num * 100).toFixed(1) + '%' : 'N/A';
 
       let details = `${college.name}\n\n`;
-      details += `Location: ${college.location || 'N/A'}\n`;
       details += `Type: ${college.type || 'N/A'}\n`;
       details += `Size: ${college.size || 'N/A'}\n`;
-      details += `Region: ${college.region || 'N/A'}\n`;
       if (college.acceptanceRate !== null) details += `Acceptance Rate: ${formatPercent(college.acceptanceRate)}\n`;
       if (college.sat25thPercentile !== null && college.sat75thPercentile !== null) {
         details += `SAT Range: ${formatNumber(college.sat25thPercentile)}-${formatNumber(college.sat75thPercentile)}\n`;

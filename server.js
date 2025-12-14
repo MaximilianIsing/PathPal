@@ -1137,76 +1137,76 @@ function readAccounts() {
       values.push(parseCSVValue(current.trim())); // Last value
       
       // Process row even if it has fewer values than headers (for backward compatibility)
-      const account = {};
-      headers.forEach((header, index) => {
+        const account = {};
+        headers.forEach((header, index) => {
         let value = index < values.length ? values[index] : '';
-        account[header] = value;
-      });
-      
-      // Parse boolean and arrays
-      if (account.weighted === 'true') account.weighted = true;
-      else if (account.weighted === 'false') account.weighted = false;
-      
-      try {
-        account.majors = account.majors ? JSON.parse(account.majors) : [];
-      } catch (e) {
-        account.majors = [];
-      }
-      
-      try {
-        account.ap_courses = account.ap_courses ? JSON.parse(account.ap_courses) : [];
-      } catch (e) {
-        account.ap_courses = [];
-      }
+          account[header] = value;
+        });
+        
+        // Parse boolean and arrays
+        if (account.weighted === 'true') account.weighted = true;
+        else if (account.weighted === 'false') account.weighted = false;
+        
+        try {
+          account.majors = account.majors ? JSON.parse(account.majors) : [];
+        } catch (e) {
+          account.majors = [];
+        }
+        
+        try {
+          account.ap_courses = account.ap_courses ? JSON.parse(account.ap_courses) : [];
+        } catch (e) {
+          account.ap_courses = [];
+        }
       
       try {
         account.academic_courses = account.academic_courses ? JSON.parse(account.academic_courses) : [];
       } catch (e) {
         account.academic_courses = [];
       }
-      
-      try {
-        account.interests = account.interests ? JSON.parse(account.interests) : [];
-      } catch (e) {
-        account.interests = [];
-      }
-      
-      try {
-        // Skip invalid "[object Object]" strings
-        if (account.activities && account.activities.trim() === '[object Object]') {
+        
+        try {
+          account.interests = account.interests ? JSON.parse(account.interests) : [];
+        } catch (e) {
+          account.interests = [];
+        }
+        
+        try {
+          // Skip invalid "[object Object]" strings
+          if (account.activities && account.activities.trim() === '[object Object]') {
+            account.activities = [];
+          }
+          // Try to parse as JSON array first
+          else if (account.activities && account.activities.trim().startsWith('[')) {
+            account.activities = JSON.parse(account.activities);
+          } else if (account.activities && account.activities.trim()) {
+            // Legacy string format - convert to array format for consistency
+            // Parse "X hrs — description" format
+            const lines = account.activities.split('\n').map(l => l.trim()).filter(Boolean);
+            account.activities = lines.map(line => {
+              const match = line.match(/^(\d+)\s*(hrs?|hours?|h)?\s*[-–:]\s*(.+)$/i);
+              if (match) {
+                return { hours: match[1], description: match[3] };
+              }
+              return { hours: '', description: line };
+            });
+          } else {
+            account.activities = [];
+          }
+        } catch (e) {
+          // If parsing fails completely, default to empty array
           account.activities = [];
         }
-        // Try to parse as JSON array first
-        else if (account.activities && account.activities.trim().startsWith('[')) {
-          account.activities = JSON.parse(account.activities);
-        } else if (account.activities && account.activities.trim()) {
-          // Legacy string format - convert to array format for consistency
-          // Parse "X hrs — description" format
-          const lines = account.activities.split('\n').map(l => l.trim()).filter(Boolean);
-          account.activities = lines.map(line => {
-            const match = line.match(/^(\d+)\s*(hrs?|hours?|h)?\s*[-–:]\s*(.+)$/i);
-            if (match) {
-              return { hours: match[1], description: match[3] };
-            }
-            return { hours: '', description: line };
-          });
+        
+        // Parse rating as number if it exists
+        if (account.rating && account.rating !== '') {
+          const ratingNum = parseFloat(account.rating);
+          account.rating = !isNaN(ratingNum) ? ratingNum : null;
         } else {
-          account.activities = [];
+          account.rating = null;
         }
-      } catch (e) {
-        // If parsing fails completely, default to empty array
-        account.activities = [];
-      }
-      
-      // Parse rating as number if it exists
-      if (account.rating && account.rating !== '') {
-        const ratingNum = parseFloat(account.rating);
-        account.rating = !isNaN(ratingNum) ? ratingNum : null;
-      } else {
-        account.rating = null;
-      }
-      
-      accounts.push(account);
+        
+        accounts.push(account);
     }
     
     return accounts;

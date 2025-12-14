@@ -44,7 +44,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.12
+      v1.13
     </div>
   </nav>
 
@@ -211,6 +211,7 @@
         }
         const category = categorizeSchool(odds);
         
+        
         const card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '1rem';
@@ -220,7 +221,7 @@
             <div>
               <h3 style="color: var(--primary-green); margin-bottom: 0.5rem;">${college.name}</h3>
               <p style="color: var(--text-light); font-size: 0.9rem;">
-                ${college.location} • ${college.type} • ${college.acceptanceRate !== null ? Math.round(college.acceptanceRate * 1000) / 10 + '%' : 'N/A'} acceptance
+                ${college.type || 'Unknown'} • ${college.acceptanceRate !== null ? Math.round(college.acceptanceRate * 1000) / 10 + '%' : 'N/A'} acceptance
               </p>
             </div>
             ${odds !== null ? `<span class="badge badge-${category.category}">${category.label}</span>` : ''}
