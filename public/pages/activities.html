@@ -54,36 +54,44 @@
 
       <!-- Filters -->
       <div class="filters">
-        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Filter by Category</h3>
-        <div class="filters-grid">
-          <button class="btn filter-btn active" data-category="all" onclick="filterActivities('all')">
-            All
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Filter by Program Type</h3>
+        <div id="program-type-filters" class="filters-grid">
+          <button class="btn filter-btn program-type-filter-btn active" data-program-type="all" onclick="filterByProgramType('all')">
+            All Types
           </button>
-          <button class="btn filter-btn" data-category="academic" onclick="filterActivities('academic')">
-            Academic
+          <button class="btn filter-btn program-type-filter-btn" data-program-type="Youth Service Provider" onclick="filterByProgramType('Youth Service Provider')">
+            Youth Service Provider
           </button>
-          <button class="btn filter-btn" data-category="leadership" onclick="filterActivities('leadership')">
-            Leadership
+          <button class="btn filter-btn program-type-filter-btn" data-program-type="Affiliate Center" onclick="filterByProgramType('Affiliate Center')">
+            Affiliate Center
           </button>
-          <button class="btn filter-btn" data-category="community" onclick="filterActivities('community')">
-            Community Service
-          </button>
-          <button class="btn filter-btn" data-category="career" onclick="filterActivities('career')">
-            Career-Focused
-          </button>
-          <button class="btn filter-btn" data-category="internship" onclick="filterActivities('internship')">
-            Internships
+          <button class="btn filter-btn program-type-filter-btn" data-program-type="Comprehensive Center" onclick="filterByProgramType('Comprehensive Center')">
+            Comprehensive Center
           </button>
         </div>
-      </div>
-
-      <!-- Recommendations -->
-      <div class="card">
-        <h3>Personalized Recommendations</h3>
-        <p style="margin-bottom: 1rem;">Based on your profile and goals, here are activities and internships that can strengthen your college application. Filter by category to find opportunities that match your interests.</p>
-        <button class="btn btn-secondary" onclick="loadRecommendations()" style="width: 100%;">
-          Refresh Recommendations
-        </button>
+        
+        <h3 style="color: var(--primary-green); margin-top: 1.5rem; margin-bottom: 1rem;">Filter by Location</h3>
+        <div id="location-filters" class="filters-grid" style="display: flex; flex-wrap: nowrap; gap: 1rem;">
+          <button class="btn filter-btn location-filter-btn active" data-location="all" onclick="filterByLocation('all')" style="flex: 1;">
+            All
+          </button>
+          <button class="btn filter-btn location-filter-btn" data-location="state" onclick="filterByLocation('state')" style="flex: 1;">
+            My State
+          </button>
+          <button class="btn filter-btn location-filter-btn" data-location="city" onclick="filterByLocation('city')" style="flex: 1;">
+            My City
+          </button>
+        </div>
+        
+        <h3 style="color: var(--primary-green); margin-top: 1.5rem; margin-bottom: 1rem;">Sort By</h3>
+        <div class="filters-grid">
+          <button class="btn filter-btn sort-btn active" data-sort="name" onclick="setSort('name')">
+            Name (A-Z)
+          </button>
+          <button class="btn filter-btn sort-btn" data-sort="distance" onclick="setSort('distance')">
+            Distance
+          </button>
+        </div>
       </div>
 
       <!-- Activity List -->
@@ -107,40 +115,16 @@
   <script src="/js/app.js"></script>
   <script>
     let allActivities = [];
-    let currentFilter = 'all';
-
-    const defaultActivities = [
-      // Academic
-      { id: 1, title: 'Math Olympiad / Math Team', category: 'academic', description: 'Competitive math problem-solving team. Develops analytical thinking and problem-solving skills.', platform: 'School-based', timeCommitment: '2-4 hrs/week', gradeLevel: '9-12' },
-      { id: 2, title: 'Science Olympiad', category: 'academic', description: 'Competitive science team covering various STEM disciplines. Great for students interested in science.', platform: 'School-based', timeCommitment: '3-5 hrs/week', gradeLevel: '9-12' },
-      { id: 3, title: 'Debate Team / Model UN', category: 'academic', description: 'Develops public speaking, research, and critical thinking skills through competitive debate or Model United Nations.', platform: 'School-based', timeCommitment: '3-6 hrs/week', gradeLevel: '9-12' },
-      { id: 4, title: 'Academic Research Project', category: 'academic', description: 'Independent research project with a mentor. Can be in any field - science, humanities, social sciences.', platform: 'University/Research Program', timeCommitment: '5-10 hrs/week', gradeLevel: '10-12' },
-      { id: 5, title: 'Honor Society', category: 'academic', description: 'National Honor Society or subject-specific honor societies. Recognizes academic excellence and service.', platform: 'School-based', timeCommitment: '1-3 hrs/week', gradeLevel: '10-12' },
-      
-      // Leadership
-      { id: 6, title: 'Student Government / ASB', category: 'leadership', description: 'Elected position representing student body. Develops leadership, communication, and organizational skills.', platform: 'School-based', timeCommitment: '5-8 hrs/week', gradeLevel: '9-12' },
-      { id: 7, title: 'Club President / Founder', category: 'leadership', description: 'Start or lead a club related to your interests. Shows initiative and leadership ability.', platform: 'School-based', timeCommitment: '3-5 hrs/week', gradeLevel: '9-12' },
-      { id: 8, title: 'Peer Tutor / Mentor', category: 'leadership', description: 'Help other students succeed academically. Develops teaching and communication skills.', platform: 'School-based', timeCommitment: '2-4 hrs/week', gradeLevel: '10-12' },
-      { id: 9, title: 'Sports Team Captain', category: 'leadership', description: 'Lead a sports team. Demonstrates teamwork, dedication, and leadership.', platform: 'School-based', timeCommitment: '10-15 hrs/week', gradeLevel: '10-12' },
-      
-      // Community Service
-      { id: 10, title: 'Volunteer Tutoring', category: 'community', description: 'Tutor underprivileged students in your community. Make a meaningful impact while developing teaching skills.', platform: 'Local Organization', timeCommitment: '2-4 hrs/week', gradeLevel: '9-12' },
-      { id: 11, title: 'Food Bank / Soup Kitchen Volunteer', category: 'community', description: 'Help fight hunger in your community. Regular volunteering shows commitment to service.', platform: 'Local Non-profit', timeCommitment: '2-4 hrs/week', gradeLevel: '9-12' },
-      { id: 12, title: 'Environmental Cleanup / Conservation', category: 'community', description: 'Participate in environmental conservation efforts. Great for students interested in sustainability.', platform: 'Environmental Organization', timeCommitment: '2-5 hrs/week', gradeLevel: '9-12' },
-      { id: 13, title: 'Hospital / Healthcare Volunteer', category: 'community', description: 'Volunteer at a local hospital or healthcare facility. Excellent for pre-med students.', platform: 'Hospital/Clinic', timeCommitment: '3-6 hrs/week', gradeLevel: '10-12' },
-      { id: 14, title: 'Animal Shelter Volunteer', category: 'community', description: 'Help care for animals at a local shelter. Shows compassion and responsibility.', platform: 'Animal Shelter', timeCommitment: '2-4 hrs/week', gradeLevel: '9-12' },
-      
-      // Career-Focused
-      { id: 15, title: 'Business Pitch Competition', category: 'career', description: 'Develop and pitch business ideas in competitions. Great for entrepreneurship-minded students.', platform: 'Competition/Program', timeCommitment: '5-10 hrs/week (seasonal)', gradeLevel: '10-12' },
-      { id: 16, title: 'Coding Bootcamp / Tech Program', category: 'career', description: 'Intensive programming or tech skills course. Develops technical skills for tech careers.', platform: 'Online/Local Program', timeCommitment: '10-20 hrs/week (intensive)', gradeLevel: '9-12' },
-      { id: 17, title: 'Journalism / School Newspaper', category: 'career', description: 'Write for school newspaper or journalism program. Develops writing and communication skills.', platform: 'School-based', timeCommitment: '3-5 hrs/week', gradeLevel: '9-12' },
-      { id: 18, title: 'Robotics Team', category: 'career', description: 'Build and program robots for competitions. Combines engineering, programming, and teamwork.', platform: 'School/Community Team', timeCommitment: '5-10 hrs/week', gradeLevel: '9-12' },
-      
-      // Internships
-      { id: 19, title: 'Summer Internship', category: 'internship', description: 'Gain real-world work experience in your field of interest. Highly valued by colleges.', platform: 'Various', timeCommitment: '20-40 hrs/week (summer)', gradeLevel: '11-12' },
-      { id: 20, title: 'Research Internship', category: 'internship', description: 'Work with professors or researchers on ongoing projects. Great for STEM students.', platform: 'University/Research Lab', timeCommitment: '15-30 hrs/week (summer)', gradeLevel: '11-12' },
-      { id: 21, title: 'Shadowing Program', category: 'internship', description: 'Shadow professionals in your field of interest. Learn about careers firsthand.', platform: 'Professional Networks', timeCommitment: '5-10 hrs/week', gradeLevel: '10-12' }
-    ];
+    let currentProgramTypeFilter = 'all';
+    let currentLocationFilter = 'all'; // 'all', 'state', 'city'
+    let currentSort = 'name'; // 'name' or 'distance'
+    let currentPage = 1;
+    let userZipcode = '';
+    let userState = '';
+    let userCity = '';
+    let userLat = null;
+    let userLon = null;
+    const itemsPerPage = 10;
 
     document.addEventListener('DOMContentLoaded', () => {
       loadRecommendations();
@@ -148,100 +132,336 @@
     });
 
     async function loadRecommendations() {
-      const profile = await UserProfile.get();
       const container = document.getElementById('activities-list');
 
-      // Show loading state
-      container.innerHTML = '<div class="card"><p class="loading">Loading recommendations...</p></div>';
-      
-      // Start with default activities
-      allActivities = [...defaultActivities];
-
       try {
-        // Get AI recommendations if profile has enough info
-        if (profile.majors && profile.majors.length > 0) {
-          const message = `Based on my profile (Grade: ${profile.grade || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}), suggest 3-5 specific extracurricular activities, clubs, volunteer opportunities, or internships that would strengthen my college application. Format as a numbered list with brief descriptions.`;
+        // Get zipcode from profile if available
+        const profile = await UserProfile.get();
+        userZipcode = (profile.zipcode || '').trim();
         
-        const response = await sendChatMessage(message);
-        const recommendations = response.message.split('\n').filter(line => line.trim() && /^\d+[.)]/.test(line.trim()));
+        // Check if zipcode is provided
+        if (!userZipcode) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 2rem; border: 2px solid #dc3545;">
+              <h4 style="color: #dc3545; margin-bottom: 1rem;">Zip Code Required</h4>
+              <p style="color: var(--text-light); margin-bottom: 1rem;">Please add your zip code to your profile to view youth programs in your area.</p>
+              <a href="/profile.html" class="btn btn-secondary" style="display: inline-block; text-decoration: none; color: inherit;">Go to Profile</a>
+            </div>
+          `;
+          // Also show a notification
+          showNotification('Please add your zip code to your profile to view youth programs.', 'error');
+          return;
+        }
+
+        // Show loading state
+        container.innerHTML = '<div class="card"><p class="loading">Loading youth programs...</p></div>';
         
-          // Add AI recommendations
-          const aiActivities = recommendations.map((rec, idx) => {
-            const text = rec.replace(/^\d+[.)]\s*/, '').trim();
-            const parts = text.split(':');
-            return {
-          id: defaultActivities.length + idx + 1,
-              title: parts[0].trim(),
-              description: parts.slice(1).join(':').trim() || 'Personalized recommendation based on your profile',
-          category: 'career',
-              platform: 'AI Recommended',
-              timeCommitment: 'Varies',
-              gradeLevel: profile.grade || '9-12'
-            };
+        const url = `/api/activities/youth-programs?zipcode=${encodeURIComponent(userZipcode)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Failed to load programs');
+        }
+        
+        // Get user's state and city from zipcode lookup
+        try {
+          const zipcodeData = await lookupZipcode(userZipcode);
+          if (zipcodeData) {
+            userState = zipcodeData.state_id || '';
+            userCity = zipcodeData.city || '';
+            if (zipcodeData.lat && zipcodeData.lng) {
+              userLat = parseFloat(zipcodeData.lat);
+              userLon = parseFloat(zipcodeData.lng);
+            }
+          }
+        } catch (error) {
+          console.warn('Could not lookup zipcode data:', error);
+        }
+
+        // Map API response to activity format
+        allActivities = (data.programs || []).map((program, idx) => {
+          // Determine category based on ProgramType
+          let category = 'career';
+          const programType = (program.ProgramType || '').toLowerCase();
+          if (programType.includes('academic') || programType.includes('education') || programType.includes('tutoring')) {
+            category = 'academic';
+          } else if (programType.includes('leadership') || programType.includes('mentor')) {
+            category = 'leadership';
+          } else if (programType.includes('volunteer') || programType.includes('service') || programType.includes('community')) {
+            category = 'community';
+          } else if (programType.includes('internship') || programType.includes('work')) {
+            category = 'internship';
+          }
+
+          // Build location string
+          const locationParts = [];
+          if (program.City) locationParts.push(program.City);
+          if (program.StateAbbr) locationParts.push(program.StateAbbr);
+          const location = locationParts.length > 0 ? locationParts.join(', ') : 'Location not specified';
+
+          // Build full address
+          const addressParts = [];
+          if (program.Address1) addressParts.push(program.Address1);
+          if (program.Address2) addressParts.push(program.Address2);
+          if (program.City) addressParts.push(program.City);
+          if (program.StateAbbr) addressParts.push(program.StateAbbr);
+          if (program.Zip) addressParts.push(program.Zip);
+          const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : location;
+
+          // Build contact info
+          let contactInfo = '';
+          if (program.Phone) {
+            contactInfo = `Phone: ${program.Phone}`;
+          }
+          if (program.GeneralEmail) {
+            if (contactInfo) contactInfo += ' | ';
+            contactInfo += `Email: ${program.GeneralEmail}`;
+          }
+          if (program.Contacts && program.Contacts.length > 0) {
+            const contact = program.Contacts[0];
+            if (contact.ContactPhone || contact.ContactEmail) {
+              if (contactInfo) contactInfo += ' | ';
+              if (contact.ContactName) contactInfo += `Contact: ${contact.ContactName}`;
+              if (contact.ContactPhone) contactInfo += ` (${contact.ContactPhone})`;
+              if (contact.ContactEmail) contactInfo += ` - ${contact.ContactEmail}`;
+            }
+          }
+
+          // Build description (exclude program type, phone, email - they're shown separately)
+          let description = '';
+          if (program.OpenHour) {
+            description += `Hours: ${program.OpenHour}`;
+          }
+
+          return {
+            id: program.ID || `program-${idx}`,
+            title: program.Name || 'Unnamed Program',
+            category: category,
+            description: description,
+            platform: location,
+            fullAddress: fullAddress,
+            phone: program.Phone || '',
+            email: program.GeneralEmail || (program.Contacts && program.Contacts[0]?.ContactEmail) || '',
+            website: program.WebSiteUrl || '',
+            programType: program.ProgramType || '',
+            latitude: program.Latitude,
+            longitude: program.Longitude,
+            distance: program.Distance || null,
+            distanceMiles: null, // Will be calculated later
+            centerStatus: program.CenterStatus || '',
+            centerIsOpen: program.CenterIsOpen || '',
+            state: program.StateAbbr || '',
+            city: program.City || '',
+            zip: program.Zip || ''
+          };
+        });
+
+        console.log(`Loaded ${allActivities.length} youth programs`);
+        
+        // Calculate distances for all programs using user coordinates from uszips.csv
+        if (userLat && userLon && !isNaN(userLat) && !isNaN(userLon)) {
+          console.log(`Calculating distances from user location (${userLat}, ${userLon})...`);
+          allActivities.forEach(activity => {
+            if (activity.latitude && activity.longitude) {
+              const lat = parseFloat(activity.latitude);
+              const lon = parseFloat(activity.longitude);
+              if (!isNaN(lat) && !isNaN(lon)) {
+                const dist = calculateDistance(userLat, userLon, lat, lon);
+                activity.distanceMiles = dist.toFixed(1);
+              }
+            }
           });
-          
-          allActivities = [...defaultActivities, ...aiActivities];
+          console.log(`Calculated distances for ${allActivities.filter(a => a.distanceMiles).length} activities`);
+        } else {
+          console.warn('User coordinates not available - distances will not be calculated');
+        }
+        
+        populateProgramTypeFilters();
+        displayActivities(allActivities);
+      } catch (error) {
+        console.error('Error loading youth programs:', error);
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <h4 style="color: var(--primary-green); margin-bottom: 1rem;">Error Loading Programs</h4>
+            <p style="color: var(--text-light); margin-bottom: 1rem;">${error.message || 'Failed to load youth programs. Please try again later.'}</p>
+            <button class="btn btn-secondary" onclick="loadRecommendations()">Try Again</button>
+          </div>
+        `;
+      }
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Calculate distance between two coordinates (Haversine formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 3959; // Earth's radius in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function populateProgramTypeFilters() {
+      // Program type filters are now hardcoded in HTML, so this function is no longer needed
+      // But we'll keep it for any future dynamic updates if needed
+    }
+
+    function filterByProgramType(programType) {
+      currentProgramTypeFilter = programType;
+      currentPage = 1; // Reset to first page when filter changes
+      
+      // Update active button
+      document.querySelectorAll('.program-type-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-program-type') === programType) {
+          btn.classList.add('active');
+        }
+      });
+      
+      displayActivities(allActivities);
+    }
+
+    // Lookup zipcode data from CSV file
+    async function lookupZipcode(zipcode) {
+      try {
+        const response = await fetch(`/api/zipcode-lookup?zipcode=${encodeURIComponent(zipcode)}`);
+        if (response.ok) {
+          const data = await response.json();
+          return data;
         }
       } catch (error) {
-        console.error('Error loading AI recommendations:', error);
-        // Continue with default activities
+        console.warn('Zipcode lookup failed:', error);
       }
+      return null;
+    }
 
-        displayActivities(allActivities);
+    function filterByLocation(locationType) {
+      currentLocationFilter = locationType;
+      currentPage = 1; // Reset to first page when filter changes
+      
+      // Update active button
+      document.querySelectorAll('.location-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-location') === locationType) {
+          btn.classList.add('active');
+        }
+      });
+      
+      displayActivities(allActivities);
+    }
+
+    function setSort(sortType) {
+      currentSort = sortType;
+      currentPage = 1; // Reset to first page when sort changes
+      
+      // Update active button
+      document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-sort') === sortType) {
+          btn.classList.add('active');
+        }
+      });
+      
+      displayActivities(allActivities);
     }
 
     function displayActivities(activities) {
       const container = document.getElementById('activities-list');
-      const filtered = currentFilter === 'all' ? activities : activities.filter(a => a.category === currentFilter);
+      
+      // Apply program type filter
+      let filtered = currentProgramTypeFilter === 'all' ? activities : activities.filter(a => a.programType === currentProgramTypeFilter);
+      
+      // Apply location filter
+      if (currentLocationFilter === 'state' && userState) {
+        filtered = filtered.filter(a => a.state === userState);
+      } else if (currentLocationFilter === 'city' && userCity && userState) {
+        filtered = filtered.filter(a => a.city === userCity && a.state === userState);
+      }
+      
+      // Sort activities
+      if (currentSort === 'name') {
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+      } else if (currentSort === 'distance') {
+        filtered.sort((a, b) => {
+          const distA = a.distanceMiles ? parseFloat(a.distanceMiles) : Infinity;
+          const distB = b.distanceMiles ? parseFloat(b.distanceMiles) : Infinity;
+          return distA - distB;
+        });
+      }
 
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="card" style="text-align: center; padding: 2rem;">
             <h4 style="color: var(--primary-green); margin-bottom: 1rem;">No Activities Found</h4>
-            <p style="color: var(--text-light); margin-bottom: 1rem;">No activities match your current filter. Try selecting a different category.</p>
-            <button class="btn btn-secondary" onclick="filterActivities('all')">Show All Activities</button>
+            <p style="color: var(--text-light); margin-bottom: 1rem;">No activities match your current filters. Try selecting different options.</p>
+            <button class="btn btn-secondary" onclick="filterByProgramType('all'); filterByLocation('all'); setSort('name');">Show All Activities</button>
           </div>
         `;
         return;
       }
 
-      container.innerHTML = '<h3 style="color: var(--primary-green); margin: 1rem 0;">Recommended Activities</h3>';
+      // Calculate pagination
+      const totalPages = Math.ceil(filtered.length / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedActivities = filtered.slice(startIndex, endIndex);
 
-      filtered.forEach(activity => {
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="color: var(--primary-green); margin: 0;">Available Programs</h3>
+          <span style="color: var(--text-light); font-size: 0.9rem;">Showing ${startIndex + 1}-${Math.min(endIndex, filtered.length)} of ${filtered.length}</span>
+        </div>
+      `;
+
+      const categoryLabels = {
+        academic: 'Academic',
+        leadership: 'Leadership',
+        community: 'Community Service',
+        career: 'Career-Focused',
+        internship: 'Internship'
+      };
+
+      paginatedActivities.forEach(activity => {
         const card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '1rem';
-        
-        const categoryLabels = {
-          academic: 'Academic',
-          leadership: 'Leadership',
-          community: 'Community Service',
-          career: 'Career-Focused',
-          internship: 'Internship'
-        };
         
         card.innerHTML = `
           <div style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
             <div style="flex: 1;">
-              <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${activity.title}</h4>
-                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.75rem; line-height: 1.5;">${activity.description || 'No description available'}</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+              <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${escapeHtml(activity.title)}</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
               <span class="badge badge-target" style="background: var(--light-mint); color: var(--primary-green);">
                 ${categoryLabels[activity.category] || activity.category}
               </span>
-                  ${activity.timeCommitment ? `<span style="color: var(--text-light); font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/HourGlass176x256.png" alt="Time" style="width: 14px; height: 14px;"> ${activity.timeCommitment}</span>` : ''}
-                  ${activity.platform ? `<span style="color: var(--text-light); font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Location128x128.png" alt="Location" style="width: 14px; height: 14px;"> ${activity.platform}</span>` : ''}
-                  ${activity.gradeLevel ? `<span style="color: var(--text-light); font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Book256x256.png" alt="Grade" style="width: 14px; height: 14px;"> Grades ${activity.gradeLevel}</span>` : ''}
+                  ${activity.platform ? `<span style="color: var(--text-light); font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Location128x128.png" alt="Location" style="width: 14px; height: 14px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.platform)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">${escapeHtml(activity.platform)}</a>${activity.distanceMiles ? ` <span style="color: var(--text-light);">(${escapeHtml(activity.distanceMiles)} mi)</span>` : ''}</span>` : ''}
                 </div>
+                ${activity.programType ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.25rem;">${escapeHtml(activity.programType)}</p>` : ''}
+                ${activity.fullAddress ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Location128x128.png" alt="Address" style="width: 14px; height: 14px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.fullAddress)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">${escapeHtml(activity.fullAddress)}</a></p>` : ''}
+                ${activity.phone ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Mobile256x256.png" alt="Phone" style="width: 14px; height: 14px;">${escapeHtml(activity.phone)}</p>` : ''}
+                ${activity.email ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Mail256x175.png" alt="Email" style="width: 14px; height: 10px;"><a href="mailto:${escapeHtml(activity.email)}" style="color: var(--primary-green); text-decoration: none;">${escapeHtml(activity.email)}</a></p>` : ''}
+                ${activity.website ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/site256x256.png" alt="Website" style="width: 14px; height: 14px;"><a href="${escapeHtml(activity.website)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">Visit Website</a></p>` : ''}
+                ${activity.centerStatus ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Status: ${escapeHtml(activity.centerStatus)}</p>` : ''}
               </div>
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary" onclick="askCounselorAboutActivity('${activity.title}', '${activity.description || ''}')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--light-mint); color: var(--primary-green);">
+            <button class="btn btn-secondary" data-activity-title="${escapeHtml(activity.title)}" data-activity-desc="${escapeHtml(activity.description || '')}" onclick="askCounselorAboutActivity(this.dataset.activityTitle, this.dataset.activityDesc)" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--light-mint); color: var(--primary-green);">
               <img src="/media/icons/Chat256x256.png" alt="Counselor" style="width: 16px; height: 16px;"> Counselor
             </button>
-            <button class="btn btn-secondary" onclick="addToPlanner(${activity.id})" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <button class="btn btn-secondary" data-activity-id="${escapeHtml(activity.id)}" onclick="addToPlanner(this.dataset.activityId)" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
               <img src="/media/icons/Calender256x256.png" alt="Calendar" style="width: 16px; height: 16px;"> Add to Planner
             </button>
           </div>
@@ -249,21 +469,52 @@
         
         container.appendChild(card);
       });
+      
+      // Add pagination controls
+      if (totalPages > 1) {
+        const paginationDiv = document.createElement('div');
+        paginationDiv.style.display = 'flex';
+        paginationDiv.style.justifyContent = 'center';
+        paginationDiv.style.alignItems = 'center';
+        paginationDiv.style.gap = '0.5rem';
+        paginationDiv.style.marginTop = '1.5rem';
+        
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn btn-secondary';
+        prevBtn.textContent = 'Previous';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => {
+          if (currentPage > 1) {
+            currentPage--;
+            displayActivities(allActivities);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        };
+        
+        const pageInfo = document.createElement('span');
+        pageInfo.style.color = 'var(--text-light)';
+        pageInfo.style.padding = '0 1rem';
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-secondary';
+        nextBtn.textContent = 'Next';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            displayActivities(allActivities);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        };
+        
+        paginationDiv.appendChild(prevBtn);
+        paginationDiv.appendChild(pageInfo);
+        paginationDiv.appendChild(nextBtn);
+        container.appendChild(paginationDiv);
+      }
     }
 
-    function filterActivities(category) {
-      currentFilter = category;
-      
-      // Update active button
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.category === category) {
-          btn.classList.add('active');
-        }
-      });
-      
-      displayActivities(allActivities);
-    }
 
     function askCounselorAboutActivity(activityTitle, activityDescription) {
       // Create a question about the activity
@@ -275,11 +526,11 @@
     }
 
     function addToPlanner(activityId) {
-      const activity = allActivities.find(a => a.id === activityId);
+      const activity = allActivities.find(a => a.id === activityId || a.id.toString() === activityId.toString());
       if (activity) {
         const plannerItems = Storage.get('plannerItems', []);
         // Check if already added
-        if (plannerItems.find(item => item.id === activityId)) {
+        if (plannerItems.find(item => item.id === activityId || item.id.toString() === activityId.toString())) {
           showNotification(`${activity.title} is already in your planner.`, 'info');
           return;
         }

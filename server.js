@@ -381,6 +381,385 @@ app.post('/api/transcript/process', async (req, res) => {
   }
 });
 
+// Read CareerOneStop API credentials
+let CAREERONESTOP_USER_ID = '';
+let CAREERONESTOP_TOKEN = '';
+try {
+  CAREERONESTOP_USER_ID = fs.readFileSync(path.join(__dirname, 'activites-userId.txt'), 'utf8').trim();
+  CAREERONESTOP_TOKEN = fs.readFileSync(path.join(__dirname, 'activities-token.txt'), 'utf8').trim();
+} catch (error) {
+  console.warn('Warning: CareerOneStop API credentials not found');
+}
+
+// Youth programs cache (indexed by zipcode)
+let youthProgramsCache = {}; // { zipcode: [programs...] }
+let allYouthPrograms = []; // All programs (for fallback or matching nearby zips)
+let youthProgramsCacheTime = null;
+
+const OPPORTUNITIES_CSV_PATH = path.join(__dirname, 'opprotunities.csv');
+
+// Read opportunities from CSV file
+function readOpportunitiesFromCSV() {
+  try {
+    // Try both spellings (opportunities.csv and opprotunities.csv)
+    let csvPath = OPPORTUNITIES_CSV_PATH;
+    if (!fs.existsSync(csvPath)) {
+      csvPath = path.join(__dirname, 'opportunities.csv');
+      if (!fs.existsSync(csvPath)) {
+        return null; // CSV doesn't exist
+      }
+    }
+
+    const csvText = fs.readFileSync(csvPath, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length <= 1) return []; // Only header or empty
+    
+    const headers = lines[0].split(',').map(h => h.trim());
+    const programs = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      // Parse CSV line (handling quoted values)
+      for (let j = 0; j < lines[i].length; j++) {
+        const char = lines[i][j];
+        
+        if (char === '"') {
+          if (inQuotes && lines[i][j + 1] === '"') {
+            current += '"';
+            j++; // Skip next quote
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(parseCSVValue(current.trim()));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(parseCSVValue(current.trim())); // Last value
+      
+      // Create program object matching API format
+      if (values.length >= headers.length) {
+        const program = {};
+        headers.forEach((header, index) => {
+          program[header] = index < values.length ? values[index] : '';
+        });
+        
+        // Convert CSV format to API response format
+        const apiFormatProgram = {
+          ID: program.ID || '',
+          Name: program.Name || '',
+          ProgramType: program.ProgramType || '',
+          Address1: program.Address1 || '',
+          Address2: program.Address2 || '',
+          City: program.City || '',
+          StateAbbr: program.StateAbbr || '',
+          StateName: program.StateName || '',
+          Zip: program.Zip || '',
+          Phone: program.Phone || '',
+          GeneralEmail: program.GeneralEmail || '',
+          Fax: program.Fax || '',
+          WebSiteUrl: program.WebSiteUrl || '',
+          Latitude: program.Latitude ? parseFloat(program.Latitude) : null,
+          Longitude: program.Longitude ? parseFloat(program.Longitude) : null,
+          Distance: program.Distance || '',
+          OpenHour: program.OpenHour || '',
+          CenterIsOpen: program.CenterIsOpen || '',
+          CenterStatus: program.CenterStatus || '',
+          WhyClosed: program.WhyClosed || '',
+          IsValid: program.IsValid || '',
+          ServiceMessage: program.ServiceMessage || '',
+          Contacts: []
+        };
+        
+        // Add contact if available
+        if (program.ContactName || program.ContactEmail || program.ContactPhone) {
+          apiFormatProgram.Contacts = [{
+            ContactName: program.ContactName || '',
+            ContactEmail: program.ContactEmail || '',
+            ContactPhone: program.ContactPhone || ''
+          }];
+        }
+        
+        programs.push(apiFormatProgram);
+      }
+    }
+    
+    return programs;
+  } catch (error) {
+    console.error('Error reading opportunities from CSV:', error);
+    return null; // Return null to trigger API fallback
+  }
+}
+
+// Refresh youth programs cache from CSV (or API if CSV missing)
+async function refreshYouthPrograms() {
+  try {
+    // Try to load from CSV first
+    const csvPrograms = readOpportunitiesFromCSV();
+    if (csvPrograms !== null) {
+      console.log(`✓ Loaded ${csvPrograms.length} youth programs from CSV`);
+      
+      // Index programs by zipcode (same logic as API version)
+      const indexedByZip = {};
+      allYouthPrograms = csvPrograms;
+      
+      csvPrograms.forEach(program => {
+        const zip = program.Zip ? program.Zip.substring(0, 5).trim() : null;
+        if (zip && /^\d{5}$/.test(zip)) {
+          if (!indexedByZip[zip]) {
+            indexedByZip[zip] = [];
+          }
+          indexedByZip[zip].push(program);
+        }
+        const zip3 = zip ? zip.substring(0, 3) : null;
+        if (zip3 && /^\d{3}$/.test(zip3)) {
+          const key3 = `zip3_${zip3}`;
+          if (!indexedByZip[key3]) {
+            indexedByZip[key3] = [];
+          }
+          indexedByZip[key3].push(program);
+        }
+      });
+
+      youthProgramsCache = indexedByZip;
+      youthProgramsCacheTime = Date.now();
+      
+      const totalPrograms = csvPrograms.length;
+      const zipcodesWithPrograms = Object.keys(indexedByZip).filter(k => !k.startsWith('zip3_')).length;
+      
+      console.log(`✓ Youth programs cache refreshed: ${totalPrograms} programs indexed by ${zipcodesWithPrograms} zipcodes (from CSV)`);
+      
+      return csvPrograms;
+    }
+    
+    // CSV not available, fall back to API
+    console.log('CSV not found, fetching from API...');
+    
+    if (!CAREERONESTOP_USER_ID || !CAREERONESTOP_TOKEN) {
+      console.warn('⚠ CareerOneStop API credentials not configured - cannot fetch youth programs');
+      return [];
+    }
+
+    const url = `https://api.careeronestop.org/v1/youthprogramfinder/${CAREERONESTOP_USER_ID}?enableMetaData=false`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${CAREERONESTOP_TOKEN}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('CareerOneStop API error:', response.status, errorText);
+      throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    const programs = data.YouthProgramList || [];
+    
+    console.log(`✓ Fetched ${programs.length} youth programs from API`);
+    
+    // Index programs by zipcode (first 5 digits)
+    const indexedByZip = {};
+    allYouthPrograms = programs;
+    
+    programs.forEach(program => {
+      const zip = program.Zip ? program.Zip.substring(0, 5).trim() : null;
+      if (zip && /^\d{5}$/.test(zip)) {
+        // Valid 5-digit zipcode
+        if (!indexedByZip[zip]) {
+          indexedByZip[zip] = [];
+        }
+        indexedByZip[zip].push(program);
+      }
+      // Also index by partial matches (3-digit prefix for nearby matches)
+      const zip3 = zip ? zip.substring(0, 3) : null;
+      if (zip3 && /^\d{3}$/.test(zip3)) {
+        const key3 = `zip3_${zip3}`;
+        if (!indexedByZip[key3]) {
+          indexedByZip[key3] = [];
+        }
+        indexedByZip[key3].push(program);
+      }
+    });
+
+    youthProgramsCache = indexedByZip;
+    youthProgramsCacheTime = Date.now();
+    
+    const totalPrograms = programs.length;
+    const zipcodesWithPrograms = Object.keys(indexedByZip).filter(k => !k.startsWith('zip3_')).length;
+    
+    console.log(`✓ Youth programs cache refreshed: ${totalPrograms} programs indexed by ${zipcodesWithPrograms} zipcodes (from API)`);
+    
+    return programs;
+  } catch (error) {
+    console.error('Error refreshing youth programs:', error);
+    // Keep existing cache if refresh fails
+    return allYouthPrograms;
+  }
+}
+
+// Get youth programs by zipcode (from cache)
+function getYouthProgramsByZipcode(zipcode) {
+  if (!zipcode || !/^\d{5}$/.test(zipcode.trim())) {
+    return [];
+  }
+
+  const zip = zipcode.trim().substring(0, 5);
+  
+  // First try exact match
+  let programs = youthProgramsCache[zip] || [];
+  
+  // If no exact match, try 3-digit prefix for nearby programs
+  if (programs.length === 0) {
+    const zip3 = zip.substring(0, 3);
+    programs = youthProgramsCache[`zip3_${zip3}`] || [];
+  }
+  
+  return programs;
+}
+
+// Get youth programs from CareerOneStop API (serves from cache)
+// Zipcode lookup endpoint
+app.get('/api/zipcode-lookup', async (req, res) => {
+  try {
+    const zipcode = req.query.zipcode?.trim();
+    if (!zipcode) {
+      return res.status(400).json({ error: 'Zipcode is required' });
+    }
+
+    // Read the zipcode CSV file (try stripped version first for faster lookups)
+    let zipcodePath = path.join(__dirname, 'uszips_stripped.csv');
+    if (!fs.existsSync(zipcodePath)) {
+      zipcodePath = path.join(__dirname, 'uszips.csv');
+      if (!fs.existsSync(zipcodePath)) {
+        return res.status(404).json({ error: 'Zipcode database not found' });
+      }
+    }
+
+    const csvContent = fs.readFileSync(zipcodePath, 'utf8');
+    const lines = csvContent.split('\n');
+    
+    // Skip header line
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Parse CSV line (handling quoted values)
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          if (j + 1 < line.length && line[j + 1] === '"' && inQuotes) {
+            current += '"';
+            j++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          let value = current.trim();
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1).replace(/""/g, '"');
+          }
+          values.push(value);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      // Last value
+      let value = current.trim();
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1).replace(/""/g, '"');
+      }
+      values.push(value);
+      
+      // Check if this zipcode matches
+      // uszips_stripped.csv structure: zip,lat,lng (no quotes, 3 columns)
+      // uszips.csv structure: "zip","lat","lng","city","state_id","state_name",... (quoted, many columns)
+      const isStripped = zipcodePath.includes('uszips_stripped.csv');
+      let zipValue, lat, lng, city, state_id, state_name;
+      
+      if (isStripped) {
+        // Stripped version: zip,lat,lng (no quotes)
+        zipValue = values[0]?.trim() || '';
+        lat = parseFloat(values[1]?.trim() || 0);
+        lng = parseFloat(values[2]?.trim() || 0);
+        city = '';
+        state_id = '';
+        state_name = '';
+      } else {
+        // Full version: "zip","lat","lng","city","state_id","state_name",...
+        zipValue = values[0]?.replace(/"/g, '') || '';
+        lat = parseFloat(values[1]?.replace(/"/g, '') || 0);
+        lng = parseFloat(values[2]?.replace(/"/g, '') || 0);
+        city = values[3]?.replace(/"/g, '') || '';
+        state_id = values[4]?.replace(/"/g, '') || '';
+        state_name = values[5]?.replace(/"/g, '') || '';
+      }
+      
+      if (zipValue === zipcode) {
+        return res.json({
+          zip: zipValue,
+          lat: lat,
+          lng: lng,
+          city: city,
+          state_id: state_id,
+          state_name: state_name
+        });
+      }
+    }
+    
+    res.status(404).json({ error: 'Zipcode not found' });
+  } catch (error) {
+    console.error('Error looking up zipcode:', error);
+    res.status(500).json({ error: 'Failed to lookup zipcode' });
+  }
+});
+
+app.get('/api/activities/youth-programs', async (req, res) => {
+  try {
+    const { zipcode } = req.query;
+    
+    if (!zipcode || !zipcode.trim()) {
+      return res.status(400).json({ 
+        error: 'Zipcode is required',
+        programs: []
+      });
+    }
+
+    // Get programs from cache
+    const programs = getYouthProgramsByZipcode(zipcode);
+    
+    res.json({ 
+      success: true,
+      programs: programs,
+      recordCount: programs.length,
+      cached: true,
+      cacheTime: youthProgramsCacheTime
+    });
+  } catch (error) {
+    console.error('Error getting youth programs:', error);
+    res.status(500).json({ 
+      error: 'Failed to get youth programs',
+      programs: []
+    });
+  }
+});
+
 // Serve all HTML pages
 const htmlPages = [
   'index.html', 'profile.html', 'odds.html', 'simulator.html', 
@@ -495,81 +874,6 @@ function getCollegeData() {
   return collegeDataCache || [];
 }
 
-// Write college data to CSV file (for testing)
-function writeCollegeDataToCSV(data) {
-  try {
-    const csvPath = path.join(__dirname, 'college_data_export.csv');
-    
-    if (!data || data.length === 0) {
-      console.log('No data to write to CSV');
-      return;
-    }
-    
-    // Get all unique keys from all objects, preserving order from first object
-    const allKeys = new Set();
-    const headerOrder = [];
-    
-    // First, get keys from first object to preserve order
-    if (data.length > 0) {
-      Object.keys(data[0]).forEach(key => {
-        allKeys.add(key);
-        headerOrder.push(key);
-      });
-    }
-    
-    // Then add any keys from other objects that might be missing
-    data.forEach(row => {
-      Object.keys(row).forEach(key => {
-        if (!allKeys.has(key)) {
-          allKeys.add(key);
-          headerOrder.push(key);
-        }
-      });
-    });
-    
-    const headers = headerOrder;
-    
-    // Build CSV content
-    let csv = headers.join(',') + '\n';
-    
-    data.forEach(row => {
-      const values = headers.map(header => {
-        let value = row[header];
-        
-        // Handle null/undefined
-        if (value === null || value === undefined) {
-          value = '';
-        }
-        // Handle booleans
-        else if (typeof value === 'boolean') {
-          value = value ? 'true' : 'false';
-        }
-        // Handle arrays/objects
-        else if (typeof value === 'object') {
-          value = JSON.stringify(value);
-        }
-        // Convert to string
-        else {
-          value = String(value);
-        }
-        
-        // Escape quotes and wrap in quotes if contains comma, newline, or quote
-        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
-          value = '"' + value.replace(/"/g, '""') + '"';
-        }
-        
-        return value;
-      });
-      csv += values.join(',') + '\n';
-    });
-    
-    fs.writeFileSync(csvPath, csv, 'utf8');
-    console.log(`✓ College data written to ${csvPath} (${data.length} rows)`);
-  } catch (error) {
-    console.error('Error writing college data to CSV:', error);
-  }
-}
-
 // Refresh college data cache
 async function refreshCollegeData() {
   try {
@@ -577,9 +881,6 @@ async function refreshCollegeData() {
     collegeDataCache = data;
     collegeDataCacheTime = Date.now();
     console.log(`✓ College data cache refreshed: ${data.length} colleges`);
-    
-    // Write to CSV for testing
-    writeCollegeDataToCSV(data);
     
     return data;
   } catch (error) {
@@ -818,78 +1119,77 @@ function readAccounts() {
       }
       values.push(parseCSVValue(current.trim())); // Last value
       
-      if (values.length >= headers.length) {
-        const account = {};
-        headers.forEach((header, index) => {
-          let value = values[index] || '';
-          account[header] = value;
-        });
-        
-        // Parse boolean and arrays
-        if (account.weighted === 'true') account.weighted = true;
-        else if (account.weighted === 'false') account.weighted = false;
-        
-        try {
-          account.majors = account.majors ? JSON.parse(account.majors) : [];
-        } catch (e) {
-          account.majors = [];
-        }
-        
-        try {
-          account.ap_courses = account.ap_courses ? JSON.parse(account.ap_courses) : [];
-        } catch (e) {
-          account.ap_courses = [];
-        }
-        
-        try {
-          account.academic_courses = account.academic_courses ? JSON.parse(account.academic_courses) : [];
-        } catch (e) {
-          account.academic_courses = [];
-        }
-        
-        try {
-          account.interests = account.interests ? JSON.parse(account.interests) : [];
-        } catch (e) {
-          account.interests = [];
-        }
-        
-        try {
-          // Skip invalid "[object Object]" strings
-          if (account.activities && account.activities.trim() === '[object Object]') {
-            account.activities = [];
-          }
-          // Try to parse as JSON array first
-          else if (account.activities && account.activities.trim().startsWith('[')) {
-            account.activities = JSON.parse(account.activities);
-          } else if (account.activities && account.activities.trim()) {
-            // Legacy string format - convert to array format for consistency
-            // Parse "X hrs — description" format
-            const lines = account.activities.split('\n').map(l => l.trim()).filter(Boolean);
-            account.activities = lines.map(line => {
-              const match = line.match(/^(\d+)\s*(hrs?|hours?|h)?\s*[-–:]\s*(.+)$/i);
-              if (match) {
-                return { hours: match[1], description: match[3] };
-              }
-              return { hours: '', description: line };
-            });
-          } else {
-            account.activities = [];
-          }
-        } catch (e) {
-          // If parsing fails completely, default to empty array
+      // Process row even if it has fewer values than headers (for backward compatibility)
+      const account = {};
+      headers.forEach((header, index) => {
+        let value = index < values.length ? values[index] : '';
+        account[header] = value;
+      });
+      
+      // Parse boolean and arrays
+      if (account.weighted === 'true') account.weighted = true;
+      else if (account.weighted === 'false') account.weighted = false;
+      
+      try {
+        account.majors = account.majors ? JSON.parse(account.majors) : [];
+      } catch (e) {
+        account.majors = [];
+      }
+      
+      try {
+        account.ap_courses = account.ap_courses ? JSON.parse(account.ap_courses) : [];
+      } catch (e) {
+        account.ap_courses = [];
+      }
+      
+      try {
+        account.academic_courses = account.academic_courses ? JSON.parse(account.academic_courses) : [];
+      } catch (e) {
+        account.academic_courses = [];
+      }
+      
+      try {
+        account.interests = account.interests ? JSON.parse(account.interests) : [];
+      } catch (e) {
+        account.interests = [];
+      }
+      
+      try {
+        // Skip invalid "[object Object]" strings
+        if (account.activities && account.activities.trim() === '[object Object]') {
           account.activities = [];
         }
-        
-        // Parse rating as number if it exists
-        if (account.rating && account.rating !== '') {
-          const ratingNum = parseFloat(account.rating);
-          account.rating = !isNaN(ratingNum) ? ratingNum : null;
+        // Try to parse as JSON array first
+        else if (account.activities && account.activities.trim().startsWith('[')) {
+          account.activities = JSON.parse(account.activities);
+        } else if (account.activities && account.activities.trim()) {
+          // Legacy string format - convert to array format for consistency
+          // Parse "X hrs — description" format
+          const lines = account.activities.split('\n').map(l => l.trim()).filter(Boolean);
+          account.activities = lines.map(line => {
+            const match = line.match(/^(\d+)\s*(hrs?|hours?|h)?\s*[-–:]\s*(.+)$/i);
+            if (match) {
+              return { hours: match[1], description: match[3] };
+            }
+            return { hours: '', description: line };
+          });
         } else {
-          account.rating = null;
+          account.activities = [];
         }
-        
-        accounts.push(account);
+      } catch (e) {
+        // If parsing fails completely, default to empty array
+        account.activities = [];
       }
+      
+      // Parse rating as number if it exists
+      if (account.rating && account.rating !== '') {
+        const ratingNum = parseFloat(account.rating);
+        account.rating = !isNaN(ratingNum) ? ratingNum : null;
+      } else {
+        account.rating = null;
+      }
+      
+      accounts.push(account);
     }
     
     return accounts;
@@ -902,7 +1202,7 @@ function readAccounts() {
 // Write accounts to CSV
 function writeAccounts(accounts) {
   try {
-    const headers = ['user_id', 'name', 'grade', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'created_at', 'updated_at'];
+    const headers = ['user_id', 'name', 'grade', 'zipcode', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'created_at', 'updated_at'];
     
     let csv = headers.join(',') + '\n';
     
@@ -979,6 +1279,7 @@ function saveAccount(accountData) {
       user_id: accountData.user_id,
       name: accountData.name || '',
       grade: accountData.grade || '',
+      zipcode: accountData.zipcode || '',
       academic_type: accountData.academic_type || 'gpa',
       gpa: accountData.gpa || '',
       weighted: accountData.weighted !== undefined ? accountData.weighted : true,
@@ -1023,6 +1324,7 @@ app.get('/api/profile', async (req, res) => {
         user_id: userId,
         name: '',
         grade: '',
+        zipcode: '',
         academicType: 'gpa',
         gpa: '',
         weighted: true,
@@ -1053,6 +1355,7 @@ app.get('/api/profile', async (req, res) => {
       user_id: account.user_id,
       name: account.name || '',
       grade: account.grade || '',
+      zipcode: account.zipcode || '',
       academicType: account.academic_type || 'gpa',
       gpa: account.gpa || '',
       weighted: account.weighted !== undefined ? account.weighted : true,
@@ -1159,6 +1462,7 @@ app.post('/api/profile', async (req, res) => {
       user_id: profileData.user_id,
       name: profileData.name || '',
       grade: profileData.grade || '',
+      zipcode: profileData.zipcode || '',
       academic_type: profileData.academicType || 'gpa',
       gpa: profileData.gpa || '',
       weighted: profileData.weighted !== undefined ? profileData.weighted : true,
@@ -1785,10 +2089,19 @@ app.listen(PORT, '0.0.0.0', async () => {
     console.warn('⚠ Warning: No college data loaded from API');
   }
   
+  // Load youth programs on startup
+  await refreshYouthPrograms();
+  
   // Set up 24-hour interval to refresh college data
   setInterval(async () => {
     console.log('Refreshing college data (24-hour interval)...');
     await refreshCollegeData();
+  }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+  
+  // Set up 24-hour interval to refresh youth programs
+  setInterval(async () => {
+    console.log('Refreshing youth programs (24-hour interval)...');
+    await refreshYouthPrograms();
   }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
   
   // Initialize accounts storage

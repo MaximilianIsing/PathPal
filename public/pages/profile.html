@@ -83,6 +83,14 @@
             <option value="12th">12th Grade</option>
           </select>
         </div>
+
+        <div class="form-group">
+          <label>Zip Code</label>
+          <input type="text" id="zipcode" placeholder="Enter your zip code" pattern="[0-9]{5}" maxlength="5">
+          <small style="display:block; margin-top:0.25rem; color: var(--text-light);">
+            Used to find nearby youth programs and opportunities
+          </small>
+        </div>
       </div>
 
       <!-- Academic Info -->
@@ -1218,6 +1226,7 @@
         
         document.getElementById('name').value = profile.name || '';
         document.getElementById('grade').value = profile.grade || '';
+        document.getElementById('zipcode').value = profile.zipcode || '';
         
         // Handle academic type (GPA vs Courses)
         const academicType = profile.academicType || 'gpa';
@@ -1694,6 +1703,7 @@
         const profile = {
           name: document.getElementById('name').value,
           grade: document.getElementById('grade').value,
+          zipcode: document.getElementById('zipcode').value,
           academicType: academicType,
           gpa: academicType === 'gpa' ? document.getElementById('gpa').value : '',
           weighted: academicType === 'gpa' ? document.getElementById('weighted').checked : false,
