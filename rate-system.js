@@ -434,13 +434,23 @@ function rateCollege(college) {
 /**
  * Calculate admission odds based on student score, college score, and acceptance rate.
  * Uses the delta (difference) between scores and the college's acceptance rate to determine percentage chance.
+ * If college test score percentiles are provided, uses z-scores for more nuanced evaluation.
  *
  * @param {number|string} studentScore - Student's rating score (0-100).
  * @param {number|string} collegeScore - College's rating score (0-100).
  * @param {number|string} [acceptanceRate] - College's acceptance rate (0-1, e.g., 0.15 for 15%).
+ * @param {Object} [options] - Optional parameters for z-score calculation.
+ * @param {number|string} [options.studentSat] - Student's SAT score.
+ * @param {number|string} [options.studentAct] - Student's ACT score.
+ * @param {number|string} [options.collegeSat25] - College's 25th percentile SAT.
+ * @param {number|string} [options.collegeSat50] - College's 50th percentile SAT.
+ * @param {number|string} [options.collegeSat75] - College's 75th percentile SAT.
+ * @param {number|string} [options.collegeAct25] - College's 25th percentile ACT.
+ * @param {number|string} [options.collegeAct50] - College's 50th percentile ACT.
+ * @param {number|string} [options.collegeAct75] - College's 75th percentile ACT.
  * @returns {number} - Admission odds as a percentage (0-100).
  */
-function getAdmissionOdds(studentScore, collegeScore, acceptanceRate) {
+function getAdmissionOdds(studentScore, collegeScore, acceptanceRate, options = {}) {
   // Parse inputs
   const student = typeof studentScore === 'string' ? parseFloat(studentScore) : (studentScore || 0);
   const college = typeof collegeScore === 'string' ? parseFloat(collegeScore) : (collegeScore || 0);
@@ -480,9 +490,79 @@ function getAdmissionOdds(studentScore, collegeScore, acceptanceRate) {
   const sigmoidDelta = (normalizedDelta / (1 + Math.abs(normalizedDelta) * sigmoidFactor)) * 50;
   odds = baseOdds + (sigmoidDelta * deltaMultiplier);
   
-  // Give slightly higher odds than calculated (as requested - boost by ~5-10%)
+  // Calculate z-score adjustment if college test percentiles are available
+  let zScoreAdjustment = 0;
+  if (options) {
+    const parseNum = (val) => {
+      if (val === null || val === undefined || val === '') return null;
+      const num = typeof val === 'string' ? parseFloat(val) : val;
+      return Number.isFinite(num) && num > 0 ? num : null;
+    };
+
+    const studentSat = parseNum(options.studentSat);
+    const studentAct = parseNum(options.studentAct);
+    const sat25 = parseNum(options.collegeSat25);
+    const sat50 = parseNum(options.collegeSat50);
+    const sat75 = parseNum(options.collegeSat75);
+    const act25 = parseNum(options.collegeAct25);
+    const act50 = parseNum(options.collegeAct50);
+    const act75 = parseNum(options.collegeAct75);
+
+    // Use SAT if available, otherwise ACT
+    if (studentSat && sat25 && sat50 && sat75) {
+      // Calculate standard deviation from IQR (interquartile range)
+      // For normal distribution: IQR ≈ 1.35 * SD, so SD ≈ IQR / 1.35
+      const iqr = sat75 - sat25;
+      const sd = iqr / 1.35; // Standard deviation
+      const mean = sat50; // Median (50th percentile) as mean estimate
+
+      if (sd > 0) {
+        // Calculate z-score: z = (student_score - mean) / SD
+        const zScore = (studentSat - mean) / sd;
+        
+        // Convert z-score to adjustment factor
+        // Positive z-score (above average) increases odds, negative decreases
+        // Scale: z-score of +1 (1 SD above) = +8% boost, z-score of -1 = -8% penalty
+        // Use a diminishing returns curve for extreme z-scores
+        zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+      }
+    } else if (studentAct && act25 && act50 && act75) {
+      // Same calculation for ACT
+      const iqr = act75 - act25;
+      const sd = iqr / 1.35;
+      const mean = act50;
+
+      if (sd > 0) {
+        const zScore = (studentAct - mean) / sd;
+        zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+      }
+    }
+  }
+
+  // Apply z-score adjustment
+  odds = odds + zScoreAdjustment;
+
+  // Give slightly higher odds than calculated, especially for selective schools
   // This makes the system more optimistic
-  const optimismBoost = 1.08; // 8% boost
+  let optimismBoost = 1.10; // Default 10% boost
+  
+  if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
+    const acceptancePercent = acceptance * 100;
+    
+    // Higher boost for more selective schools
+    if (acceptancePercent < 10) {
+      // Very selective (5% acceptance): 15% boost
+      optimismBoost = 1.15;
+    } else if (acceptancePercent < 20) {
+      // Highly selective (10-20% acceptance): 12% boost
+      optimismBoost = 1.12;
+    } else if (acceptancePercent < 30) {
+      // Selective (20-30% acceptance): 11% boost
+      optimismBoost = 1.11;
+    }
+    // Otherwise use default 10% boost
+  }
+  
   odds = odds * optimismBoost;
 
   // If acceptance rate is provided, use it as a constraint

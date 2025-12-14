@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="v1.10">
+  <meta name="description" content="v1.11">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/media/AppIcon.png">
@@ -37,7 +37,7 @@
     </div>
     <div class="desktop-footer-bar">
       <span class="desktop-footer-left">© Path Pal 2025</span>
-      <span class="desktop-footer-right">v1.10</span>
+      <span class="desktop-footer-right">v1.11</span>
     </div>
   </div>
 
@@ -90,7 +90,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.10
+      v1.11
     </div>
   </nav>
 
@@ -206,6 +206,7 @@
       <!-- Privacy Policy Link -->
       <div style="text-align: center; margin: 1.5rem 0 0.5rem 0;">
         <a href="https://maximilianising.github.io/PathPal/PRIVACY_POLICY.html" target="_blank" style="color: var(--primary-green); font-size: 0.85rem; font-style: italic; text-decoration: none;">Privacy Policy</a>
+        <span style="color: var(--text-light); font-size: 0.85rem;"> | team@pathpal.us</span>
       </div>
 
     </div>
@@ -320,7 +321,7 @@
         if (profile.academicType === 'courses') {
           if (profile.academicCourses && profile.academicCourses.length > 0) completion += 15;
         } else {
-          if (profile.gpa) completion += 15;
+        if (profile.gpa) completion += 15;
         }
           // SAT/ACT counts if scores exist OR if "Untaken" is selected (testType === 'UNTAKEN')
           if (profile.sat || profile.act || testType === 'UNTAKEN') completion += 15;

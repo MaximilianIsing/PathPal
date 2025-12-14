@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: December 12th 2025 (v1.10)**
+**Last Updated: December 14th 2025 (v1.11)**
 
 ## Introduction
 
@@ -17,6 +17,7 @@ When you create an account and use Path Pal, we may collect the following inform
 - **Account Information**: Email address, password (hashed), and user ID
 - **Profile Information**: 
   - Name and grade level
+  - Zip code (used to find local activities and opportunities)
   - Academic information (GPA, weighted/unweighted status)
   - Standardized test scores (SAT, ACT, PSAT)
   - Intended majors and career goals
@@ -44,6 +45,7 @@ We use the collected information for the following purposes:
    - Create and manage your account
    - Calculate admission odds based on your profile
    - Provide personalized college recommendations
+   - Find local activities and opportunities based on your zip code
    - Enable AI-powered counseling and guidance
    - Process and extract course information from uploaded transcripts using AI vision technology
 
@@ -175,7 +177,7 @@ If you are a California resident, you have additional rights under the Californi
 
 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
 
-**Email**: Team@pathpal.us
+**Email**: team@pathpal.us
 
 ## Consent
 

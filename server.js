@@ -385,7 +385,7 @@ app.post('/api/transcript/process', async (req, res) => {
 let CAREERONESTOP_USER_ID = '';
 let CAREERONESTOP_TOKEN = '';
 try {
-  CAREERONESTOP_USER_ID = fs.readFileSync(path.join(__dirname, 'activites-userId.txt'), 'utf8').trim();
+  CAREERONESTOP_USER_ID = fs.readFileSync(path.join(__dirname, 'activities-userId.txt'), 'utf8').trim();
   CAREERONESTOP_TOKEN = fs.readFileSync(path.join(__dirname, 'activities-token.txt'), 'utf8').trim();
 } catch (error) {
   console.warn('Warning: CareerOneStop API credentials not found');
@@ -615,17 +615,32 @@ function getYouthProgramsByZipcode(zipcode) {
   }
 
   const zip = zipcode.trim().substring(0, 5);
+  const zip3 = zip.substring(0, 3);
   
-  // First try exact match
-  let programs = youthProgramsCache[zip] || [];
+  // Get programs from exact zipcode match
+  const exactMatch = youthProgramsCache[zip] || [];
   
-  // If no exact match, try 3-digit prefix for nearby programs
-  if (programs.length === 0) {
-    const zip3 = zip.substring(0, 3);
-    programs = youthProgramsCache[`zip3_${zip3}`] || [];
-  }
+  // Also get programs from 3-digit prefix (nearby zipcodes in same area)
+  const nearbyMatch = youthProgramsCache[`zip3_${zip3}`] || [];
   
-  return programs;
+  // Combine both, but use a Set to avoid duplicates (programs might be in both)
+  const programMap = new Map();
+  
+  // Add exact matches first (they get priority)
+  exactMatch.forEach(program => {
+    const key = program.ID || JSON.stringify(program);
+    programMap.set(key, program);
+  });
+  
+  // Add nearby matches (won't duplicate if already in exact match)
+  nearbyMatch.forEach(program => {
+    const key = program.ID || JSON.stringify(program);
+    if (!programMap.has(key)) {
+      programMap.set(key, program);
+    }
+  });
+  
+  return Array.from(programMap.values());
 }
 
 // Get youth programs from CareerOneStop API (serves from cache)
@@ -743,6 +758,8 @@ app.get('/api/activities/youth-programs', async (req, res) => {
 
     // Get programs from cache
     const programs = getYouthProgramsByZipcode(zipcode);
+    
+    console.log(`Returning ${programs.length} programs for zipcode ${zipcode}`);
     
     res.json({ 
       success: true,
@@ -1496,6 +1513,29 @@ app.post('/api/profile', async (req, res) => {
 app.get('/api/user-id', (req, res) => {
   const userId = generateUserId();
   res.json({ user_id: userId });
+});
+
+// Calculate student rating endpoint (for simulator)
+app.post('/api/calculate-rating', async (req, res) => {
+  try {
+    const profileData = req.body;
+    
+    // Calculate rating using rateStudent
+    const calculatedRating = await rateStudent({
+      gpa: profileData.gpa,
+      weighted: profileData.weighted !== undefined ? profileData.weighted : true,
+      sat: profileData.sat,
+      act: profileData.act,
+      testOptional: profileData.testOptional === true,
+      apCourses: profileData.apCourses || [],
+      activities: profileData.activities || []
+    });
+    
+    res.json({ rating: calculatedRating });
+  } catch (error) {
+    console.error('Error calculating rating:', error);
+    res.status(500).json({ error: 'Failed to calculate rating' });
+  }
 });
 
 // Authentication endpoints

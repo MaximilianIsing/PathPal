@@ -44,7 +44,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.10
+      v1.11
     </div>
   </nav>
 
@@ -118,6 +118,170 @@
   <script>
     let currentProfile = {};
     let simulatedProfile = null;
+    let currentProfileRating = null;
+    let simulatedProfileRating = null;
+
+    // Client-side implementation of getAdmissionOdds (from rate-system.js)
+    function getAdmissionOdds(studentScore, collegeScore, acceptanceRate, options = {}) {
+      // Parse inputs
+      const student = typeof studentScore === 'string' ? parseFloat(studentScore) : (studentScore || 0);
+      const college = typeof collegeScore === 'string' ? parseFloat(collegeScore) : (collegeScore || 0);
+      const acceptance = typeof acceptanceRate === 'string' ? parseFloat(acceptanceRate) : (acceptanceRate || null);
+
+      // Ensure scores are in valid range
+      const studentNorm = Math.max(0, Math.min(100, student));
+      const collegeNorm = Math.max(0, Math.min(100, college));
+
+      // Calculate delta (difference)
+      const delta = studentNorm - collegeNorm;
+
+      // Base odds when scores are equal - start from the college's acceptance rate if available
+      // If no acceptance rate, default to 50%
+      let baseOdds = 50;
+      if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
+        // Use acceptance rate as base, but adjust based on score delta
+        // For example: 15% acceptance rate college = base odds of 15% when student matches college
+        baseOdds = acceptance * 100;
+      }
+
+      // Calculate odds based on delta
+      // Positive delta (student > college) = higher odds
+      // Negative delta (student < college) = lower odds
+      
+      // Use a sigmoid-like curve for smooth transitions
+      const deltaMultiplier = 1.5; // Each point of delta = 1.5% change
+      let odds = baseOdds + (delta * deltaMultiplier);
+
+      // Apply sigmoid-like curve for more realistic distribution
+      // This makes extreme differences less impactful
+      const sigmoidFactor = 0.8; // Smoothing factor
+      const normalizedDelta = delta / 50; // Normalize to -1 to 1 range
+      const sigmoidDelta = (normalizedDelta / (1 + Math.abs(normalizedDelta) * sigmoidFactor)) * 50;
+      odds = baseOdds + (sigmoidDelta * deltaMultiplier);
+
+      // Calculate z-score adjustment if college test percentiles are available
+      let zScoreAdjustment = 0;
+      if (options) {
+        const parseNum = (val) => {
+          if (val === null || val === undefined || val === '') return null;
+          const num = typeof val === 'string' ? parseFloat(val) : val;
+          return Number.isFinite(num) && num > 0 ? num : null;
+        };
+
+        const studentSat = parseNum(options.studentSat);
+        const studentAct = parseNum(options.studentAct);
+        const sat25 = parseNum(options.collegeSat25);
+        const sat50 = parseNum(options.collegeSat50);
+        const sat75 = parseNum(options.collegeSat75);
+        const act25 = parseNum(options.collegeAct25);
+        const act50 = parseNum(options.collegeAct50);
+        const act75 = parseNum(options.collegeAct75);
+
+        // Use SAT if available, otherwise ACT
+        if (studentSat && sat25 && sat50 && sat75) {
+          // Calculate standard deviation from IQR (interquartile range)
+          // For normal distribution: IQR ≈ 1.35 * SD, so SD ≈ IQR / 1.35
+          const iqr = sat75 - sat25;
+          const sd = iqr / 1.35; // Standard deviation
+          const mean = sat50; // Median (50th percentile) as mean estimate
+
+          if (sd > 0) {
+            // Calculate z-score: z = (student_score - mean) / SD
+            const zScore = (studentSat - mean) / sd;
+            
+            // Convert z-score to adjustment factor
+            // Positive z-score (above average) increases odds, negative decreases
+            // Scale: z-score of +1 (1 SD above) = +8% boost, z-score of -1 = -8% penalty
+            // Use a diminishing returns curve for extreme z-scores
+            zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+          }
+        } else if (studentAct && act25 && act50 && act75) {
+          // Same calculation for ACT
+          const iqr = act75 - act25;
+          const sd = iqr / 1.35;
+          const mean = act50;
+
+          if (sd > 0) {
+            const zScore = (studentAct - mean) / sd;
+            zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+          }
+        }
+      }
+
+      // Apply z-score adjustment
+      odds = odds + zScoreAdjustment;
+
+      // Give slightly higher odds than calculated, especially for selective schools
+      // This makes the system more optimistic
+      let optimismBoost = 1.10; // Default 10% boost
+      
+      if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
+        const acceptancePercent = acceptance * 100;
+        
+        // Higher boost for more selective schools
+        if (acceptancePercent < 10) {
+          // Very selective (5% acceptance): 15% boost
+          optimismBoost = 1.15;
+        } else if (acceptancePercent < 20) {
+          // Highly selective (10-20% acceptance): 12% boost
+          optimismBoost = 1.12;
+        } else if (acceptancePercent < 30) {
+          // Selective (20-30% acceptance): 11% boost
+          optimismBoost = 1.11;
+        }
+        // Otherwise use default 10% boost
+      }
+      
+      odds = odds * optimismBoost;
+
+      // If acceptance rate is provided, use it as a constraint
+      // The odds should not exceed the acceptance rate by too much, and should scale with it
+      if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
+        const acceptancePercent = acceptance * 100;
+        
+        // For highly selective schools (low acceptance), allow higher odds after optimism boost
+        if (acceptancePercent < 10) {
+          // Very selective (5% acceptance): allow up to 3x the acceptance rate for strong students
+          const maxOdds = Math.min(acceptancePercent * 3.0, 95);
+          odds = Math.min(odds, maxOdds);
+        } else if (acceptancePercent < 20) {
+          // Highly selective: odds can go up to 2.8x the acceptance rate for strong students
+          const maxOdds = Math.min(acceptancePercent * 2.8, 95);
+          odds = Math.min(odds, maxOdds);
+        } else if (acceptancePercent < 50) {
+          // Moderately selective: odds can go up to 2.2x the acceptance rate
+          const maxOdds = Math.min(acceptancePercent * 2.2, 95);
+          odds = Math.min(odds, maxOdds);
+        } else {
+          // Less selective: odds can go higher, but still cap at reasonable level
+          const maxOdds = Math.min(acceptancePercent * 1.8, 95);
+          odds = Math.min(odds, maxOdds);
+        }
+        
+        // Ensure odds don't go below a minimum based on acceptance rate
+        // Even weak students have some chance at less selective schools
+        if (acceptancePercent > 50) {
+          const minOdds = Math.max(acceptancePercent * 0.3, 5);
+          odds = Math.max(odds, minOdds);
+        } else {
+          const minOdds = Math.max(acceptancePercent * 0.2, 2);
+          odds = Math.max(odds, minOdds);
+        }
+      }
+
+      // Clamp to reasonable bounds (2% to 98%)
+      odds = Math.max(2, Math.min(98, odds));
+
+      // Round to nearest integer
+      return Math.round(odds);
+    }
+
+    function categorizeSchool(odds) {
+      if (odds === null || odds === undefined) return { category: 'unknown', label: 'Unknown' };
+      if (odds >= 70) return { category: 'safety', label: 'Safety' };
+      if (odds >= 40) return { category: 'target', label: 'Target' };
+      return { category: 'reach', label: 'Reach' };
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
       // Initialize user ID first
@@ -129,6 +293,7 @@
     async function loadCurrentProfile() {
       try {
         currentProfile = await UserProfile.get();
+        currentProfileRating = currentProfile.rating || null;
         const savedColleges = SavedColleges.get();
         
         const container = document.getElementById('current-profile');
@@ -151,12 +316,16 @@
       }
     }
 
-    function calculateSimulation() {
+    async function calculateSimulation() {
       const savedColleges = SavedColleges.get();
       if (savedColleges.length === 0) {
         showNotification('Please save some colleges first to see simulation results.', 'warning');
         return;
       }
+
+      // Show loading state
+      const container = document.getElementById('simulation-results');
+      container.innerHTML = '<h3 style="color: var(--primary-green); margin: 1rem 0;">Simulation Results</h3><div class="loading">Calculating odds...</div>';
 
       // Create simulated profile
       simulatedProfile = {
@@ -167,14 +336,77 @@
         activities: document.getElementById('sim-activities').value || currentProfile.activities
       };
 
+      // Calculate rating for simulated profile
+      try {
+        const userId = getUserId();
+        const response = await fetch('/api/calculate-rating', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          },
+          body: JSON.stringify({
+            gpa: simulatedProfile.gpa,
+            weighted: simulatedProfile.weighted !== undefined ? simulatedProfile.weighted : true,
+            sat: simulatedProfile.sat,
+            act: simulatedProfile.act,
+            testOptional: simulatedProfile.testOptional === true,
+            apCourses: simulatedProfile.apCourses || [],
+            activities: simulatedProfile.activities || []
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          simulatedProfileRating = data.rating;
+        } else {
+          showNotification('Error calculating rating for simulated profile.', 'error');
+          simulatedProfileRating = currentProfileRating; // Fallback to current rating
+        }
+      } catch (error) {
+        console.error('Error calculating simulated rating:', error);
+        simulatedProfileRating = currentProfileRating; // Fallback to current rating
+      }
+
       // Calculate new odds
-      const container = document.getElementById('simulation-results');
       container.innerHTML = '<h3 style="color: var(--primary-green); margin: 1rem 0;">Simulation Results</h3>';
 
       savedColleges.forEach(college => {
-        const currentOdds = calculateAdmissionOdds(currentProfile, college);
-        const newOdds = calculateAdmissionOdds(simulatedProfile, college);
-        const change = newOdds - currentOdds;
+        // Use current profile rating
+        let currentOdds = null;
+        if (currentProfileRating !== null && currentProfileRating !== undefined && college.rating !== null && college.rating !== undefined) {
+          // Pass test score data for z-score calculation
+          const currentOptions = {
+            studentSat: currentProfile.sat || null,
+            studentAct: currentProfile.act || null,
+            collegeSat25: college.sat25thPercentile || null,
+            collegeSat50: college.sat50thPercentile || college.satAverage || null,
+            collegeSat75: college.sat75thPercentile || null,
+            collegeAct25: college.act25thPercentile || null,
+            collegeAct50: college.act50thPercentile || college.actMidpoint || null,
+            collegeAct75: college.act75thPercentile || null
+          };
+          currentOdds = getAdmissionOdds(currentProfileRating, college.rating, college.acceptanceRate, currentOptions);
+        }
+
+        // Use simulated profile rating
+        let newOdds = null;
+        if (simulatedProfileRating !== null && simulatedProfileRating !== undefined && college.rating !== null && college.rating !== undefined) {
+          // Pass test score data for z-score calculation
+          const simOptions = {
+            studentSat: simulatedProfile.sat || null,
+            studentAct: simulatedProfile.act || null,
+            collegeSat25: college.sat25thPercentile || null,
+            collegeSat50: college.sat50thPercentile || college.satAverage || null,
+            collegeSat75: college.sat75thPercentile || null,
+            collegeAct25: college.act25thPercentile || null,
+            collegeAct50: college.act50thPercentile || college.actMidpoint || null,
+            collegeAct75: college.act75thPercentile || null
+          };
+          newOdds = getAdmissionOdds(simulatedProfileRating, college.rating, college.acceptanceRate, simOptions);
+        }
+
+        const change = (currentOdds !== null && newOdds !== null) ? newOdds - currentOdds : 0;
         const category = categorizeSchool(newOdds);
         
         const card = document.createElement('div');
@@ -188,17 +420,19 @@
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
             <div style="text-align: center; padding: 1rem; background: var(--light-mint); border-radius: 8px;">
-              <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-light);">${currentOdds.toFixed(0)}%</div>
+              <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-light);">${currentOdds !== null ? currentOdds + '%' : 'N/A'}</div>
               <div style="font-size: 0.85rem; color: var(--text-light);">Current</div>
             </div>
             <div style="text-align: center; padding: 1rem; background: ${change > 0 ? '#e8f5e9' : change < 0 ? '#ffe5e5' : '#f5f5f5'}; border-radius: 8px;">
-              <div style="font-size: 1.5rem; font-weight: bold; color: ${change > 0 ? '#27ae60' : change < 0 ? '#e74c3c' : '#7f8c8d'};">${newOdds.toFixed(0)}%</div>
+              <div style="font-size: 1.5rem; font-weight: bold; color: ${change > 0 ? '#27ae60' : change < 0 ? '#e74c3c' : '#7f8c8d'};">${newOdds !== null ? newOdds + '%' : 'N/A'}</div>
               <div style="font-size: 0.85rem; color: var(--text-light);">New Odds</div>
             </div>
           </div>
+          ${currentOdds !== null && newOdds !== null ? `
           <div style="text-align: center; padding: 0.5rem; background: ${change > 0 ? '#e8f5e9' : change < 0 ? '#ffe5e5' : '#f5f5f5'}; border-radius: 8px; font-weight: bold; color: ${change > 0 ? '#27ae60' : change < 0 ? '#e74c3c' : '#7f8c8d'};">
             ${change > 0 ? '↑' : change < 0 ? '↓' : '='} ${Math.abs(change).toFixed(1)}% change
           </div>
+          ` : ''}
         `;
         
         container.appendChild(card);

@@ -44,7 +44,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.10
+      v1.11
     </div>
   </nav>
 
@@ -70,26 +70,26 @@
           </button>
         </div>
         
-        <h3 style="color: var(--primary-green); margin-top: 1.5rem; margin-bottom: 1rem;">Filter by Location</h3>
-        <div id="location-filters" class="filters-grid" style="display: flex; flex-wrap: nowrap; gap: 1rem;">
-          <button class="btn filter-btn location-filter-btn active" data-location="all" onclick="filterByLocation('all')" style="flex: 1;">
+        <h3 style="color: var(--primary-green); margin-top: 1.5rem; margin-bottom: 1rem;">Filter by Distance</h3>
+        <div id="distance-filters" class="filters-grid" style="display: flex; flex-wrap: nowrap; gap: 1rem;">
+          <button class="btn filter-btn distance-filter-btn active" data-distance="5" onclick="filterByDistance('5')" style="flex: 1;">
+            &lt;5 mi
+          </button>
+          <button class="btn filter-btn distance-filter-btn" data-distance="15" onclick="filterByDistance('15')" style="flex: 1;">
+            &lt;15 mi
+          </button>
+          <button class="btn filter-btn distance-filter-btn" data-distance="all" onclick="filterByDistance('all')" style="flex: 1;">
             All
-          </button>
-          <button class="btn filter-btn location-filter-btn" data-location="state" onclick="filterByLocation('state')" style="flex: 1;">
-            My State
-          </button>
-          <button class="btn filter-btn location-filter-btn" data-location="city" onclick="filterByLocation('city')" style="flex: 1;">
-            My City
           </button>
         </div>
         
         <h3 style="color: var(--primary-green); margin-top: 1.5rem; margin-bottom: 1rem;">Sort By</h3>
         <div class="filters-grid">
-          <button class="btn filter-btn sort-btn active" data-sort="name" onclick="setSort('name')">
-            Name (A-Z)
-          </button>
-          <button class="btn filter-btn sort-btn" data-sort="distance" onclick="setSort('distance')">
+          <button class="btn filter-btn sort-btn active" data-sort="distance" onclick="setSort('distance')">
             Distance
+          </button>
+          <button class="btn filter-btn sort-btn" data-sort="name" onclick="setSort('name')">
+            Name (A-Z)
           </button>
         </div>
       </div>
@@ -116,8 +116,8 @@
   <script>
     let allActivities = [];
     let currentProgramTypeFilter = 'all';
-    let currentLocationFilter = 'all'; // 'all', 'state', 'city'
-    let currentSort = 'name'; // 'name' or 'distance'
+    let currentDistanceFilter = '5'; // 'all', '5', '15' - default to '5'
+    let currentSort = 'distance'; // 'name' or 'distance' - default to 'distance'
     let currentPage = 1;
     let userZipcode = '';
     let userState = '';
@@ -176,7 +176,7 @@
             }
           }
         } catch (error) {
-          console.warn('Could not lookup zipcode data:', error);
+          // Zipcode lookup failed
         }
 
         // Map API response to activity format
@@ -257,11 +257,8 @@
           };
         });
 
-        console.log(`Loaded ${allActivities.length} youth programs`);
-        
         // Calculate distances for all programs using user coordinates from uszips.csv
         if (userLat && userLon && !isNaN(userLat) && !isNaN(userLon)) {
-          console.log(`Calculating distances from user location (${userLat}, ${userLon})...`);
           allActivities.forEach(activity => {
             if (activity.latitude && activity.longitude) {
               const lat = parseFloat(activity.latitude);
@@ -272,15 +269,11 @@
               }
             }
           });
-          console.log(`Calculated distances for ${allActivities.filter(a => a.distanceMiles).length} activities`);
-        } else {
-          console.warn('User coordinates not available - distances will not be calculated');
         }
         
         populateProgramTypeFilters();
         displayActivities(allActivities);
       } catch (error) {
-        console.error('Error loading youth programs:', error);
         container.innerHTML = `
           <div class="card" style="text-align: center; padding: 2rem;">
             <h4 style="color: var(--primary-green); margin-bottom: 1rem;">Error Loading Programs</h4>
@@ -341,19 +334,19 @@
           return data;
         }
       } catch (error) {
-        console.warn('Zipcode lookup failed:', error);
+        // Zipcode lookup failed
       }
       return null;
     }
 
-    function filterByLocation(locationType) {
-      currentLocationFilter = locationType;
+    function filterByDistance(distanceType) {
+      currentDistanceFilter = distanceType;
       currentPage = 1; // Reset to first page when filter changes
       
       // Update active button
-      document.querySelectorAll('.location-filter-btn').forEach(btn => {
+      document.querySelectorAll('.distance-filter-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.getAttribute('data-location') === locationType) {
+        if (btn.getAttribute('data-distance') === distanceType) {
           btn.classList.add('active');
         }
       });
@@ -381,23 +374,50 @@
       
       // Apply program type filter
       let filtered = currentProgramTypeFilter === 'all' ? activities : activities.filter(a => a.programType === currentProgramTypeFilter);
-      
-      // Apply location filter
-      if (currentLocationFilter === 'state' && userState) {
-        filtered = filtered.filter(a => a.state === userState);
-      } else if (currentLocationFilter === 'city' && userCity && userState) {
-        filtered = filtered.filter(a => a.city === userCity && a.state === userState);
+      // Apply distance filter
+      if (currentDistanceFilter !== 'all') {
+        filtered = filtered.filter(a => {
+          if (!a.distanceMiles) return false; // Exclude activities without distance
+          const distance = parseFloat(a.distanceMiles);
+          if (isNaN(distance)) return false;
+          
+          if (currentDistanceFilter === '5') {
+            return distance < 5;
+          } else if (currentDistanceFilter === '15') {
+            return distance < 15;
+          }
+          return true;
+        });
       }
       
-      // Sort activities
+      // Sort by distance (activities without distance go to the end)
+      filtered.sort((a, b) => {
+        const distA = a.distanceMiles ? parseFloat(a.distanceMiles) : Infinity;
+        const distB = b.distanceMiles ? parseFloat(b.distanceMiles) : Infinity;
+        return distA - distB;
+      });
+      
+      // Limit to closest activities
+      // When "all" is selected, show up to 500 activities to avoid overwhelming the UI
+      // When a distance filter is active, limit to 100 closest (already filtered by distance)
+      const maxActivities = currentDistanceFilter === 'all' ? 500 : 100;
+      
+      if (filtered.length > maxActivities) {
+        let activitiesWithDistance = filtered.filter(a => a.distanceMiles && !isNaN(parseFloat(a.distanceMiles)));
+        let activitiesWithoutDistance = filtered.filter(a => !a.distanceMiles || isNaN(parseFloat(a.distanceMiles)));
+        
+        if (activitiesWithDistance.length >= maxActivities) {
+          // If we have enough with distance, take only those (closest ones)
+          filtered = activitiesWithDistance.slice(0, maxActivities);
+        } else {
+          // Take all with distance, plus fill the rest with activities without distance
+          filtered = activitiesWithDistance.concat(activitiesWithoutDistance.slice(0, maxActivities - activitiesWithDistance.length));
+        }
+      }
+      
+      // Apply user's preferred sort (if not distance)
       if (currentSort === 'name') {
         filtered.sort((a, b) => a.title.localeCompare(b.title));
-      } else if (currentSort === 'distance') {
-        filtered.sort((a, b) => {
-          const distA = a.distanceMiles ? parseFloat(a.distanceMiles) : Infinity;
-          const distB = b.distanceMiles ? parseFloat(b.distanceMiles) : Infinity;
-          return distA - distB;
-        });
       }
 
       if (filtered.length === 0) {
@@ -405,7 +425,7 @@
           <div class="card" style="text-align: center; padding: 2rem;">
             <h4 style="color: var(--primary-green); margin-bottom: 1rem;">No Activities Found</h4>
             <p style="color: var(--text-light); margin-bottom: 1rem;">No activities match your current filters. Try selecting different options.</p>
-            <button class="btn btn-secondary" onclick="filterByProgramType('all'); filterByLocation('all'); setSort('name');">Show All Activities</button>
+            <button class="btn btn-secondary" onclick="filterByProgramType('all'); filterByDistance('all'); setSort('distance');">Show All Activities</button>
           </div>
         `;
         return;

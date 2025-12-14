@@ -324,7 +324,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.10
+      v1.11
     </div>
   </nav>
 
@@ -448,7 +448,7 @@
     let studentRating = null;
 
     // Client-side implementation of getAdmissionOdds (from rate-system.js)
-    function getAdmissionOdds(studentScore, collegeScore, acceptanceRate) {
+    function getAdmissionOdds(studentScore, collegeScore, acceptanceRate, options = {}) {
       // Parse inputs
       const student = typeof studentScore === 'string' ? parseFloat(studentScore) : (studentScore || 0);
       const college = typeof collegeScore === 'string' ? parseFloat(collegeScore) : (collegeScore || 0);
@@ -485,27 +485,102 @@
       const sigmoidDelta = (normalizedDelta / (1 + Math.abs(normalizedDelta) * sigmoidFactor)) * 50;
       odds = baseOdds + (sigmoidDelta * deltaMultiplier);
 
+      // Calculate z-score adjustment if college test percentiles are available
+      let zScoreAdjustment = 0;
+      if (options) {
+        const parseNum = (val) => {
+          if (val === null || val === undefined || val === '') return null;
+          const num = typeof val === 'string' ? parseFloat(val) : val;
+          return Number.isFinite(num) && num > 0 ? num : null;
+        };
+
+        const studentSat = parseNum(options.studentSat);
+        const studentAct = parseNum(options.studentAct);
+        const sat25 = parseNum(options.collegeSat25);
+        const sat50 = parseNum(options.collegeSat50);
+        const sat75 = parseNum(options.collegeSat75);
+        const act25 = parseNum(options.collegeAct25);
+        const act50 = parseNum(options.collegeAct50);
+        const act75 = parseNum(options.collegeAct75);
+
+        // Use SAT if available, otherwise ACT
+        if (studentSat && sat25 && sat50 && sat75) {
+          // Calculate standard deviation from IQR (interquartile range)
+          // For normal distribution: IQR ≈ 1.35 * SD, so SD ≈ IQR / 1.35
+          const iqr = sat75 - sat25;
+          const sd = iqr / 1.35; // Standard deviation
+          const mean = sat50; // Median (50th percentile) as mean estimate
+
+          if (sd > 0) {
+            // Calculate z-score: z = (student_score - mean) / SD
+            const zScore = (studentSat - mean) / sd;
+            
+            // Convert z-score to adjustment factor
+            // Positive z-score (above average) increases odds, negative decreases
+            // Scale: z-score of +1 (1 SD above) = +8% boost, z-score of -1 = -8% penalty
+            // Use a diminishing returns curve for extreme z-scores
+            zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+          }
+        } else if (studentAct && act25 && act50 && act75) {
+          // Same calculation for ACT
+          const iqr = act75 - act25;
+          const sd = iqr / 1.35;
+          const mean = act50;
+
+          if (sd > 0) {
+            const zScore = (studentAct - mean) / sd;
+            zScoreAdjustment = (zScore * 8) / (1 + Math.abs(zScore) * 0.3);
+          }
+        }
+      }
+
+      // Apply z-score adjustment
+      odds = odds + zScoreAdjustment;
+
+      // Give slightly higher odds than calculated, especially for selective schools
+      // This makes the system more optimistic
+      let optimismBoost = 1.10; // Default 10% boost
+      
+      if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
+        const acceptancePercent = acceptance * 100;
+        
+        // Higher boost for more selective schools
+        if (acceptancePercent < 10) {
+          // Very selective (5% acceptance): 15% boost
+          optimismBoost = 1.15;
+        } else if (acceptancePercent < 20) {
+          // Highly selective (10-20% acceptance): 12% boost
+          optimismBoost = 1.12;
+        } else if (acceptancePercent < 30) {
+          // Selective (20-30% acceptance): 11% boost
+          optimismBoost = 1.11;
+        }
+        // Otherwise use default 10% boost
+      }
+      
+      odds = odds * optimismBoost;
+
       // If acceptance rate is provided, use it as a constraint
       // The odds should not exceed the acceptance rate by too much, and should scale with it
       if (acceptance !== null && acceptance >= 0 && acceptance <= 1) {
         const acceptancePercent = acceptance * 100;
         
-        // Scale the odds relative to the acceptance rate
-        // If baseOdds was set from acceptance rate, we've already accounted for it
-        // But we should ensure odds don't go too far above/below the acceptance rate based on delta alone
-        
-        // For highly selective schools (low acceptance), limit how high odds can go
-        if (acceptancePercent < 20) {
-          // Very selective: odds can go up to 2.5x the acceptance rate for strong students
-          const maxOdds = Math.min(acceptancePercent * 2.5, 95);
+        // For highly selective schools (low acceptance), allow higher odds after optimism boost
+        if (acceptancePercent < 10) {
+          // Very selective (5% acceptance): allow up to 3x the acceptance rate for strong students
+          const maxOdds = Math.min(acceptancePercent * 3.0, 95);
+          odds = Math.min(odds, maxOdds);
+        } else if (acceptancePercent < 20) {
+          // Highly selective: odds can go up to 2.8x the acceptance rate for strong students
+          const maxOdds = Math.min(acceptancePercent * 2.8, 95);
           odds = Math.min(odds, maxOdds);
         } else if (acceptancePercent < 50) {
-          // Moderately selective: odds can go up to 1.8x the acceptance rate
-          const maxOdds = Math.min(acceptancePercent * 1.8, 95);
+          // Moderately selective: odds can go up to 2.2x the acceptance rate
+          const maxOdds = Math.min(acceptancePercent * 2.2, 95);
           odds = Math.min(odds, maxOdds);
         } else {
           // Less selective: odds can go higher, but still cap at reasonable level
-          const maxOdds = Math.min(acceptancePercent * 1.5, 95);
+          const maxOdds = Math.min(acceptancePercent * 1.8, 95);
           odds = Math.min(odds, maxOdds);
         }
         
@@ -754,7 +829,17 @@
           if (!isComplete || studentRating === null || studentRating === undefined || college.rating === null || college.rating === undefined) {
             return false; // Hide colleges when we can't calculate odds
           }
-          const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
+          const options = {
+            studentSat: studentProfile?.sat || null,
+            studentAct: studentProfile?.act || null,
+            collegeSat25: college.sat25thPercentile || null,
+            collegeSat50: college.sat50thPercentile || college.satAverage || null,
+            collegeSat75: college.sat75thPercentile || null,
+            collegeAct25: college.act25thPercentile || null,
+            collegeAct50: college.act50thPercentile || college.actMidpoint || null,
+            collegeAct75: college.act75thPercentile || null
+          };
+          const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate, options);
           const category = categorizeSchool(odds);
           if (category.category !== chanceFilter) return false;
         }
@@ -833,7 +918,18 @@
         let oddsDisplay;
         const isComplete = isProfileComplete(studentProfile);
         if (isComplete && studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
-          odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
+          // Pass test score data for z-score calculation
+          const options = {
+            studentSat: studentProfile?.sat || null,
+            studentAct: studentProfile?.act || null,
+            collegeSat25: college.sat25thPercentile || null,
+            collegeSat50: college.sat50thPercentile || college.satAverage || null,
+            collegeSat75: college.sat75thPercentile || null,
+            collegeAct25: college.act25thPercentile || null,
+            collegeAct50: college.act50thPercentile || college.actMidpoint || null,
+            collegeAct75: college.act75thPercentile || null
+          };
+          odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate, options);
           oddsDisplay = odds + '%';
         } else {
           odds = null;
@@ -1199,7 +1295,17 @@
       let oddsText;
       const isComplete = isProfileComplete(studentProfile);
       if (isComplete && studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
-        const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate);
+        const options = {
+          studentSat: studentProfile?.sat || null,
+          studentAct: studentProfile?.act || null,
+          collegeSat25: college.sat25thPercentile || null,
+          collegeSat50: college.sat50thPercentile || college.satAverage || null,
+          collegeSat75: college.sat75thPercentile || null,
+          collegeAct25: college.act25thPercentile || null,
+          collegeAct50: college.act50thPercentile || college.actMidpoint || null,
+          collegeAct75: college.act75thPercentile || null
+        };
+        const odds = getAdmissionOdds(studentRating, college.rating, college.acceptanceRate, options);
         oddsText = `${odds}%`;
       } else {
         oddsText = 'N/A';

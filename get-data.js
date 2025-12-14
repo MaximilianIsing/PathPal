@@ -9,8 +9,8 @@ const path = require('path');
 const API_URL = 'https://path-pal-college-scanner.onrender.com/getdata?key=23176427708775045798948882391414';
 const API_HEALTH_URL = 'https://path-pal-college-scanner.onrender.com/health';
 const USE_BACKUP_FILE = path.join(__dirname, 'use-backup.txt');
-const BACKUP_CSV_PATH = path.join(__dirname, 'data_backup.csv');
-const BACKUP_JSON_PATH = path.join(__dirname, 'data_backup.json');
+const BACKUP_CSV_PATH = path.join(__dirname, 'data-backup.csv');
+const BACKUP_JSON_PATH = path.join(__dirname, 'data-backup.json');
 
 /**
  * Transform API college object to internal format
@@ -224,10 +224,20 @@ async function readBackupJSON() {
     const data = JSON.parse(jsonText);
     
     // Handle both array format and object with data property
-    const colleges = Array.isArray(data) ? data : (data.data || data.colleges || []);
+    let colleges = Array.isArray(data) ? data : (data.data || data.colleges || []);
     
     if (!Array.isArray(colleges)) {
       throw new Error('Invalid JSON format: expected array or object with data/colleges property');
+    }
+    
+    // Check if colleges need transformation (API format vs internal format)
+    // API format has fields like acceptance_rate_pct, sat_25th_percentile
+    // Internal format has fields like acceptance_rate, sat_25th_percentile (without _pct suffix)
+    const needsTransformation = colleges.length > 0 && colleges[0].acceptance_rate_pct !== undefined;
+    
+    if (needsTransformation) {
+      console.log(`Transforming ${colleges.length} colleges from API format to internal format...`);
+      colleges = colleges.map((college, index) => transformApiCollege(college, index));
     }
     
     console.log(`✓ Successfully loaded ${colleges.length} colleges from backup JSON`);

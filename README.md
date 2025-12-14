@@ -1,6 +1,6 @@
 # Path Pal
 
-**v1.10**
+**v1.11**
 
 Path Pal is a Progressive Web App (PWA) that helps students plan their college journey with personalized recommendations, admission odds calculations, and AI-powered guidance.
 
@@ -8,8 +8,8 @@ Path Pal is a Progressive Web App (PWA) that helps students plan their college j
 
 - **Home Page**: Quick access to all features with progress tracking
 - **My Profile**: Manage academic information, test scores, and intended majors
-- **Admissions Odds**: See your acceptance probability for saved colleges with AI tips
-- **"What If" Simulator**: Test hypothetical changes to see how they affect admission odds
+- **Admissions Odds**: See your acceptance probability for saved colleges with AI tips. Uses advanced z-score calculations based on test score percentiles for accurate predictions.
+- **"What If" Simulator**: Test hypothetical changes to see how they affect admission odds. Features accurate odds calculations using z-scores and test score percentiles to provide realistic scenario analysis.
 - **College Explorer**: Discover and filter colleges with AI recommendations
 - **Career & Salary Paths**: Explore career outcomes and median salaries by major
 - **Activity & Internship Recs**: Get personalized activity and internship suggestions
@@ -94,6 +94,17 @@ For production deployment (Render), set:
 - `NODE_ENV`: Set to `production` for production
 
 See `env.example.txt` for a template.
+
+## Contact
+
+For questions, support, or feedback, please contact us at:
+
+**Email**: team@pathpal.us
+
+## Recent Updates (v1.11)
+
+- **Improved "What If" Simulator**: Enhanced admission odds calculation accuracy with z-score adjustments based on test score percentiles for more realistic scenario analysis
+- **Better Odds Calculations**: Updated admission odds system across all pages to provide more nuanced and accurate predictions using z-scores and test score percentiles
 
 ## License
 
