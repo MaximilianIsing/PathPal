@@ -102,8 +102,7 @@ async function signIn(email, password) {
  */
 function continueAsGuest() {
   const guestId = generateUserId();
-  localStorage.setItem('user_id', guestId);
-  localStorage.setItem('is_guest', 'true');
+  setUserSession(guestId, true);
   return guestId;
 }
 
@@ -114,6 +113,8 @@ function continueAsGuest() {
  */
 function setUserSession(userId, isGuest = false) {
   localStorage.setItem('user_id', userId);
+  // Use JSON.stringify for userId to match api.js Storage utility expectations
+  localStorage.setItem('userId', JSON.stringify(userId));
   localStorage.setItem('is_guest', isGuest ? 'true' : 'false');
 }
 
@@ -134,11 +135,22 @@ function isGuest() {
 }
 
 /**
- * Sign out current user
+ * Sign out current user - clears all user-related data from localStorage
  */
 function signOut() {
+  // Clear authentication data
   localStorage.removeItem('user_id');
+  localStorage.removeItem('userId'); // Clear api.js userId as well
   localStorage.removeItem('is_guest');
+  
+  // Clear user-specific data that should not persist across accounts
+  localStorage.removeItem('savedColleges');
+  localStorage.removeItem('profile-picture');
+  localStorage.removeItem('test-type');
+  localStorage.removeItem('test-scores');
+  
+  // Clear any cached profile data (if stored separately)
+  // Note: Profile data should always be fetched from server, not cached locally
 }
 
 /**

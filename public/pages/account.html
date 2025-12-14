@@ -44,13 +44,18 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.11
+      v1.12
     </div>
   </nav>
 
   <main>
     <div class="container">
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Account Settings</h2>
+
+      <!-- User Email Display -->
+      <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+        <span id="user-email-display">Loading...</span>
+      </p>
 
       <!-- Sign Out Section -->
       <div class="card" style="margin-bottom: 1.5rem;">
@@ -114,6 +119,25 @@
   <script src="/js/app.js"></script>
   <script src="/js/auth.js"></script>
   <script>
+    // Load and display user email on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const emailDisplay = document.getElementById('user-email-display');
+      
+      // Check if user is a guest
+      if (isGuest()) {
+        emailDisplay.textContent = 'Guest User';
+        return;
+      }
+      
+      // Try to get email for logged-in user
+      const email = await getUserEmail();
+      if (email) {
+        emailDisplay.textContent = email;
+      } else {
+        emailDisplay.textContent = 'Unable to load email';
+      }
+    });
+
     // Get user email from localStorage or API
     async function getUserEmail() {
       const userId = getCurrentUserId();
