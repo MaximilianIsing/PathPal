@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Essay Assistant - Path Pal">
+  <title>Essay Assistant - Path Pal</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+  <meta name="theme-color" content="#0d8c79">
+  <style>
+    .mode-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .mode-button {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--primary-green);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Arvo', serif;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+    .mode-button.active {
+      background: var(--primary-green);
+      color: var(--white);
+      border-color: var(--primary-green);
+    }
+    .essay-input {
+      width: 100%;
+      min-height: 200px;
+      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Arvo', serif;
+      font-size: 1rem;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .essay-input:focus {
+      outline: none;
+      border-color: var(--primary-green);
+    }
+    .essay-result {
+      background: var(--white);
+      border: 2px solid var(--primary-green);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.6;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .essay-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .copy-button {
+      padding: 0.5rem 1rem;
+      background: var(--primary-green);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Arvo', serif;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .copy-button:hover {
+      background: #0a6b5d;
+      transform: translateY(-1px);
+    }
+    .prompt-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Arvo', serif;
+      font-size: 1rem;
+      box-sizing: border-box;
+      margin-bottom: 1rem;
+    }
+    .prompt-input:focus {
+      outline: none;
+      border-color: var(--primary-green);
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop-message">
+    <h1><img src="/media/icons/Mobile256x256.png" alt="Mobile" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 0.5rem;"> Mobile App Required</h1>
+    <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet.</p>
+  </div>
+
+  <header>
+    <div class="header-content container">
+      <div class="logo">
+        <a href="/index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit;">
+          <img src="/media/logo/logo64x64.png" alt="Path Pal Logo">
+          <h1>Path Pal</h1>
+        </a>
+      </div>
+      <button class="menu-toggle" aria-label="Toggle menu"><img src="/media/icons/Hamburger128x128.png" alt="Menu" style="width: 24px; height: 24px;"></button>
+    </div>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="/index.html"><img src="/media/icons/Home256x256.png" alt="Home" class="nav-icon"> Home</a></li>
+      <li><a href="/profile.html"><img src="/media/icons/Profile256x256.png" alt="Profile" class="nav-icon"> My Profile</a></li>
+      <li><a href="/odds.html"><img src="/media/icons/Odds256x256.png" alt="Admissions Odds" class="nav-icon"> Admissions Odds</a></li>
+      <li><a href="/simulator.html"><img src="/media/icons/WhatIf256x256.png" alt="What If" class="nav-icon"> "What If" Simulator</a></li>
+      <li><a href="/explorer.html"><img src="/media/icons/Search256x256.png" alt="College Explorer" class="nav-icon"> College Explorer</a></li>
+      <li><a href="/career.html"><img src="/media/icons/DollarSign256x256.png" alt="Career & Salary Paths" class="nav-icon"> Career & Salary Paths</a></li>
+      <li><a href="/activities.html"><img src="/media/icons/Activity256x256.png" alt="Activities" class="nav-icon"> Activity & Internship Recs</a></li>
+      <li><a href="/planner.html"><img src="/media/icons/Calender256x256.png" alt="4-Year Planner" class="nav-icon"> 4-Year Planner</a></li>
+      <li><a href="/messages.html"><img src="/media/icons/Chat256x256.png" alt="AI Counselor" class="nav-icon"> AI Counselor</a></li>
+      <li><a href="/essay-assistant.html" class="active"><img src="/media/icons/Book256x256.png" alt="Essay Assistant" class="nav-icon"> Essay Assistant</a></li>
+      <li><a href="/saved.html"><img src="/media/icons/Star256x256.png" alt="Saved Colleges" class="nav-icon"> Saved Colleges</a></li>
+      <li><a href="/account.html"><img src="/media/icons/SignOut256x256.png" alt="Account Options" class="nav-icon"> Account Options</a></li>
+      <li><a href="/team.html"><img src="/media/icons/Team256x256.png" alt="Our Team" class="nav-icon"> Our Team</a></li>
+      <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
+    </ul>
+    <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
+      v1.14
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h2 style="color: var(--primary-green); margin: 1rem 0;">Essay Assistant</h2>
+      <p style="color: var(--text-light); margin-bottom: 1.5rem;">Generate a new essay or refine an existing one using AI powered by your profile information.</p>
+
+      <!-- Mode Selector -->
+      <div class="mode-selector">
+        <button class="mode-button active" id="generate-mode" onclick="switchMode('generate')">Generate Essay</button>
+        <button class="mode-button" id="refine-mode" onclick="switchMode('refine')">Refine Essay</button>
+      </div>
+
+      <!-- Generate Essay Mode -->
+      <div id="generate-section" class="card">
+        <h3 style="color: var(--primary-green);">Generate New Essay</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Describe what you'd like your essay to be about. The AI will use your profile information to create a personalized essay.</p>
+        
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="generate-personal-statement" onchange="togglePersonalStatement('generate')" style="width: 18px; height: 18px; cursor: pointer;">
+            <span style="font-weight: bold; color: var(--text-dark);">Personal Statement</span>
+          </label>
+        </div>
+
+        <div class="form-group" id="generate-prompt-group">
+          <label style="color: var(--primary-green);">Essay Prompt / Topic</label>
+          <input type="text" id="essay-prompt" class="prompt-input" placeholder="e.g., Why Dartmouth?..." maxlength="500">
+        </div>
+
+        <div class="form-group" id="generate-length-group">
+          <label style="color: var(--primary-green);">Essay Length</label>
+          <div style="display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: nowrap;">
+            <input type="number" id="generate-length" class="prompt-input" placeholder="Number of..." min="100" max="10000" style="flex: 1; max-width: 150px; margin-bottom: 0;">
+            <select id="generate-length-type" class="prompt-input" style="flex: 1; margin-bottom: 0; cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'><path fill=\'%23333\' d=\'M6 9L1 4h10z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.5rem;">
+              <option value="words">Words</option>
+              <option value="characters">Characters</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="color: var(--primary-green);">Additional Instructions (Optional)</label>
+          <textarea id="generate-instructions" class="essay-input" placeholder="Add any specific requirements, tone preferences, or details you'd like included..." style="min-height: 100px;" maxlength="2000"></textarea>
+        </div>
+
+        <button class="btn-primary" onclick="generateEssay()" id="generate-btn" style="width: 100%;">Generate Essay</button>
+      </div>
+
+      <!-- Refine Essay Mode -->
+      <div id="refine-section" class="card" style="display: none;">
+        <h3 style="color: var(--primary-green);">Refine Existing Essay</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Paste your essay below and describe how you'd like it improved.</p>
+        
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="refine-personal-statement" onchange="togglePersonalStatement('refine')" style="width: 18px; height: 18px; cursor: pointer;">
+            <span style="font-weight: bold; color: var(--text-dark);">Personal Statement</span>
+          </label>
+        </div>
+        
+        <div class="form-group" id="refine-prompt-group">
+          <label style="color: var(--primary-green);">Essay Prompt / Topic (Optional)</label>
+          <input type="text" id="refine-prompt" class="prompt-input" placeholder="e.g., Why Dartmouth?..." maxlength="500">
+        </div>
+        
+        <div class="form-group">
+          <label style="color: var(--primary-green);">Your Essay</label>
+          <textarea id="essay-text" class="essay-input" placeholder="Paste your essay here..." oninput="updateEssayWordCount()" maxlength="50000"></textarea>
+          <div id="essay-word-count" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.85rem; text-align: right;"></div>
+        </div>
+
+        <div class="form-group" id="refine-length-group">
+          <label style="color: var(--primary-green);">Target Length (Optional)</label>
+          <div style="display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: nowrap;">
+            <input type="number" id="refine-length" class="prompt-input" placeholder="Number of..." min="100" max="10000" style="flex: 1; max-width: 150px; margin-bottom: 0;">
+            <select id="refine-length-type" class="prompt-input" style="flex: 1; margin-bottom: 0; cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'><path fill=\'%23333\' d=\'M6 9L1 4h10z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.5rem;">
+              <option value="words">Words</option>
+              <option value="characters">Characters</option>
+            </select>
+          </div>
+          <small style="display:block; margin-top:0.25rem; color: var(--text-light);">Leave empty to keep current length</small>
+        </div>
+
+        <div class="form-group">
+          <label style="color: var(--primary-green);">How would you like to improve it? (Optional)</label>
+          <input type="text" id="refine-instructions" class="prompt-input" placeholder="e.g., Make it more compelling, Fix grammar and flow, Add more personal details, Strengthen the conclusion..." maxlength="500">
+        </div>
+
+        <button class="btn-primary" onclick="refineEssay()" id="refine-btn" style="width: 100%;">Refine Essay</button>
+      </div>
+
+      <!-- Essay Result -->
+      <div id="essay-result-container" style="display: none; margin-top: 2rem;"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; Path Pal 2025 — College applications are hard... take a breath.</p>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    let currentMode = 'generate';
+    let isProcessing = false;
+    let currentEssayText = ''; // Store the current essay text for copying
+
+    // Escape HTML for safety
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Calculate word count
+    function getWordCount(text) {
+      if (!text || !text.trim()) return 0;
+      return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    }
+
+    // Calculate character count
+    function getCharacterCount(text) {
+      if (!text) return 0;
+      return text.length;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // Update button states
+      document.getElementById('generate-mode').classList.toggle('active', mode === 'generate');
+      document.getElementById('refine-mode').classList.toggle('active', mode === 'refine');
+      
+      // Show/hide sections
+      document.getElementById('generate-section').style.display = mode === 'generate' ? 'block' : 'none';
+      document.getElementById('refine-section').style.display = mode === 'refine' ? 'block' : 'none';
+      
+      // Hide result when switching modes
+      document.getElementById('essay-result-container').style.display = 'none';
+    }
+
+    function togglePersonalStatement(mode) {
+      if (mode === 'generate') {
+        const isChecked = document.getElementById('generate-personal-statement').checked;
+        const promptGroup = document.getElementById('generate-prompt-group');
+        const lengthGroup = document.getElementById('generate-length-group');
+        
+        if (isChecked) {
+          // Hide prompt and length fields
+          promptGroup.style.display = 'none';
+          lengthGroup.style.display = 'none';
+          // Set length to 650 words
+          document.getElementById('generate-length').value = '650';
+          document.getElementById('generate-length-type').value = 'words';
+        } else {
+          // Show prompt and length fields
+          promptGroup.style.display = 'block';
+          lengthGroup.style.display = 'block';
+          // Clear the length
+          document.getElementById('generate-length').value = '';
+        }
+      } else if (mode === 'refine') {
+        const isChecked = document.getElementById('refine-personal-statement').checked;
+        const promptGroup = document.getElementById('refine-prompt-group');
+        const lengthGroup = document.getElementById('refine-length-group');
+        
+        if (isChecked) {
+          // Hide prompt and length fields
+          promptGroup.style.display = 'none';
+          lengthGroup.style.display = 'none';
+          // Set length to 650 words
+          document.getElementById('refine-length').value = '650';
+          document.getElementById('refine-length-type').value = 'words';
+        } else {
+          // Show prompt and length fields
+          promptGroup.style.display = 'block';
+          lengthGroup.style.display = 'block';
+          // Clear the length
+          document.getElementById('refine-length').value = '';
+        }
+      }
+    }
+
+    async function generateEssay() {
+      if (isProcessing) return;
+      
+      const isPersonalStatement = document.getElementById('generate-personal-statement').checked;
+      const prompt = isPersonalStatement ? '' : document.getElementById('essay-prompt').value.trim();
+      const instructions = document.getElementById('generate-instructions').value.trim();
+      const lengthInput = document.getElementById('generate-length').value.trim();
+      const length = isPersonalStatement ? 650 : (lengthInput ? parseInt(lengthInput) : 650);
+      const lengthType = isPersonalStatement ? 'words' : document.getElementById('generate-length-type').value;
+      const generateBtn = document.getElementById('generate-btn');
+      
+      if (!isPersonalStatement && !prompt) {
+        showNotification('Please enter an essay prompt or topic', 'error');
+        return;
+      }
+      
+      if (!isPersonalStatement && !lengthInput) {
+        showNotification('Please enter an essay length', 'error');
+        return;
+      }
+      
+      if (!isPersonalStatement && (length < 100 || length > 10000)) {
+        showNotification('Essay length must be between 100 and 10,000', 'error');
+        return;
+      }
+      
+      // Disable buttons and show loading
+      isProcessing = true;
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating...';
+      generateBtn.style.opacity = '0.6';
+      generateBtn.style.cursor = 'not-allowed';
+      
+      // Also disable the refine button to prevent mode switching
+      const refineBtn = document.getElementById('refine-btn');
+      refineBtn.disabled = true;
+      refineBtn.style.opacity = '0.6';
+      refineBtn.style.cursor = 'not-allowed';
+      
+      // Disable mode selector buttons
+      document.getElementById('generate-mode').disabled = true;
+      document.getElementById('refine-mode').disabled = true;
+      document.getElementById('generate-mode').style.opacity = '0.6';
+      document.getElementById('refine-mode').style.opacity = '0.6';
+      document.getElementById('generate-mode').style.cursor = 'not-allowed';
+      document.getElementById('refine-mode').style.cursor = 'not-allowed';
+      
+      try {
+        // Get user profile for context
+        const profile = await UserProfile.get();
+        
+        // Build essay generation prompt
+        let essayPrompt = '';
+        if (isPersonalStatement) {
+          essayPrompt = `Write a compelling Common Application personal statement essay. The Common App personal statement prompt asks students to share a story, experience, or aspect of their identity that is meaningful to them. The essay should be authentic, personal, and reveal something significant about the student's character, values, or growth.\n\n`;
+        } else {
+          essayPrompt = `Write a compelling college application essay based on the following topic: "${prompt}"\n\n`;
+        }
+        
+        if (instructions) {
+          essayPrompt += `Additional instructions: ${instructions}\n\n`;
+        }
+        
+        essayPrompt += `Use the following student profile information to personalize the essay:\n`;
+        essayPrompt += `- Name: ${profile.name || 'Not provided'}\n`;
+        essayPrompt += `- Grade: ${profile.grade || 'Not provided'}\n`;
+        if (profile.gpa) essayPrompt += `- GPA: ${profile.gpa}\n`;
+        if (profile.sat) essayPrompt += `- SAT Score: ${profile.sat}\n`;
+        if (profile.act) essayPrompt += `- ACT Score: ${profile.act}\n`;
+        if (profile.majors && profile.majors.length > 0) {
+          essayPrompt += `- Intended Majors: ${profile.majors.join(', ')}\n`;
+        }
+        if (profile.careerGoals) {
+          essayPrompt += `- Career Goals: ${profile.careerGoals}\n`;
+        }
+        if (profile.academicCourses && profile.academicCourses.length > 0) {
+          essayPrompt += `- Academic Courses: ${profile.academicCourses.join(', ')}\n`;
+        }
+        if (profile.apCourses && profile.apCourses.length > 0) {
+          essayPrompt += `- AP Courses: ${profile.apCourses.join(', ')}\n`;
+        }
+        if (profile.activities && profile.activities.length > 0) {
+          essayPrompt += `- Activities: ${profile.activities.join(', ')}\n`;
+        }
+        
+        const finalLength = isPersonalStatement ? 650 : length;
+        const finalLengthType = isPersonalStatement ? 'words' : lengthType;
+        const lengthText = finalLengthType === 'words' 
+          ? `exactly ${finalLength} words` 
+          : `exactly ${finalLength} characters`;
+        essayPrompt += `\nWrite a well-structured, authentic, and compelling essay (${lengthText}) that tells a personal story and demonstrates the student's character, values, and potential. Make it engaging and memorable. The essay must be ${lengthText} - be precise with the length requirement.`;
+        
+        const context = [{
+          role: 'system',
+          content: `You are an expert college essay writing assistant. Write compelling, authentic college application essays that tell personal stories and demonstrate character. Essays should be well-structured, engaging, and exactly ${finalLength} ${finalLengthType}.`
+        }];
+        
+        const response = await sendChatMessage(essayPrompt, context, 'long');
+        
+        // Store essay text for copying
+        currentEssayText = response.message;
+        
+        // Display result
+        document.getElementById('essay-result-container').innerHTML = `
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <h3 style="color: var(--primary-green); margin: 0;">Your Essay</h3>
+              <button class="copy-button" onclick="copyEssay()">Copy Essay</button>
+            </div>
+            <div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; color: var(--text-dark); font-size: 1rem; padding: 1rem; background: var(--light-mint); border-radius: 8px; border-left: 4px solid var(--primary-green);">${escapeHtml(response.message).replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+        document.getElementById('essay-result-container').style.display = 'block';
+        document.getElementById('essay-result-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        showNotification('Essay generated successfully!', 'success');
+      } catch (error) {
+        console.error('Error generating essay:', error);
+        if (error.isRateLimit) {
+          const resetTime = error.rateLimit?.resetIn || 30;
+          showNotification(`You're generating essays too quickly. Please wait ${resetTime} seconds before trying again.`, 'error');
+        } else {
+          showNotification('Failed to generate essay. Please try again.', 'error');
+        }
+      } finally {
+        isProcessing = false;
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Essay';
+        generateBtn.style.opacity = '1';
+        generateBtn.style.cursor = 'pointer';
+        
+        // Re-enable the refine button
+        const refineBtn = document.getElementById('refine-btn');
+        refineBtn.disabled = false;
+        refineBtn.style.opacity = '1';
+        refineBtn.style.cursor = 'pointer';
+        
+        // Re-enable mode selector buttons
+        document.getElementById('generate-mode').disabled = false;
+        document.getElementById('refine-mode').disabled = false;
+        document.getElementById('generate-mode').style.opacity = '1';
+        document.getElementById('refine-mode').style.opacity = '1';
+        document.getElementById('generate-mode').style.cursor = 'pointer';
+        document.getElementById('refine-mode').style.cursor = 'pointer';
+      }
+    }
+
+    async function refineEssay() {
+      if (isProcessing) return;
+      
+      const isPersonalStatement = document.getElementById('refine-personal-statement').checked;
+      const essayText = document.getElementById('essay-text').value.trim();
+      const prompt = isPersonalStatement ? '' : document.getElementById('refine-prompt').value.trim();
+      const instructions = document.getElementById('refine-instructions').value.trim();
+      const targetLengthInput = document.getElementById('refine-length').value.trim();
+      const targetLength = isPersonalStatement ? '650' : targetLengthInput;
+      const lengthType = isPersonalStatement ? 'words' : document.getElementById('refine-length-type').value;
+      const refineBtn = document.getElementById('refine-btn');
+      
+      if (!essayText) {
+        showNotification('Please paste your essay', 'error');
+        return;
+      }
+      
+      if (!isPersonalStatement && targetLength && (parseInt(targetLength) < 100 || parseInt(targetLength) > 10000)) {
+        showNotification('Target length must be between 100 and 10,000', 'error');
+        return;
+      }
+      
+      // Disable buttons and show loading
+      isProcessing = true;
+      refineBtn.disabled = true;
+      refineBtn.textContent = 'Refining...';
+      refineBtn.style.opacity = '0.6';
+      refineBtn.style.cursor = 'not-allowed';
+      
+      // Also disable the generate button to prevent mode switching
+      const generateBtn = document.getElementById('generate-btn');
+      generateBtn.disabled = true;
+      generateBtn.style.opacity = '0.6';
+      generateBtn.style.cursor = 'not-allowed';
+      
+      // Disable mode selector buttons
+      document.getElementById('generate-mode').disabled = true;
+      document.getElementById('refine-mode').disabled = true;
+      document.getElementById('generate-mode').style.opacity = '0.6';
+      document.getElementById('refine-mode').style.opacity = '0.6';
+      document.getElementById('generate-mode').style.cursor = 'not-allowed';
+      document.getElementById('refine-mode').style.cursor = 'not-allowed';
+      
+      try {
+        // Get user profile for context
+        const profile = await UserProfile.get();
+        
+        // Build refinement prompt
+        let refinePrompt = '';
+        if (isPersonalStatement) {
+          refinePrompt = `Please help refine and improve the following Common Application personal statement essay. The essay should be authentic, personal, and reveal something significant about the student's character, values, or growth. It must be exactly 650 words.\n\n`;
+        } else {
+          refinePrompt = `Please help refine and improve the following college application essay:\n\n`;
+          if (prompt) {
+            refinePrompt += `Essay Topic/Prompt: "${prompt}"\n\n`;
+          }
+        }
+        
+        refinePrompt += `---ESSAY---\n${essayText}\n---END ESSAY---\n\n`;
+        
+        if (instructions) {
+          refinePrompt += `Specific improvements requested: ${instructions}\n\n`;
+        } else {
+          refinePrompt += `Please improve the essay by:\n`;
+          refinePrompt += `- Fixing any grammar, spelling, or punctuation errors\n`;
+          refinePrompt += `- Improving flow and transitions between paragraphs\n`;
+          refinePrompt += `- Strengthening the narrative and making it more compelling\n`;
+          refinePrompt += `- Ensuring it tells a clear, personal story\n`;
+          refinePrompt += `- Making the conclusion more impactful\n\n`;
+        }
+        
+        if (targetLength) {
+          const lengthText = lengthType === 'words' 
+            ? `exactly ${targetLength} words` 
+            : `exactly ${targetLength} characters`;
+          refinePrompt += `IMPORTANT: The refined essay must be ${lengthText}. Adjust the length accordingly while maintaining quality and the student's voice.\n\n`;
+        }
+        
+        refinePrompt += `Student profile context:\n`;
+        if (profile.name) refinePrompt += `- Name: ${profile.name}\n`;
+        if (profile.majors && profile.majors.length > 0) {
+          refinePrompt += `- Intended Majors: ${profile.majors.join(', ')}\n`;
+        }
+        if (profile.careerGoals) {
+          refinePrompt += `- Career Goals: ${profile.careerGoals}\n`;
+        }
+        
+        refinePrompt += `\n\nIMPORTANT: Provide your response in the following format:\n\n`;
+        refinePrompt += `---REFINED ESSAY---\n[The complete refined essay here]\n---END ESSAY---\n\n`;
+        refinePrompt += `---CHANGES MADE---\n[Bullet points listing what was changed, improved, or fixed]\n---END CHANGES---\n\n`;
+        refinePrompt += `Provide the refined essay with improvements while maintaining the student's authentic voice and original message.`;
+        
+        const finalTargetLength = isPersonalStatement ? '650' : targetLength;
+        const finalLengthType = isPersonalStatement ? 'words' : lengthType;
+        const systemContent = (isPersonalStatement || finalTargetLength) 
+          ? `You are an expert college essay editor. Refine and improve college application essays while maintaining the student's authentic voice. Fix errors, improve flow, and strengthen the narrative without changing the core message or making it sound artificial. The refined essay must be exactly ${finalTargetLength} ${finalLengthType}. Always format your response with "---REFINED ESSAY---" followed by the essay, then "---END ESSAY---", then "---CHANGES MADE---" followed by bullet points of changes, then "---END CHANGES---".`
+          : 'You are an expert college essay editor. Refine and improve college application essays while maintaining the student\'s authentic voice. Fix errors, improve flow, and strengthen the narrative without changing the core message or making it sound artificial. Always format your response with "---REFINED ESSAY---" followed by the essay, then "---END ESSAY---", then "---CHANGES MADE---" followed by bullet points of changes, then "---END CHANGES---".';
+        
+        const context = [{
+          role: 'system',
+          content: systemContent
+        }];
+        
+        const response = await sendChatMessage(refinePrompt, context, 'long');
+        
+        // Parse the response to separate essay and changes
+        const responseText = response.message;
+        const essayMatch = responseText.match(/---REFINED ESSAY---\s*([\s\S]*?)\s*---END ESSAY---/);
+        const changesMatch = responseText.match(/---CHANGES MADE---\s*([\s\S]*?)\s*---END CHANGES---/);
+        
+        let essayContent = '';
+        let changesContent = '';
+        
+        if (essayMatch && changesMatch) {
+          essayContent = essayMatch[1].trim();
+          changesContent = changesMatch[1].trim();
+        } else {
+          // Fallback if format not followed - try to parse anyway or show full response
+          essayContent = responseText;
+          changesContent = 'Unable to parse changes. Please review the essay above.';
+        }
+        
+        // Store essay text for copying (just the essay, not the changes)
+        currentEssayText = essayContent;
+        
+        // Calculate counts
+        const originalWordCount = getWordCount(essayText);
+        const originalCharCount = getCharacterCount(essayText);
+        const refinedWordCount = getWordCount(essayContent);
+        const refinedCharCount = getCharacterCount(essayContent);
+        
+        // Determine which unit to display based on what was selected
+        const displayUnit = isPersonalStatement ? 'words' : lengthType;
+        const originalCount = displayUnit === 'words' ? originalWordCount : originalCharCount;
+        const refinedCount = displayUnit === 'words' ? refinedWordCount : refinedCharCount;
+        const unitLabel = displayUnit === 'words' ? 'words' : 'characters';
+        
+        // Format changes content with proper bullet points
+        const formattedChanges = escapeHtml(changesContent)
+          .replace(/\n/g, '<br>')
+          .replace(/^([-•*])\s*/gm, '• ')
+          .replace(/^(\d+\.)\s*/gm, '• ');
+        
+        // Display result
+        document.getElementById('essay-result-container').innerHTML = `
+          <div class="card" style="margin-bottom: 1.5rem; background: var(--light-mint);">
+            <div style="text-align: center; padding: 1rem;">
+              <div style="color: var(--text-dark); font-size: 1rem; font-weight: bold;">
+                <span style="color: var(--primary-green);">Before:</span> ${originalCount} ${unitLabel} → 
+                <span style="color: var(--primary-green);">After:</span> ${refinedCount} ${unitLabel}
+              </div>
+            </div>
+          </div>
+          
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <h3 style="color: var(--primary-green); margin: 0;">Refined Essay</h3>
+              <button class="copy-button" onclick="copyEssay()">Copy Essay</button>
+            </div>
+            <div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; color: var(--text-dark); font-size: 1rem; padding: 1rem; background: var(--light-mint); border-radius: 8px; border-left: 4px solid var(--primary-green);">${escapeHtml(essayContent).replace(/\n/g, '<br>')}</div>
+          </div>
+          
+          <div class="card">
+            <h3 style="color: var(--primary-green); margin: 0 0 1.5rem 0;">Changes Made</h3>
+            <div style="color: var(--text-dark); line-height: 1.8; white-space: pre-wrap; padding: 1rem; background: var(--white); border-radius: 8px; border: 1px solid var(--border-color);">${formattedChanges}</div>
+          </div>
+        `;
+        document.getElementById('essay-result-container').style.display = 'block';
+        document.getElementById('essay-result-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        showNotification('Essay refined successfully!', 'success');
+      } catch (error) {
+        console.error('Error refining essay:', error);
+        if (error.isRateLimit) {
+          const resetTime = error.rateLimit?.resetIn || 30;
+          showNotification(`You're refining essays too quickly. Please wait ${resetTime} seconds before trying again.`, 'error');
+        } else {
+          showNotification('Failed to refine essay. Please try again.', 'error');
+        }
+      } finally {
+        isProcessing = false;
+        refineBtn.disabled = false;
+        refineBtn.textContent = 'Refine Essay';
+        refineBtn.style.opacity = '1';
+        refineBtn.style.cursor = 'pointer';
+        
+        // Re-enable the generate button
+        const generateBtn = document.getElementById('generate-btn');
+        generateBtn.disabled = false;
+        generateBtn.style.opacity = '1';
+        generateBtn.style.cursor = 'pointer';
+        
+        // Re-enable mode selector buttons
+        document.getElementById('generate-mode').disabled = false;
+        document.getElementById('refine-mode').disabled = false;
+        document.getElementById('generate-mode').style.opacity = '1';
+        document.getElementById('refine-mode').style.opacity = '1';
+        document.getElementById('generate-mode').style.cursor = 'pointer';
+        document.getElementById('refine-mode').style.cursor = 'pointer';
+      }
+    }
+
+    function updateEssayWordCount() {
+      const essayText = document.getElementById('essay-text').value;
+      const wordCountEl = document.getElementById('essay-word-count');
+      
+      if (!essayText.trim()) {
+        wordCountEl.textContent = '';
+        return;
+      }
+      
+      const words = essayText.trim().split(/\s+/).filter(word => word.length > 0);
+      const characters = essayText.length;
+      const charactersNoSpaces = essayText.replace(/\s/g, '').length;
+      
+      wordCountEl.textContent = `${words.length} words • ${characters} characters (${charactersNoSpaces} without spaces)`;
+    }
+
+    function copyEssay() {
+      // Copy just the essay text, not the changes section
+      navigator.clipboard.writeText(currentEssayText).then(() => {
+        showNotification('Essay copied to clipboard!', 'success');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        showNotification('Failed to copy essay', 'error');
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initializeUserId();
+      // Initialize word count on page load
+      updateEssayWordCount();
+    });
+  </script>
+  <script src="/js/auth.js"></script>
+  <script>
+    function handleSignOut() {
+      signOut();
+      window.location.href = '/pages/login.html';
+    }
+  </script>
+</body>
+</html>

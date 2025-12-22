@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: December 14th 2025 (v1.12)**
+**Last Updated: December 21, 2025 (v1.14)**
 
 ## Introduction
 
@@ -28,6 +28,8 @@ When you create an account and use Path Pal, we may collect the following inform
 - **Usage Data**: Information about how you interact with the Service, including:
   - Saved colleges
   - Messages sent to the AI counselor
+  - Chat history (stored locally on your device)
+  - Essay prompts and essay content (when using the Essay Assistant feature)
   - Transcript upload history (date and timestamp only, not the transcript content itself)
   - Preferences and settings
 
@@ -47,12 +49,15 @@ We use the collected information for the following purposes:
    - Provide personalized college recommendations
    - Find local activities and opportunities based on your zip code
    - Enable AI-powered counseling and guidance
+   - Generate and refine college application essays using AI
+   - Display relevant college news and updates
    - Process and extract course information from uploaded transcripts using AI vision technology
 
 2. **To Improve the Service**:
    - Analyze usage patterns to enhance user experience
    - Develop new features and functionality
    - Fix bugs and technical issues
+   - Enforce rate limits to prevent abuse and ensure fair usage
 
 3. **To Communicate with You**:
    - Send important updates about the Service
@@ -62,13 +67,18 @@ We use the collected information for the following purposes:
 4. **To Ensure Security**:
    - Authenticate users and prevent unauthorized access
    - Detect and prevent fraud or abuse
+   - Implement rate limiting to prevent service abuse (20 requests per minute for AI features)
 
 ## Data Storage and Security
 
 ### Storage Methods
 
-- **Server-Side Storage**: Your account information, profile data, and preferences are stored securely on our servers using CSV files and secure databases. Transcript upload metadata (user ID, date, and timestamp) is stored to track usage and enforce rate limits. The actual transcript images/PDFs are not stored after processing.
-- **Client-Side Storage**: Some data is stored locally on your device using browser localStorage for offline functionality
+- **Server-Side Storage**: Your account information, profile data, and preferences are stored securely on our servers using CSV files and secure databases. Transcript upload metadata (user ID, date, and timestamp) is stored to track usage and enforce rate limits. The actual transcript images/PDFs are not stored after processing. Rate limiting data (request counts and timestamps) is stored temporarily in memory to enforce usage limits.
+- **Client-Side Storage**: Some data is stored locally on your device using browser localStorage for offline functionality, including:
+  - Chat history for the AI Counselor (up to 10 chats)
+  - Saved colleges
+  - User preferences and settings
+  - Streak counter and usage statistics
 
 ### Security Measures
 
@@ -89,15 +99,22 @@ Path Pal uses OpenAI's GPT-4 and GPT-4 Vision APIs to provide AI-powered feature
 - College recommendations
 - AI counseling and guidance
 - Personalized advice
+- Essay generation and refinement (Essay Assistant feature)
 - Automatic course extraction from uploaded transcripts
 
-When you use these features, your messages, relevant profile information, and uploaded transcript images may be sent to OpenAI for processing. Transcript images are processed using GPT-4 Vision to extract course information (course names, grades, and course types) and are not stored by OpenAI after processing. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
+When you use these features, your messages, relevant profile information, essay prompts, essay content, and uploaded transcript images may be sent to OpenAI for processing. Transcript images are processed using GPT-4 Vision to extract course information (course names, grades, and course types) and are not stored by OpenAI after processing. Essay content and prompts are sent to GPT-4 for generation and refinement purposes. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
 
 **Transcript Processing**: When you upload a transcript, the image or PDF is converted to an image format, compressed to reduce file size, and sent to OpenAI's GPT-4 Vision API for processing. The transcript image itself is not stored on our servers after processing. We only store the extracted course information (course names, grades, and course types) in your profile. We track upload metadata (user ID, date, and timestamp) to enforce rate limiting (3 uploads per day per user) and for service improvement purposes.
+
+**Essay Assistant**: When you use the Essay Assistant feature to generate or refine essays, your essay prompts, essay content, and relevant profile information (such as intended majors, activities, and academic information) are sent to OpenAI's GPT-4 API to create personalized essays. This information is used solely for essay generation and refinement purposes. Essay content is not stored on our servers after processing, though it may be temporarily stored in your browser's localStorage for your convenience.
 
 ### Email Services
 
 We use third-party email services to send notifications and communications. These services may have access to your email address for the sole purpose of delivering messages.
+
+### News API
+
+Path Pal uses NewsAPI.org to display relevant college news and updates on the home page. When you view the news section, we fetch general college-related news articles. We do not send any personal information to NewsAPI.org. The news articles are filtered for relevance to college admissions and education topics. NewsAPI.org's use of data is governed by their Privacy Policy.
 
 ## Data Sharing and Disclosure
 
@@ -147,9 +164,11 @@ When you delete your account, we will delete or anonymize your personal informat
 Path Pal uses localStorage and similar technologies to:
 - Remember your preferences and settings
 - Enable offline functionality
+- Store chat history for the AI Counselor (up to 10 chats)
+- Track usage statistics (such as daily streak counter)
 - Improve user experience
 
-You can control these technologies through your browser settings, though disabling them may affect the functionality of the Service.
+You can control these technologies through your browser settings, though disabling them may affect the functionality of the Service. Chat history and other locally stored data can be cleared through your browser's storage settings or by deleting your account.
 
 ## International Data Transfers
 

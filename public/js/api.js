@@ -16,7 +16,15 @@ async function sendChatMessage(message, context = [], responseLength = 'medium')
     });
     
     if (!response.ok) {
-      throw new Error('Failed to send message');
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        // Rate limit error
+        const error = new Error(errorData.error || 'Rate limit exceeded. Please wait a moment before trying again.');
+        error.rateLimit = errorData.rateLimit;
+        error.isRateLimit = true;
+        throw error;
+      }
+      throw new Error(errorData.error || 'Failed to send message');
     }
     
     return await response.json();

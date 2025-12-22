@@ -13,6 +13,49 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for transcript images
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Rate limiting for AI features (non-obstructive, just to prevent spam)
+const rateLimitStore = new Map(); // userId -> { count: number, resetTime: number }
+const RATE_LIMIT_REQUESTS = 20; // Number of requests allowed
+const RATE_LIMIT_WINDOW = 60 * 1000; // Time window in milliseconds (1 minute)
+
+function checkRateLimit(userId) {
+  const now = Date.now();
+  const userLimit = rateLimitStore.get(userId);
+  
+  // If no record exists or the window has expired, create/reset
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitStore.set(userId, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW
+    });
+    return { allowed: true, remaining: RATE_LIMIT_REQUESTS - 1 };
+  }
+  
+  // If under the limit, increment and allow
+  if (userLimit.count < RATE_LIMIT_REQUESTS) {
+    userLimit.count++;
+    return { allowed: true, remaining: RATE_LIMIT_REQUESTS - userLimit.count };
+  }
+  
+  // Over the limit
+  const timeUntilReset = Math.ceil((userLimit.resetTime - now) / 1000);
+  return { 
+    allowed: false, 
+    remaining: 0,
+    resetIn: timeUntilReset
+  };
+}
+
+// Clean up old entries periodically (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, limit] of rateLimitStore.entries()) {
+    if (now > limit.resetTime) {
+      rateLimitStore.delete(userId);
+    }
+  }
+}, 5 * 60 * 1000);
+
 // Read GPT key from environment variable (for Render) or file (for local dev)
 let GPT_API_KEY = process.env.GPT_API_KEY || '';
 if (!GPT_API_KEY) {
@@ -128,6 +171,17 @@ app.post('/api/chat', async (req, res) => {
     const { message, context, responseLength = 'medium' } = req.body;
     const userId = req.headers['user-id'] || 'anonymous';
     const timestamp = new Date().toISOString();
+    
+    // Check rate limit
+    const rateLimit = checkRateLimit(userId);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({ 
+        error: `Rate limit exceeded. Please wait ${rateLimit.resetIn} seconds before making another request.`,
+        rateLimit: {
+          resetIn: rateLimit.resetIn
+        }
+      });
+    }
     
     // Log incoming message from user
     try {
@@ -791,7 +845,7 @@ app.get('/api/activities/youth-programs', async (req, res) => {
 const htmlPages = [
   'index.html', 'profile.html', 'odds.html', 'simulator.html', 
   'explorer.html', 'career.html', 'activities.html', 'planner.html', 
-  'messages.html', 'saved.html', 'team.html', 'account.html'
+  'messages.html', 'essay-assistant.html', 'saved.html', 'team.html', 'account.html'
 ];
 
 htmlPages.forEach(page => {
