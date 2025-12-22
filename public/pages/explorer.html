@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="College Explorer - Path Pal">
   <title>College Explorer - Path Pal</title>
   <link rel="manifest" href="/manifest.json">
@@ -687,6 +687,25 @@
       await loadColleges();
     });
 
+    function checkAndShowIncompleteProfileNotification() {
+      // Check if profile is incomplete (not 100% complete or no rating)
+      const isComplete = isProfileComplete(studentProfile);
+      const hasRating = studentRating !== null && studentRating !== undefined;
+      
+      // Only show notification if profile is incomplete or rating is missing
+      if (!isComplete || !hasRating) {
+        // Use localStorage to track if we've shown this notification in this session
+        const notificationKey = 'explorer-incomplete-profile-notification-shown';
+        const hasShownNotification = sessionStorage.getItem(notificationKey);
+        
+        if (!hasShownNotification) {
+          // Show red error notification
+          showNotification('Finish your profile to see calculated admission odds!', 'error');
+          sessionStorage.setItem(notificationKey, 'true');
+        }
+      }
+    }
+
     async function loadColleges() {
       const container = document.getElementById('colleges-list');
       container.innerHTML = '<div class="loading">Loading colleges...</div>';
@@ -699,6 +718,9 @@
         filteredColleges = sortColleges([...allColleges]);
         
         displayColleges();
+        
+        // Check if profile is incomplete after displaying colleges
+        checkAndShowIncompleteProfileNotification();
       } catch (error) {
         console.error('Error loading colleges:', error);
         container.innerHTML = '<div class="no-results">Error loading colleges. Please try again later.</div>';
@@ -815,8 +837,15 @@
           
           case 'enrollment-high':
             // Sort by enrollment: high to low
-            const enrollA = a.enrollment !== null && a.enrollment !== undefined ? a.enrollment : -1;
-            const enrollB = b.enrollment !== null && b.enrollment !== undefined ? b.enrollment : -1;
+            // Normalize enrollment values before comparing
+            const normalizeEnroll = (num) => {
+              if (num === null || num === undefined) return -1;
+              const numValue = typeof num === 'string' ? parseFloat(num) : num;
+              if (isNaN(numValue)) return -1;
+              return numValue < 99 ? numValue * 1000 : numValue;
+            };
+            const enrollA = normalizeEnroll(a.enrollment);
+            const enrollB = normalizeEnroll(b.enrollment);
             // Put null values at the end
             if (enrollA === -1 && enrollB === -1) return 0;
             if (enrollA === -1) return 1;
@@ -825,8 +854,15 @@
           
           case 'enrollment-low':
             // Sort by enrollment: low to high
-            const enrollALow = a.enrollment !== null && a.enrollment !== undefined ? a.enrollment : 999999;
-            const enrollBLow = b.enrollment !== null && b.enrollment !== undefined ? b.enrollment : 999999;
+            // Normalize enrollment values before comparing
+            const normalizeEnrollLow = (num) => {
+              if (num === null || num === undefined) return 999999;
+              const numValue = typeof num === 'string' ? parseFloat(num) : num;
+              if (isNaN(numValue)) return 999999;
+              return numValue < 99 ? numValue * 1000 : numValue;
+            };
+            const enrollALow = normalizeEnrollLow(a.enrollment);
+            const enrollBLow = normalizeEnrollLow(b.enrollment);
             // Put null values at the end
             if (enrollALow === 999999 && enrollBLow === 999999) return 0;
             if (enrollALow === 999999) return 1;
@@ -913,7 +949,14 @@
         // Tuition filter (based on out-of-state tuition)
         if (tuitionFilter) {
           const maxTuition = parseInt(tuitionFilter) * 1000; // Convert to dollars (15k = 15000)
-          const outOfStateTuition = college.tuitionOutState;
+          // Normalize tuition value (multiply by 1000 if < 999)
+          let outOfStateTuition = college.tuitionOutState;
+          if (outOfStateTuition !== null && outOfStateTuition !== undefined) {
+            const numValue = typeof outOfStateTuition === 'string' ? parseFloat(outOfStateTuition) : outOfStateTuition;
+            if (!isNaN(numValue) && numValue < 999) {
+              outOfStateTuition = numValue * 1000;
+            }
+          }
           if (outOfStateTuition === null || outOfStateTuition === undefined || outOfStateTuition >= maxTuition) {
             return false;
           }
@@ -991,15 +1034,47 @@
         const card = document.createElement('div');
         card.className = 'college-card';
         
+        // Helper function to normalize currency values (multiply by 1000 if < 999)
+        const normalizeCurrency = (num) => {
+          if (num === null || num === undefined || num === '') return null;
+          const numValue = typeof num === 'string' ? parseFloat(num) : num;
+          if (isNaN(numValue)) return null;
+          // If the number is less than 999, assume it's in thousands and multiply by 1000
+          if (numValue < 999) {
+            return numValue * 1000;
+          }
+          return numValue;
+        };
+        
+        // Helper function to normalize enrollment values (multiply by 1000 if < 99)
+        const normalizeEnrollment = (num) => {
+          if (num === null || num === undefined || num === '') return null;
+          const numValue = typeof num === 'string' ? parseFloat(num) : num;
+          if (isNaN(numValue)) return null;
+          // If the number is less than 99, assume it's in thousands and multiply by 1000
+          if (numValue < 99) {
+            return numValue * 1000;
+          }
+          return numValue;
+        };
+        
         // Format numbers
         const formatNumber = (num) => {
           if (num === null || num === undefined || num === '') return 'N/A';
           return num.toLocaleString();
         };
         
+        // Format enrollment (with normalization)
+        const formatEnrollment = (num) => {
+          const normalized = normalizeEnrollment(num);
+          if (normalized === null) return 'N/A';
+          return normalized.toLocaleString();
+        };
+        
         const formatCurrency = (num) => {
-          if (num === null || num === undefined || num === '') return 'N/A';
-          return '$' + num.toLocaleString();
+          const normalized = normalizeCurrency(num);
+          if (normalized === null) return 'N/A';
+          return '$' + normalized.toLocaleString();
         };
         
         const formatPercent = (num) => {
@@ -1123,7 +1198,7 @@
             ${college.enrollment !== null ? `
             <div class="info-row">
               <span class="info-label">Enrollment</span>
-              <span class="info-value">${formatNumber(college.enrollment)}</span>
+              <span class="info-value">${formatEnrollment(college.enrollment)}</span>
             </div>
             ` : ''}
             ${college.studentFacultyRatio !== null ? `
@@ -1196,12 +1271,16 @@
           </div>
 
           <div class="college-actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
-            <button class="btn btn-secondary" onclick="saveCollege('${college.id}', event)" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="saveCollege('${college.id}', event)" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex: 2;">
               <span>${isSaved ? 'Unsave' : 'Save'}</span>
               <img src="/media/icons/${isSaved ? 'StarFull256x256' : 'Star256x256'}.png" alt="${isSaved ? 'Saved' : 'Save'}" style="width: 20px; height: 20px;">
             </button>
+            <button class="btn btn-secondary" onclick="askCounselorAboutCollege('${college.id}')" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex: 1;">
+              <img src="/media/icons/Chat256x256.png" alt="Ask AI" style="width: 20px; height: 20px;">
+              <span>Ask AI</span>
+            </button>
             ${college.url ? `
-            <button class="btn btn-secondary" onclick="window.open('${college.url}', '_blank')">Visit Website</button>
+            <button class="btn btn-secondary" onclick="window.open('${college.url}', '_blank')" style="flex: 1;">Visit Website</button>
             ` : ''}
           </div>
         `;
@@ -1250,6 +1329,17 @@
           content.classList.add('expanded');
         }
       }
+    }
+
+    function askCounselorAboutCollege(collegeId) {
+      // Find college by ID
+      const college = allColleges.find(c => c.id === collegeId);
+      if (!college) return;
+      
+      // Navigate to AI Counselor with pre-filled question
+      const question = `Do I have a shot at ${college.name}? Is it a good fit for me?`;
+      const encodedQuestion = encodeURIComponent(question);
+      window.location.href = `/messages.html?question=${encodedQuestion}`;
     }
 
     function saveCollege(collegeId, event) {
@@ -1305,8 +1395,41 @@
       const college = allColleges.find(c => c.id === collegeId);
       if (!college) return;
 
+      // Helper function to normalize currency values (multiply by 1000 if < 999)
+      const normalizeCurrency = (num) => {
+        if (num === null || num === undefined || num === '') return null;
+        const numValue = typeof num === 'string' ? parseFloat(num) : num;
+        if (isNaN(numValue)) return null;
+        // If the number is less than 999, assume it's in thousands and multiply by 1000
+        if (numValue < 999) {
+          return numValue * 1000;
+        }
+        return numValue;
+      };
+
+      // Helper function to normalize enrollment values (multiply by 1000 if < 99)
+      const normalizeEnrollment = (num) => {
+        if (num === null || num === undefined || num === '') return null;
+        const numValue = typeof num === 'string' ? parseFloat(num) : num;
+        if (isNaN(numValue)) return null;
+        // If the number is less than 99, assume it's in thousands and multiply by 1000
+        if (numValue < 99) {
+          return numValue * 1000;
+        }
+        return numValue;
+      };
+
       const formatNumber = (num) => num !== null && num !== undefined && num !== '' ? num.toLocaleString() : 'N/A';
-      const formatCurrency = (num) => num !== null && num !== undefined && num !== '' ? '$' + num.toLocaleString() : 'N/A';
+      const formatCurrency = (num) => {
+        const normalized = normalizeCurrency(num);
+        if (normalized === null) return 'N/A';
+        return '$' + normalized.toLocaleString();
+      };
+      const formatEnrollment = (num) => {
+        const normalized = normalizeEnrollment(num);
+        if (normalized === null) return 'N/A';
+        return normalized.toLocaleString();
+      };
       const formatPercent = (num) => num !== null && num !== undefined && num !== '' ? (num * 100).toFixed(1) + '%' : 'N/A';
 
       let details = `${college.name}\n\n`;
@@ -1327,7 +1450,7 @@
       if (college.tuitionOutState !== null) details += `Out-of-State Tuition: ${formatCurrency(college.tuitionOutState)}\n`;
       if (college.avgAfterAid !== null) details += `Avg Cost After Aid: ${formatCurrency(college.avgAfterAid)}\n`;
       if (college.graduationRate !== null) details += `Graduation Rate: ${formatPercent(college.graduationRate)}\n`;
-      if (college.enrollment !== null) details += `Enrollment: ${formatNumber(college.enrollment)}\n`;
+      if (college.enrollment !== null) details += `Enrollment: ${formatEnrollment(college.enrollment)}\n`;
       if (college.numMajors !== null) details += `Number of Majors: ${formatNumber(college.numMajors)}\n`;
       if (college.popularMajors) details += `\nPopular Majors: ${college.popularMajors}\n`;
       if (college.medianEarnings !== null) details += `Median Earnings (10 years): ${formatCurrency(college.medianEarnings)}\n`;

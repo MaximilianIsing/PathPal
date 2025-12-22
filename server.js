@@ -34,6 +34,16 @@ if (!EMAIL_API_KEY) {
   }
 }
 
+// Read News API key from environment variable (for Render) or file (for local dev)
+let NEWS_API_KEY = process.env.NEWS_API_KEY || '';
+if (!NEWS_API_KEY) {
+  try {
+    NEWS_API_KEY = fs.readFileSync(path.join(__dirname, 'news-key.txt'), 'utf8').trim();
+  } catch (error) {
+    console.log('News API key not found - news functionality will be disabled');
+  }
+}
+
 // Configure email transporter
 let emailTransporter = null;
 if (EMAIL_API_KEY) {
@@ -2100,6 +2110,96 @@ app.post('/api/email/test', async (req, res) => {
   } catch (error) {
     console.error('Test email error:', error);
     res.status(500).json({ success: false, error: 'An error occurred while sending test email' });
+  }
+});
+
+// API endpoint for college news
+app.get('/api/news', async (req, res) => {
+  try {
+    if (!NEWS_API_KEY) {
+      // Return empty results if no API key
+      return res.json({ articles: [] });
+    }
+
+    let allArticles = [];
+
+    // First, try to get headlines from education category (more reliable)
+    try {
+      const headlinesUrl = `https://newsapi.org/v2/top-headlines?category=education&country=us&pageSize=10&apiKey=${NEWS_API_KEY}`;
+      const headlinesResponse = await fetch(headlinesUrl);
+      const headlinesData = await headlinesResponse.json();
+      
+      if (headlinesData.status === 'ok' && headlinesData.articles) {
+        allArticles = allArticles.concat(headlinesData.articles);
+      }
+    } catch (err) {
+      console.error('Error fetching education headlines:', err);
+    }
+
+    // Also search for specific college-related terms
+    const searchQueries = [
+      encodeURIComponent('"college admissions" OR "university admissions" OR "college application"'),
+      encodeURIComponent('(SAT OR ACT) AND (college OR university OR admission)'),
+      encodeURIComponent('"financial aid" OR "college tuition" OR "scholarship"')
+    ];
+
+    // Fetch from search queries
+    for (const query of searchQueries.slice(0, 2)) { // Use first 2 queries to avoid rate limits
+      try {
+        const url = `https://newsapi.org/v2/everything?q=${query}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'ok' && data.articles) {
+          allArticles = allArticles.concat(data.articles);
+        }
+      } catch (err) {
+        console.error('Error fetching news query:', err);
+      }
+    }
+
+    // Filter for relevance - check if title/description contains college-related keywords
+    const relevanceKeywords = [
+      'college', 'university', 'admission', 'admissions', 'SAT', 'ACT', 
+      'financial aid', 'tuition', 'scholarship', 'student', 'applicant',
+      'higher education', 'enrollment', 'acceptance', 'application'
+    ];
+
+    const relevantArticles = allArticles
+      .filter(article => {
+        if (!article.title || !article.url || !article.publishedAt) return false;
+        
+        const titleLower = (article.title || '').toLowerCase();
+        const descLower = (article.description || '').toLowerCase();
+        const combined = titleLower + ' ' + descLower;
+        
+        // Must contain at least one college-related keyword
+        return relevanceKeywords.some(keyword => combined.includes(keyword.toLowerCase()));
+      })
+      .filter(article => {
+        // Exclude articles that are clearly not about college (sports, entertainment, etc.)
+        const titleLower = (article.title || '').toLowerCase();
+        const excludeTerms = ['nfl', 'nba', 'mlb', 'soccer', 'football game', 'basketball game', 'movie', 'tv show', 'celebrity'];
+        return !excludeTerms.some(term => titleLower.includes(term));
+      })
+      // Remove duplicates based on URL
+      .filter((article, index, self) => 
+        index === self.findIndex(a => a.url === article.url)
+      )
+      .slice(0, 5) // Limit to 5 articles
+      .map(article => ({
+        title: article.title,
+        description: article.description || '',
+        url: article.url,
+        publishedAt: article.publishedAt,
+        source: article.source?.name || 'News',
+        imageUrl: article.urlToImage || null
+      }));
+
+    res.json({ articles: relevantArticles });
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    res.json({ articles: [] });
   }
 });
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="AI Counselor - Path Pal">
   <title>AI Counselor - Path Pal</title>
   <link rel="manifest" href="/manifest.json">
@@ -76,6 +76,55 @@
       opacity: 1;
       transform: translateY(0);
     }
+    /* Chat history dropdown */
+    #chat-history-dropdown {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .chat-history-item {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chat-history-item:hover {
+      background: var(--light-mint);
+    }
+    .chat-history-item.active {
+      background: var(--light-mint);
+      border-left: 3px solid var(--primary-green);
+    }
+    .chat-history-item-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.85rem;
+      color: var(--text-dark);
+    }
+    .chat-history-item-date {
+      font-size: 0.7rem;
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+    .chat-history-item-delete {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1rem;
+      flex-shrink: 0;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .chat-history-item-delete:hover {
+      opacity: 1;
+      color: #e74c3c;
+    }
   </style>
 </head>
 <body>
@@ -118,21 +167,26 @@
   </nav>
 
   <main style="position: fixed; top: 70px; bottom: 0; left: 0; right: 0; background: var(--light-mint); display: flex; flex-direction: column; margin: 0; padding: 0;">
-    <!-- Chat Header with Reload Button and Response Length Selector -->
+    <!-- Chat Header with Reload Button and Chat History -->
     <div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--white); border-bottom: 1px solid var(--border-color); margin: 0; gap: 0.75rem;">
       <h2 style="color: var(--primary-green); margin: 0; flex: 1; font-size: 1.25rem;">AI College Counselor</h2>
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-        <label style="font-size: 0.75rem; color: var(--primary-green); font-family: 'Arvo', serif; font-weight: bold; margin: 0; text-align: center;">Response length</label>
-        <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--light-mint); padding: 0.25rem; border-radius: 12px; border: 2px solid var(--primary-green);">
-          <button type="button" class="response-length-btn" data-length="short" onclick="setResponseLength('short')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap;">Short</button>
-          <button type="button" class="response-length-btn active" data-length="medium" onclick="setResponseLength('medium')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: var(--primary-green); color: var(--white); white-space: nowrap;">Medium</button>
-          <button type="button" class="response-length-btn" data-length="long" onclick="setResponseLength('long')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 0.8rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap;">Long</button>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <!-- Chat History Dropdown -->
+        <div style="position: relative;">
+          <button onclick="toggleChatHistory()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 8px; min-width: 120px; font-size: 0.85rem; font-family: 'Arvo', serif; color: var(--primary-green); font-weight: bold; transition: all 0.2s;" title="Chat History" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <span id="current-chat-title">New Chat</span>
+            <span style="margin-left: 0.5rem;">▼</span>
+          </button>
+          <div id="chat-history-dropdown" style="display: none; position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; max-width: 300px; max-height: 400px; overflow-y: auto;">
+            <div style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+              <button onclick="createNewChat()" style="width: 100%; padding: 0.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; font-size: 0.9rem;">+ New Chat</button>
+            </div>
+            <div id="chat-history-list" style="display: flex; flex-direction: column;">
+              <!-- Chat history items will be inserted here -->
+            </div>
+          </div>
         </div>
       </div>
-      <button onclick="reloadChat()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 40px; height: 40px; margin: 0; flex-shrink: 0; transition: all 0.2s;" title="Reload Chat" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        <img src="/media/icons/Reload256x256.png" alt="Reload" style="width: 20px; height: 20px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-        <span style="display: none; font-size: 1.2rem; color: var(--primary-green);">↻</span>
-      </button>
     </div>
 
     <!-- Chat Messages Area - Takes remaining space -->
@@ -143,11 +197,12 @@
     </div>
 
     <!-- Quick Questions Popup -->
-    <div id="quick-questions-popup" style="position: fixed; bottom: 80px; left: 0.5rem; right: 0.5rem; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; padding: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; max-height: 300px; overflow-y: auto; pointer-events: none; margin: 0;">
+    <div id="quick-questions-popup" style="position: fixed; bottom: 80px; left: 0.5rem; right: 0.5rem; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; padding: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; max-height: 400px; overflow-y: auto; pointer-events: none; margin: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h3 style="margin: 0; color: var(--primary-green);">Quick Questions</h3>
         <button onclick="toggleQuickQuestions()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); margin: 0; padding: 0;">×</button>
       </div>
+      
       <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0;">
         <button class="btn btn-secondary" onclick="askQuickQuestion('What courses should I take next semester?')" style="text-align: left; justify-content: flex-start; margin: 0;">
           <img src="/media/icons/Book256x256.png" alt="Book" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Course Recommendations
@@ -161,8 +216,18 @@
         <button class="btn btn-secondary" onclick="askQuickQuestion('How should I prepare for college applications?')" style="text-align: left; justify-content: flex-start; margin: 0;">
           <img src="/media/icons/Check256x256.png" alt="Check" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Application Prep
         </button>
-          </div>
+      </div>
+      
+      <!-- Response Length Selector -->
+      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+        <label style="font-size: 1rem; color: var(--primary-green); font-family: 'Arvo', serif; font-weight: bold; margin: 0 0 0.5rem 0; display: block;">Response Length</label>
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--light-mint); padding: 0.25rem; border-radius: 12px; border: 2px solid var(--primary-green);">
+          <button type="button" class="response-length-btn" data-length="short" onclick="setResponseLength('short')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap; flex: 1;">Short</button>
+          <button type="button" class="response-length-btn active" data-length="medium" onclick="setResponseLength('medium')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: var(--primary-green); color: var(--white); white-space: nowrap; flex: 1;">Medium</button>
+          <button type="button" class="response-length-btn" data-length="long" onclick="setResponseLength('long')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap; flex: 1;">Long</button>
         </div>
+      </div>
+    </div>
 
     <!-- Chat Input Container - Fixed at bottom -->
     <div style="flex-shrink: 0; padding: 1rem; background: var(--white); border-top: 1px solid var(--border-color); margin: 0;">
@@ -179,9 +244,10 @@
               required
               autocomplete="off"
             maxlength="2000"
+            onkeydown="if(event.key === 'Enter' && isProcessingMessage) event.preventDefault();"
             style="flex: 1; padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: 25px; font-size: 1rem; font-family: 'Arvo', serif; margin: 0;"
             />
-          <button type="submit" style="padding: 0.75rem 1.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 25px; cursor: pointer; font-family: 'Arvo', serif; font-weight: bold; white-space: nowrap; margin: 0;">Send</button>
+          <button type="submit" id="send-button" style="padding: 0.75rem 1.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 25px; cursor: pointer; font-family: 'Arvo', serif; font-weight: bold; white-space: nowrap; margin: 0;">Send</button>
           </form>
       </div>
     </div>
@@ -197,11 +263,204 @@
   <script src="/js/app.js"></script>
   <script>
     let chatHistory = [];
+    let currentChatId = null;
+    let allChats = []; // Array of { id, title, messages, createdAt, updatedAt }
+    let isProcessingMessage = false; // Flag to prevent multiple simultaneous messages
+
+    // Chat management functions
+    function getAllChats() {
+      allChats = Storage.get('allChats', []);
+      // Sort by updatedAt (most recent first)
+      allChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      return allChats;
+    }
+
+    function saveAllChats() {
+      // Keep only the 10 most recent chats
+      if (allChats.length > 10) {
+        allChats = allChats.slice(0, 10);
+      }
+      Storage.set('allChats', allChats);
+    }
+
+    function createNewChat() {
+      currentChatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      chatHistory = [];
+      
+      const newChat = {
+        id: currentChatId,
+        title: 'New Chat',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      allChats.unshift(newChat); // Add to beginning
+      saveAllChats();
+      
+      loadChatHistory();
+      updateChatHistoryDropdown();
+      updateCurrentChatTitle('New Chat');
+      closeChatHistory();
+      
+      // Focus input
+      document.getElementById('message-input').focus();
+    }
+
+    function switchToChat(chatId) {
+      const chat = allChats.find(c => c.id === chatId);
+      if (!chat) return;
+      
+      currentChatId = chatId;
+      chatHistory = chat.messages || [];
+      
+      loadChatHistory();
+      updateCurrentChatTitle(chat.title);
+      closeChatHistory();
+    }
+
+    function deleteChat(chatId, event) {
+      event.stopPropagation(); // Prevent switching to chat when deleting
+      
+      if (confirm('Are you sure you want to delete this chat?')) {
+        allChats = allChats.filter(c => c.id !== chatId);
+        saveAllChats();
+        
+        // If deleted chat was current, create new chat
+        if (currentChatId === chatId) {
+          createNewChat();
+        } else {
+          updateChatHistoryDropdown();
+        }
+      }
+    }
+
+    function updateCurrentChatTitle(title) {
+      const titleEl = document.getElementById('current-chat-title');
+      if (titleEl) {
+        titleEl.textContent = title.length > 20 ? title.substring(0, 20) + '...' : title;
+      }
+    }
+
+    function updateChatHistoryDropdown() {
+      const listEl = document.getElementById('chat-history-list');
+      if (!listEl) return;
+      
+      getAllChats();
+      
+      if (allChats.length === 0) {
+        listEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-light); font-size: 0.85rem;">No chat history</div>';
+        return;
+      }
+      
+      let html = '';
+      allChats.forEach(chat => {
+        const date = new Date(chat.updatedAt);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const isActive = chat.id === currentChatId;
+        html += `
+          <div class="chat-history-item ${isActive ? 'active' : ''}" onclick="switchToChat('${chat.id}')">
+            <div class="chat-history-item-title">${escapeHtml(chat.title)}</div>
+            <div class="chat-history-item-date">${dateStr}</div>
+            <button class="chat-history-item-delete" onclick="deleteChat('${chat.id}', event)" title="Delete chat">×</button>
+          </div>
+        `;
+      });
+      
+      listEl.innerHTML = html;
+    }
+
+    function toggleChatHistory() {
+      const dropdown = document.getElementById('chat-history-dropdown');
+      if (!dropdown) return;
+      
+      if (dropdown.style.display === 'none' || !dropdown.style.display) {
+        updateChatHistoryDropdown();
+        dropdown.style.display = 'block';
+      } else {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    function closeChatHistory() {
+      const dropdown = document.getElementById('chat-history-dropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Generate chat title from first message using GPT
+    async function generateChatTitle(firstMessage) {
+      try {
+        const userId = getUserId();
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          },
+          body: JSON.stringify({
+            message: `Generate a short, concise title (maximum 5 words) for a college counseling conversation that starts with this question: "${firstMessage}". Only return the title, nothing else.`,
+            context: [{
+              role: 'system',
+              content: 'You are a helpful assistant. Generate a short, concise title (maximum 5 words) for college counseling conversations. Only return the title, nothing else. Do not include quotes or any other text.'
+            }],
+            responseLength: 'short'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          let title = data.message.trim();
+          // Remove quotes if present
+          title = title.replace(/^["']|["']$/g, '');
+          // Remove any leading/trailing punctuation
+          title = title.replace(/^[^\w]+|[^\w]+$/g, '');
+          // Limit to 30 characters
+          if (title.length > 30) {
+            title = title.substring(0, 27) + '...';
+          }
+          return title || 'New Chat';
+        }
+      } catch (error) {
+        console.error('Error generating chat title:', error);
+      }
+      return 'New Chat';
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('chat-history-dropdown');
+      const dropdownBtn = e.target.closest('button[onclick="toggleChatHistory()"]');
+      if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && !dropdownBtn) {
+        closeChatHistory();
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Load chat history
-      chatHistory = Storage.get('chatHistory', []);
+      // Load all chats
+      getAllChats();
+      
+      // Load or create current chat
+      if (allChats.length > 0) {
+        // Load most recent chat
+        const mostRecent = allChats[0];
+        currentChatId = mostRecent.id;
+        chatHistory = mostRecent.messages || [];
+        updateCurrentChatTitle(mostRecent.title);
+      } else {
+        // Create new chat if none exist
+        createNewChat();
+      }
+      
       loadChatHistory();
+      updateChatHistoryDropdown();
       
       // Load response length preference and set active button
       const savedLength = Storage.get('responseLength', 'medium');
@@ -266,10 +525,33 @@
     async function sendMessage(event) {
       event.preventDefault();
       
+      // Prevent sending if already processing
+      if (isProcessingMessage) return;
+      
       const input = document.getElementById('message-input');
+      const sendButton = document.getElementById('send-button');
       const message = input.value.trim();
       
       if (!message) return;
+      
+      // Check message limit (60 messages max - this will add 2 more: user + AI)
+      const MAX_MESSAGES = 60;
+      if (chatHistory.length >= MAX_MESSAGES - 1) {
+        showNotification('This chat has reached the maximum of 60 messages. Please start a new chat to continue.', 'error');
+        return;
+      }
+      
+      // Set processing flag and disable send button (but allow typing)
+      isProcessingMessage = true;
+      if (sendButton) sendButton.disabled = true;
+      if (sendButton) sendButton.style.opacity = '0.6';
+      if (sendButton) sendButton.style.cursor = 'not-allowed';
+      
+      // Create new chat if this is the first message in an empty chat
+      const isNewChat = chatHistory.length === 0 && (!currentChatId || !allChats.find(c => c.id === currentChatId));
+      if (isNewChat) {
+        currentChatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      }
       
       // Clear input
       input.value = '';
@@ -318,16 +600,54 @@
         chatHistory.push({ text: message, sender: 'user' });
         chatHistory.push({ text: response.message, sender: 'ai' });
         
-        // Keep last 20 messages
-        if (chatHistory.length > 20) {
-          chatHistory = chatHistory.slice(-20);
+        // Enforce message limit (60 messages max) - trim oldest if exceeded
+        const MAX_MESSAGES = 60;
+        if (chatHistory.length > MAX_MESSAGES) {
+          chatHistory = chatHistory.slice(-MAX_MESSAGES);
         }
         
-        Storage.set('chatHistory', chatHistory);
+        // Generate title if this is the first message in a new chat
+        let chatTitle = 'New Chat';
+        if (isNewChat || (chatHistory.length === 2 && allChats.find(c => c.id === currentChatId)?.title === 'New Chat')) {
+          chatTitle = await generateChatTitle(message);
+        } else {
+          // Get existing title
+          const existingChat = allChats.find(c => c.id === currentChatId);
+          if (existingChat) {
+            chatTitle = existingChat.title;
+          }
+        }
+        
+        // Save chat to allChats
+        const chatIndex = allChats.findIndex(c => c.id === currentChatId);
+        const chatData = {
+          id: currentChatId,
+          title: chatTitle,
+          messages: chatHistory,
+          updatedAt: new Date().toISOString(),
+          createdAt: chatIndex >= 0 ? allChats[chatIndex].createdAt : new Date().toISOString()
+        };
+        
+        if (chatIndex >= 0) {
+          allChats[chatIndex] = chatData;
+        } else {
+          allChats.unshift(chatData);
+        }
+        
+        saveAllChats();
+        updateChatHistoryDropdown();
+        updateCurrentChatTitle(chatTitle);
       } catch (error) {
         removeMessage(loadingId);
         addMessageToChat('Sorry, I encountered an error. Please try again later.', 'ai', true);
         console.error('Chat error:', error);
+      } finally {
+        // Re-enable send button (input was never disabled so user can keep typing)
+        isProcessingMessage = false;
+        if (sendButton) sendButton.disabled = false;
+        if (sendButton) sendButton.style.opacity = '1';
+        if (sendButton) sendButton.style.cursor = 'pointer';
+        input.focus();
       }
     }
 
@@ -429,9 +749,8 @@
     });
 
     function reloadChat() {
-      chatHistory = [];
-      Storage.set('chatHistory', []);
-      loadChatHistory();
+      // Create a new chat instead of clearing
+      createNewChat();
     }
   </script>
   <script src="/js/auth.js"></script>

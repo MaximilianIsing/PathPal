@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Activity & Internship Recommendations - Path Pal">
   <title>Activity & Internship Recs - Path Pal</title>
   <link rel="manifest" href="/manifest.json">
@@ -472,7 +472,7 @@
                 ${activity.fullAddress ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Location128x128.png" alt="Address" style="width: 14px; height: 14px;"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.fullAddress)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">${escapeHtml(activity.fullAddress)}</a></p>` : ''}
                 ${activity.phone ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Mobile256x256.png" alt="Phone" style="width: 14px; height: 14px;">${escapeHtml(activity.phone)}</p>` : ''}
                 ${activity.email ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Mail256x175.png" alt="Email" style="width: 14px; height: 10px;"><a href="mailto:${escapeHtml(activity.email)}" style="color: var(--primary-green); text-decoration: none;">${escapeHtml(activity.email)}</a></p>` : ''}
-                ${activity.website ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/site256x256.png" alt="Website" style="width: 14px; height: 14px;"><a href="${escapeHtml(activity.website)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">Visit Website</a></p>` : ''}
+                ${activity.website ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;"><img src="/media/icons/Site256x256.png" alt="Website" style="width: 14px; height: 14px;"><a href="${escapeHtml(activity.website)}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-green); text-decoration: none;">Visit Website</a></p>` : ''}
                 ${activity.centerStatus ? `<p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.5rem;">Status: ${escapeHtml(activity.centerStatus)}</p>` : ''}
               </div>
             </div>

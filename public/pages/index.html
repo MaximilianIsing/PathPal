@@ -103,6 +103,9 @@
         <button class="btn-hero" onclick="window.location.href='/profile.html'">Start Your Journey</button>
       </section>
 
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
+
       <!-- Progress Snapshot -->
       <section class="progress-snapshot">
         <h3>Your Progress</h3>
@@ -120,14 +123,36 @@
         </div>
       </section>
 
-      <!-- Blog Post Section -->
-      <section class="blog-post-section" onclick="showBlogPost()" style="margin: 1.5rem 0; padding: 0; border: 2px solid var(--primary-green); border-radius: 12px; background: var(--white); cursor: pointer; transition: background 0.2s; overflow: hidden;" onmouseover="this.style.background='var(--light-mint)'" onmouseout="this.style.background='var(--white)'">
-        <img src="/media/blogs/BlogPost%231.png" alt="Blog Post Image" style="width: 100%; height: auto; display: block;">
-        <div style="padding: 1rem; text-align: center;">
-          <h3 style="color: var(--primary-green); margin: 0 0 0.5rem 0;">Why We Made Path Pal</h3>
-          <p style="color: var(--text-dark); margin: 0; font-size: 0.9rem;">Blog Post • 11/23/2025</p>
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
+
+      <!-- Streak Counter & Deadlines -->
+      <section class="streak-section" style="background: var(--light-mint); border-radius: 12px; padding: 0.75rem 1rem; margin: 1.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: nowrap;">
+          <!-- Left: Streak -->
+          <div style="flex: 0 0 auto; min-width: 100px; max-width: 130px;">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+              <img src="/media/icons/Fire230x290.png" alt="Fire" style="width: 32px; height: 40px; object-fit: contain; margin-bottom: 0.25rem;">
+              <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary-green); line-height: 1; margin-bottom: 0.5rem;" id="streak-count">0 Day Streak</div>
+              <div style="color: var(--text-light); font-size: 0.7rem;" id="streak-message">Keep it up!</div>
+            </div>
+          </div>
+          
+          <!-- Divider -->
+          <div style="width: 1px; align-self: stretch; background: var(--border-color); flex-shrink: 0;"></div>
+          
+          <!-- Right: Upcoming Deadlines -->
+          <div style="flex: 1 1 auto; min-width: 0;">
+            <div style="color: var(--primary-green); font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; text-align: center;">Upcoming Deadlines</div>
+            <div id="deadlines-container" style="display: flex; flex-direction: column; gap: 0.25rem;">
+              <div style="color: var(--text-light); font-size: 0.75rem;">Loading...</div>
+            </div>
+          </div>
         </div>
       </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
 
       <!-- Blog Post Modal -->
       <div id="blog-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; overflow-y: auto; padding: 80px 1rem 80px 1rem;">
@@ -197,6 +222,34 @@
           <p>Test scenarios</p>
         </a>
       </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
+
+      <!-- Blog Post Section -->
+      <section class="blog-post-section" onclick="showBlogPost()" style="margin: 1.5rem 0; padding: 0; border: 2px solid var(--primary-green); border-radius: 12px; background: var(--white); cursor: pointer; transition: background 0.2s; overflow: hidden;" onmouseover="this.style.background='var(--light-mint)'" onmouseout="this.style.background='var(--white)'">
+        <img src="/media/blogs/BlogPost%231.png" alt="Blog Post Image" style="width: 100%; height: auto; display: block;">
+        <div style="padding: 1rem; text-align: center;">
+          <h3 style="color: var(--primary-green); margin: 0 0 0.5rem 0;">Why We Made Path Pal</h3>
+          <p style="color: var(--text-dark); margin: 0; font-size: 0.9rem;">Blog Post • 11/23/2025</p>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
+
+      <!-- College News Section -->
+      <section class="college-news-section" style="margin: 1.5rem 0;">
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Latest College News</h3>
+        <div id="news-container" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+            Loading news...
+          </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
 
       <!-- Privacy Policy Link -->
       <div style="text-align: center; margin: 1.5rem 0 0.5rem 0;">
@@ -295,6 +348,297 @@
       }
     });
 
+    // Major deadlines list
+    function getMajorDeadlines() {
+      const currentYear = new Date().getFullYear();
+      const nextYear = currentYear + 1;
+      
+      return [
+        // Early Action/Early Decision deadlines (typically November)
+        { name: "EA Deadline", month: 10, day: 1, year: currentYear, recurring: true },
+        { name: "ED Deadline", month: 10, day: 15, year: currentYear, recurring: true },
+        { name: "EA Deadline", month: 10, day: 15, year: currentYear, recurring: true },
+        { name: "ED Deadline", month: 11, day: 1, year: currentYear, recurring: true },
+        { name: "EA Deadline", month: 11, day: 1, year: currentYear, recurring: true },
+        { name: "ED Deadline", month: 11, day: 15, year: currentYear, recurring: true },
+        
+        // Regular Decision deadlines (typically January)
+        { name: "RD Deadline", month: 0, day: 1, year: nextYear, recurring: true },
+        { name: "RD Deadline", month: 0, day: 5, year: nextYear, recurring: true },
+        { name: "RD Deadline", month: 0, day: 15, year: nextYear, recurring: true },
+        { name: "RD Deadline", month: 1, day: 1, year: nextYear, recurring: true },
+        { name: "RD Deadline", month: 1, day: 15, year: nextYear, recurring: true },
+        
+        // SAT Test Dates
+        { name: "SAT Registration Deadline", month: 7, day: 8, year: currentYear, recurring: true },
+        { name: "SAT Test Date", month: 8, day: 28, year: currentYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 8, day: 12, year: currentYear, recurring: true },
+        { name: "SAT Test Date", month: 9, day: 5, year: currentYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 9, day: 3, year: currentYear, recurring: true },
+        { name: "SAT Test Date", month: 10, day: 2, year: currentYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 9, day: 24, year: currentYear, recurring: true },
+        { name: "SAT Test Date", month: 11, day: 6, year: currentYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 10, day: 22, year: currentYear, recurring: true },
+        { name: "SAT Test Date", month: 0, day: 23, year: nextYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 0, day: 7, year: nextYear, recurring: true },
+        { name: "SAT Test Date", month: 2, day: 13, year: nextYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 1, day: 26, year: nextYear, recurring: true },
+        { name: "SAT Test Date", month: 4, day: 1, year: nextYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 3, day: 15, year: nextYear, recurring: true },
+        { name: "SAT Test Date", month: 5, day: 5, year: nextYear, recurring: true },
+        { name: "SAT Registration Deadline", month: 4, day: 19, year: nextYear, recurring: true },
+        
+        // ACT Test Dates
+        { name: "ACT Registration Deadline", month: 7, day: 15, year: currentYear, recurring: true },
+        { name: "ACT Test Date", month: 8, day: 14, year: currentYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 8, day: 18, year: currentYear, recurring: true },
+        { name: "ACT Test Date", month: 9, day: 25, year: currentYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 9, day: 22, year: currentYear, recurring: true },
+        { name: "ACT Test Date", month: 11, day: 12, year: currentYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 11, day: 5, year: currentYear, recurring: true },
+        { name: "ACT Test Date", month: 1, day: 9, year: nextYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 0, day: 3, year: nextYear, recurring: true },
+        { name: "ACT Test Date", month: 3, day: 12, year: nextYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 2, day: 6, year: nextYear, recurring: true },
+        { name: "ACT Test Date", month: 5, day: 7, year: nextYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 4, day: 1, year: nextYear, recurring: true },
+        { name: "ACT Test Date", month: 6, day: 16, year: nextYear, recurring: true },
+        { name: "ACT Registration Deadline", month: 5, day: 10, year: nextYear, recurring: true },
+        
+        // FAFSA
+        { name: "FAFSA Opens", month: 9, day: 30, year: currentYear, recurring: true },
+        { name: "FAFSA Priority Deadline", month: 1, day: 1, year: nextYear, recurring: true },
+        { name: "FAFSA Deadline", month: 5, day: 1, year: nextYear, recurring: true },
+        
+        // Common App
+        { name: "Common App Opens", month: 7, day: 1, year: currentYear, recurring: true },
+        
+        // Scholarship Deadlines
+        { name: "Merit Scholarship Deadline", month: 11, day: 1, year: currentYear, recurring: true },
+        { name: "Merit Scholarship Deadline", month: 0, day: 15, year: nextYear, recurring: true },
+        { name: "Need-Based Aid Deadline", month: 1, day: 1, year: nextYear, recurring: true },
+        
+        // AP Exams
+        { name: "AP Exam Registration", month: 10, day: 15, year: currentYear, recurring: true },
+        { name: "AP Exams Begin", month: 4, day: 30, year: nextYear, recurring: true },
+        
+        // College Visits
+        { name: "College Visit Season", month: 2, day: 1, year: nextYear, recurring: true },
+        { name: "College Visit Season", month: 3, day: 1, year: nextYear, recurring: true },
+      ];
+    }
+
+    // Calculate and display upcoming deadlines
+    function displayUpcomingDeadlines() {
+      const deadlines = getMajorDeadlines();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Process deadlines and calculate next occurrence
+      const upcomingDeadlines = [];
+      
+      deadlines.forEach(deadline => {
+        let deadlineDate = new Date(deadline.year, deadline.month, deadline.day);
+        deadlineDate.setHours(0, 0, 0, 0);
+        
+        // If deadline is in the past and recurring, move to next year
+        if (deadlineDate < today && deadline.recurring) {
+          deadlineDate = new Date(deadline.year + 1, deadline.month, deadline.day);
+          deadlineDate.setHours(0, 0, 0, 0);
+        }
+        
+        // Only include future deadlines
+        if (deadlineDate >= today) {
+          const daysUntil = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+          upcomingDeadlines.push({
+            name: deadline.name,
+            date: deadlineDate,
+            daysUntil: daysUntil
+          });
+        }
+      });
+      
+      // Sort by date
+      upcomingDeadlines.sort((a, b) => a.date - b.date);
+      
+      // Get next 5
+      const next5 = upcomingDeadlines.slice(0, 5);
+      const hasMore = upcomingDeadlines.length > 5;
+      
+      // Display
+      const container = document.getElementById('deadlines-container');
+      if (!container) return;
+      
+      if (next5.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-light); font-size: 0.75rem;">No upcoming deadlines</div>';
+        return;
+      }
+      
+      let html = '';
+      next5.forEach(deadline => {
+        const dateStr = deadline.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const daysText = deadline.daysUntil === 0 ? 'Today' : deadline.daysUntil === 1 ? 'Tomorrow' : `${deadline.daysUntil} days`;
+        html += `<div style="color: var(--text-light); font-size: 0.7rem; display: flex; justify-content: space-between; gap: 0.5rem;">
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${deadline.name}</span>
+          <span style="color: var(--primary-green); font-weight: bold; flex-shrink: 0;">${dateStr} (${daysText})</span>
+        </div>`;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // Streak counter functionality
+    function updateStreak() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const lastVisitStr = localStorage.getItem('lastVisitDate');
+      let currentStreak = parseInt(localStorage.getItem('currentStreak') || '0');
+      let streakUpdated = false;
+      
+      if (!lastVisitStr) {
+        // First visit ever - start streak at 1
+        currentStreak = 1;
+        localStorage.setItem('lastVisitDate', todayStr);
+        localStorage.setItem('currentStreak', '1');
+        streakUpdated = true;
+      } else if (lastVisitStr === todayStr) {
+        // Already visited today - don't change streak, just display current value
+        streakUpdated = false;
+      } else {
+        // Different day - check if consecutive
+        const lastVisit = new Date(lastVisitStr);
+        lastVisit.setHours(0, 0, 0, 0);
+        const daysDiff = Math.floor((today - lastVisit) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff === 1) {
+          // Consecutive day - increment streak
+          currentStreak += 1;
+          localStorage.setItem('lastVisitDate', todayStr);
+          localStorage.setItem('currentStreak', currentStreak.toString());
+          streakUpdated = true;
+        } else {
+          // More than 1 day gap - reset streak to 1
+          currentStreak = 1;
+          localStorage.setItem('lastVisitDate', todayStr);
+          localStorage.setItem('currentStreak', '1');
+          streakUpdated = true;
+        }
+      }
+      
+      // Update display
+      const streakCountEl = document.getElementById('streak-count');
+      const streakMessageEl = document.getElementById('streak-message');
+      
+      if (streakCountEl) {
+        streakCountEl.textContent = `${currentStreak} Day Streak`;
+      }
+      
+      if (streakMessageEl) {
+        if (currentStreak < 4) {
+          // Encouraging messages for streaks less than 4
+          const messages = [
+            "Let's get this going!",
+            "Keep it going!",
+            "You're building momentum!",
+            "Stay consistent!",
+            "Every day counts!",
+            "You've got this!",
+            "Keep pushing forward!",
+            "Small steps, big results!",
+            "You're making progress!",
+            "Don't stop now!",
+            "Building great habits!",
+            "One day at a time!"
+          ];
+          // Cycle through messages based on streak
+          const messageIndex = (currentStreak - 1) % messages.length;
+          streakMessageEl.textContent = messages[messageIndex];
+        } else {
+          // Motivational messages for streaks 4 and above
+          const messages = [
+            "You're on fire!",
+            "Incredible dedication!",
+            "You're unstoppable!",
+            "Amazing consistency!",
+            "You're a champion!",
+            "Outstanding commitment!",
+            "You're crushing it!",
+            "Pure excellence!",
+            "You're a rockstar!",
+            "Absolutely phenomenal!",
+            "You're legendary!",
+            "Incredible willpower!",
+            "You're inspiring!",
+            "Unbelievable persistence!",
+            "You're dominating!",
+            "World-class dedication!",
+            "You're unstoppable!",
+            "Absolutely amazing!",
+            "Incredible discipline!"
+          ];
+          // Cycle through messages for longer streaks
+          const messageIndex = (currentStreak - 4) % messages.length;
+          streakMessageEl.textContent = messages[messageIndex];
+        }
+      }
+    }
+
+    // Load college news
+    async function loadCollegeNews() {
+      const newsContainer = document.getElementById('news-container');
+      if (!newsContainer) return;
+
+      try {
+        const response = await fetch('/api/news');
+        const data = await response.json();
+
+        if (data.articles && data.articles.length > 0) {
+          newsContainer.innerHTML = '';
+          data.articles.forEach(article => {
+            const articleCard = document.createElement('a');
+            articleCard.href = article.url;
+            articleCard.target = '_blank';
+            articleCard.rel = 'noopener noreferrer';
+            articleCard.style.cssText = 'display: block; background: var(--white); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; text-decoration: none; color: inherit; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+            articleCard.onmouseover = function() {
+              this.style.transform = 'translateY(-2px)';
+              this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+              this.style.borderColor = 'var(--primary-green)';
+            };
+            articleCard.onmouseout = function() {
+              this.style.transform = 'translateY(0)';
+              this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              this.style.borderColor = 'var(--border-color)';
+            };
+
+            const date = new Date(article.publishedAt);
+            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            articleCard.innerHTML = `
+              <h4 style="color: var(--primary-green); margin: 0 0 0.5rem 0; font-size: 1rem; line-height: 1.3; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                <span style="flex: 1;">${article.title}</span>
+                <img src="/media/icons/Link256x256.png" alt="Link" style="width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7;">
+              </h4>
+              ${article.description ? `<p style="color: var(--text-light); margin: 0 0 0.5rem 0; font-size: 0.85rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${article.description}</p>` : ''}
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-light);">
+                <span>${article.source}</span>
+                <span>${formattedDate}</span>
+              </div>
+            `;
+
+            newsContainer.appendChild(articleCard);
+          });
+        } else {
+          newsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-light); font-size: 0.9rem;">No news available at this time.</div>';
+        }
+      } catch (error) {
+        console.error('Error loading news:', error);
+        newsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-light); font-size: 0.9rem;">Unable to load news. Please try again later.</div>';
+      }
+    }
+
     // Load progress data and check browser mode
     document.addEventListener('DOMContentLoaded', async () => {
       // Initialize user ID first
@@ -352,6 +696,15 @@
       } catch (error) {
         console.error('Error loading profile:', error);
       }
+      
+      // Update streak counter
+      updateStreak();
+      
+      // Display upcoming deadlines
+      displayUpcomingDeadlines();
+      
+      // Load college news
+      loadCollegeNews();
       
       // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
       setTimeout(checkBrowserMode, 100);
