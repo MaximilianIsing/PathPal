@@ -133,6 +133,135 @@ if (!NEWS_API_KEY) {
   }
 }
 
+// News cache - stores fetched news articles
+let newsCache = {
+  articles: [],
+  lastFetched: null
+};
+
+// Function to fetch news from NewsAPI
+async function fetchNewsFromAPI() {
+  if (!NEWS_API_KEY) {
+    console.log('News API key not configured - skipping news fetch');
+    return;
+  }
+
+  try {
+    let allArticles = [];
+
+    // First, try to get headlines from education category (more reliable)
+    try {
+      const headlinesUrl = `https://newsapi.org/v2/top-headlines?category=education&country=us&pageSize=10&apiKey=${NEWS_API_KEY}`;
+      const headlinesResponse = await fetch(headlinesUrl);
+      const headlinesData = await headlinesResponse.json();
+      
+      if (headlinesData.status === 'ok' && headlinesData.articles) {
+        allArticles = allArticles.concat(headlinesData.articles);
+        console.log(`Fetched ${headlinesData.articles.length} education headlines`);
+      } else if (headlinesData.status === 'error') {
+        console.error('NewsAPI error (headlines):', headlinesData.message || 'Unknown error');
+        // Continue with search queries even if headlines fail
+      }
+    } catch (err) {
+      console.error('Error fetching education headlines:', err);
+      // Continue with search queries even if headlines fail
+    }
+
+    // Also search for specific college-related terms
+    const searchQueries = [
+      encodeURIComponent('"college admissions" OR "university admissions" OR "college application"'),
+      encodeURIComponent('(SAT OR ACT) AND (college OR university OR admission)'),
+      encodeURIComponent('"financial aid" OR "college tuition" OR "scholarship"')
+    ];
+
+    // Fetch from search queries (use first 2 to avoid rate limits)
+    for (const query of searchQueries.slice(0, 2)) {
+      try {
+        const url = `https://newsapi.org/v2/everything?q=${query}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'ok' && data.articles) {
+          allArticles = allArticles.concat(data.articles);
+          console.log(`Fetched ${data.articles.length} articles for query: ${query}`);
+        } else if (data.status === 'error') {
+          console.error('NewsAPI error for query:', data.message || 'Unknown error');
+          // Continue with other queries even if one fails
+        }
+      } catch (err) {
+        console.error('Error fetching news query:', err);
+        // Continue with other queries even if one fails
+      }
+    }
+
+    // Filter for relevance - check if title/description contains college-related keywords
+    const relevanceKeywords = [
+      'college', 'university', 'admission', 'admissions', 'SAT', 'ACT', 
+      'financial aid', 'tuition', 'scholarship', 'student', 'applicant',
+      'higher education', 'enrollment', 'acceptance', 'application'
+    ];
+
+    const relevantArticles = allArticles
+      .filter(article => {
+        if (!article.title || !article.url || !article.publishedAt) return false;
+        
+        const titleLower = (article.title || '').toLowerCase();
+        const descLower = (article.description || '').toLowerCase();
+        const combined = titleLower + ' ' + descLower;
+        
+        // Must contain at least one college-related keyword
+        return relevanceKeywords.some(keyword => combined.includes(keyword.toLowerCase()));
+      })
+      .filter(article => {
+        // Exclude articles that are clearly not about college (sports, entertainment, etc.)
+        const titleLower = (article.title || '').toLowerCase();
+        const excludeTerms = ['nfl', 'nba', 'mlb', 'soccer', 'football game', 'basketball game', 'movie', 'tv show', 'celebrity'];
+        return !excludeTerms.some(term => titleLower.includes(term));
+      })
+      // Remove duplicates based on URL
+      .filter((article, index, self) => 
+        index === self.findIndex(a => a.url === article.url)
+      )
+      .slice(0, 5) // Limit to 5 articles
+      .map(article => ({
+        title: article.title,
+        description: article.description || '',
+        url: article.url,
+        publishedAt: article.publishedAt,
+        source: article.source?.name || 'News',
+        imageUrl: article.urlToImage || null
+      }));
+
+    // Update cache only if we have articles
+    if (relevantArticles.length > 0) {
+      newsCache.articles = relevantArticles;
+      newsCache.lastFetched = new Date();
+      console.log(`News cache updated: ${relevantArticles.length} articles stored (from ${allArticles.length} total fetched)`);
+    } else {
+      console.log(`No relevant articles found (from ${allArticles.length} total fetched) - keeping existing cache`);
+    }
+  } catch (error) {
+    console.error('Error fetching news from API:', error);
+    // Don't update cache on error - keep existing cache
+  }
+}
+
+// Fetch news immediately on startup (if API key is available)
+if (NEWS_API_KEY) {
+  fetchNewsFromAPI().catch(err => {
+    console.error('Error in initial news fetch:', err);
+  });
+}
+
+// Fetch news every hour (3600000 milliseconds)
+setInterval(() => {
+  if (NEWS_API_KEY) {
+    fetchNewsFromAPI().catch(err => {
+      console.error('Error in scheduled news fetch:', err);
+    });
+  }
+}, 60 * 60 * 1000);
+
 // Configure email transporter
 let emailTransporter = null;
 if (EMAIL_API_KEY) {
@@ -2374,92 +2503,13 @@ app.post('/api/email/test', async (req, res) => {
   }
 });
 
-// API endpoint for college news
+// API endpoint for college news - returns cached news
 app.get('/api/news', async (req, res) => {
   try {
-    if (!NEWS_API_KEY) {
-      // Return empty results if no API key
-      return res.json({ articles: [] });
-    }
-
-    let allArticles = [];
-
-    // First, try to get headlines from education category (more reliable)
-    try {
-      const headlinesUrl = `https://newsapi.org/v2/top-headlines?category=education&country=us&pageSize=10&apiKey=${NEWS_API_KEY}`;
-      const headlinesResponse = await fetch(headlinesUrl);
-      const headlinesData = await headlinesResponse.json();
-      
-      if (headlinesData.status === 'ok' && headlinesData.articles) {
-        allArticles = allArticles.concat(headlinesData.articles);
-      }
-    } catch (err) {
-      console.error('Error fetching education headlines:', err);
-    }
-
-    // Also search for specific college-related terms
-    const searchQueries = [
-      encodeURIComponent('"college admissions" OR "university admissions" OR "college application"'),
-      encodeURIComponent('(SAT OR ACT) AND (college OR university OR admission)'),
-      encodeURIComponent('"financial aid" OR "college tuition" OR "scholarship"')
-    ];
-
-    // Fetch from search queries
-    for (const query of searchQueries.slice(0, 2)) { // Use first 2 queries to avoid rate limits
-      try {
-        const url = `https://newsapi.org/v2/everything?q=${query}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.status === 'ok' && data.articles) {
-          allArticles = allArticles.concat(data.articles);
-        }
-      } catch (err) {
-        console.error('Error fetching news query:', err);
-      }
-    }
-
-    // Filter for relevance - check if title/description contains college-related keywords
-    const relevanceKeywords = [
-      'college', 'university', 'admission', 'admissions', 'SAT', 'ACT', 
-      'financial aid', 'tuition', 'scholarship', 'student', 'applicant',
-      'higher education', 'enrollment', 'acceptance', 'application'
-    ];
-
-    const relevantArticles = allArticles
-      .filter(article => {
-        if (!article.title || !article.url || !article.publishedAt) return false;
-        
-        const titleLower = (article.title || '').toLowerCase();
-        const descLower = (article.description || '').toLowerCase();
-        const combined = titleLower + ' ' + descLower;
-        
-        // Must contain at least one college-related keyword
-        return relevanceKeywords.some(keyword => combined.includes(keyword.toLowerCase()));
-      })
-      .filter(article => {
-        // Exclude articles that are clearly not about college (sports, entertainment, etc.)
-        const titleLower = (article.title || '').toLowerCase();
-        const excludeTerms = ['nfl', 'nba', 'mlb', 'soccer', 'football game', 'basketball game', 'movie', 'tv show', 'celebrity'];
-        return !excludeTerms.some(term => titleLower.includes(term));
-      })
-      // Remove duplicates based on URL
-      .filter((article, index, self) => 
-        index === self.findIndex(a => a.url === article.url)
-      )
-      .slice(0, 5) // Limit to 5 articles
-      .map(article => ({
-        title: article.title,
-        description: article.description || '',
-        url: article.url,
-        publishedAt: article.publishedAt,
-        source: article.source?.name || 'News',
-        imageUrl: article.urlToImage || null
-      }));
-
-    res.json({ articles: relevantArticles });
+    // Return cached news articles
+    res.json({ articles: newsCache.articles || [] });
   } catch (error) {
-    console.error('Error fetching news:', error);
+    console.error('Error returning news:', error);
     res.json({ articles: [] });
   }
 });

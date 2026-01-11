@@ -1,6 +1,6 @@
 # Path Pal
 
-**v1.17**
+**v1.18**
 
 Path Pal is a Progressive Web App (PWA) that helps students plan their college journey with personalized recommendations, admission odds calculations, and AI-powered guidance.
 
@@ -101,7 +101,7 @@ For questions, support, or feedback, please contact us at:
 
 **Email**: team@pathpal.us
 
-## Recent Updates (v1.17)
+## Recent Updates (v1.18)
 
 - **Improved "What If" Simulator**: Enhanced admission odds calculation accuracy with z-score adjustments based on test score percentiles for more realistic scenario analysis
 - **Better Odds Calculations**: Updated admission odds system across all pages to provide more nuanced and accurate predictions using z-scores and test score percentiles
