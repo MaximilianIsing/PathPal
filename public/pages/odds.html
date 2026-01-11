@@ -8,6 +8,47 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
+  <script>
+    // Check PC mode and hide desktop message if enabled
+    (async function() {
+      try {
+        const response = await fetch('/api/pc-mode');
+        const data = await response.json();
+        if (data.pcMode) {
+          document.documentElement.classList.add('pc-mode-enabled');
+          const hideDesktopMessage = () => {
+            const desktopMessage = document.querySelector('.desktop-message');
+            if (desktopMessage) {
+              desktopMessage.style.display = 'none';
+              desktopMessage.classList.remove('show');
+            }
+          };
+          // Hide immediately
+          hideDesktopMessage();
+          // Also hide after DOM loads (in case app.js adds .show class)
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hideDesktopMessage);
+          }
+          // And hide after a short delay to catch late additions
+          setTimeout(hideDesktopMessage, 100);
+          // Show header nav and hide sidebar nav
+          const showHeaderNav = () => {
+            const headerNav = document.querySelector('.header-nav');
+            if (headerNav) {
+              headerNav.style.display = 'flex';
+            }
+          };
+          showHeaderNav();
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showHeaderNav);
+          }
+          setTimeout(showHeaderNav, 50);
+        }
+      } catch (error) {
+        console.error('Error checking PC mode:', error);
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="desktop-message">
@@ -24,6 +65,26 @@
         </a>
       </div>
       <button class="menu-toggle" aria-label="Toggle menu"><img src="/media/icons/Hamburger128x128.png" alt="Menu" style="width: 24px; height: 24px;"></button>
+      <div class="header-nav" style="display: none;">
+        <nav class="header-nav-menu">
+          <ul>
+            <li><a href="/index.html"><img src="/media/icons/Home256x256.png" alt="Home" class="header-nav-icon"></a></li>
+            <li><a href="/profile.html"><img src="/media/icons/Profile256x256.png" alt="My Profile" class="header-nav-icon"></a></li>
+            <li><a href="/odds.html"><img src="/media/icons/Odds256x256.png" alt="Admissions Odds" class="header-nav-icon"></a></li>
+            <li><a href="/simulator.html"><img src="/media/icons/WhatIf256x256.png" alt="What If Simulator" class="header-nav-icon"></a></li>
+            <li><a href="/explorer.html"><img src="/media/icons/Search256x256.png" alt="College Explorer" class="header-nav-icon"></a></li>
+            <li><a href="/career.html"><img src="/media/icons/DollarSign256x256.png" alt="Career & Salary" class="header-nav-icon"></a></li>
+            <li><a href="/activities.html"><img src="/media/icons/Activity256x256.png" alt="Activities" class="header-nav-icon"></a></li>
+            <li><a href="/planner.html"><img src="/media/icons/Calender256x256.png" alt="4-Year Planner" class="header-nav-icon"></a></li>
+            <li><a href="/messages.html"><img src="/media/icons/Chat256x256.png" alt="AI Counselor" class="header-nav-icon"></a></li>
+            <li><a href="/essay-assistant.html"><img src="/media/icons/Book256x256.png" alt="Essay Assistant" class="header-nav-icon"></a></li>
+            <li><a href="/saved.html"><img src="/media/icons/Star256x256.png" alt="Saved Colleges" class="header-nav-icon"></a></li>
+            <li><a href="/account.html"><img src="/media/icons/SignOut256x256.png" alt="Account Options" class="header-nav-icon"></a></li>
+            <li><a href="/team.html"><img src="/media/icons/Team256x256.png" alt="Our Team" class="header-nav-icon"></a></li>
+            <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="header-nav-icon"></a></li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </header>
 

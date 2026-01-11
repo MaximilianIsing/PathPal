@@ -56,6 +56,34 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+// Read PC mode setting from file or environment variable
+let SERVE_PC_MODE = false;
+function updatePCMode() {
+  try {
+    const pcModeFile = fs.readFileSync(path.join(__dirname, 'serve-pc.txt'), 'utf8').trim().toLowerCase();
+    SERVE_PC_MODE = pcModeFile === 'true';
+  } catch (error) {
+    // If file doesn't exist or can't be read, use environment variable or default to false
+    SERVE_PC_MODE = (process.env.SERVE_PC_MODE || 'false').toLowerCase() === 'true';
+  }
+}
+updatePCMode(); // Initial load
+
+// Watch for changes to serve-pc.txt file
+try {
+  fs.watchFile(path.join(__dirname, 'serve-pc.txt'), { interval: 1000 }, () => {
+    updatePCMode();
+    console.log(`PC mode updated: ${SERVE_PC_MODE}`);
+  });
+} catch (error) {
+  console.log('Could not watch serve-pc.txt file (file may not exist yet)');
+}
+
+// API endpoint to check PC mode
+app.get('/api/pc-mode', (req, res) => {
+  res.json({ pcMode: SERVE_PC_MODE });
+});
+
 // Read GPT key from environment variable (for Render) or file (for local dev)
 let GPT_API_KEY = process.env.GPT_API_KEY || '';
 if (!GPT_API_KEY) {

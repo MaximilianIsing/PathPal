@@ -133,6 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
       link.classList.add('active');
     }
   });
+  
+  // Also set active class for header nav in PC mode
+  const headerNavLinks = document.querySelectorAll('.header-nav-menu a');
+  headerNavLinks.forEach(link => {
+    const linkPage = link.getAttribute('href');
+    if (linkPage === currentPage || (currentPage === '' && linkPage === 'index.html')) {
+      link.classList.add('active');
+    }
+  });
 });
 
 // Remove blur transition on page load
