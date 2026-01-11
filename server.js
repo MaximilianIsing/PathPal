@@ -84,6 +84,24 @@ app.get('/api/pc-mode', (req, res) => {
   res.json({ pcMode: SERVE_PC_MODE });
 });
 
+// API endpoint to get blog posts
+app.get('/api/blog-posts', (req, res) => {
+  try {
+    const blogPostsPath = path.join(__dirname, 'public', 'media', 'blogs', 'blogposts.json');
+    if (!fs.existsSync(blogPostsPath)) {
+      return res.json([]);
+    }
+
+    const jsonText = fs.readFileSync(blogPostsPath, 'utf8');
+    const blogPosts = JSON.parse(jsonText);
+
+    res.json(blogPosts);
+  } catch (error) {
+    console.error('Error reading blog posts JSON:', error);
+    res.status(500).json({ error: 'Failed to load blog posts' });
+  }
+});
+
 // Read GPT key from environment variable (for Render) or file (for local dev)
 let GPT_API_KEY = process.env.GPT_API_KEY || '';
 if (!GPT_API_KEY) {
@@ -872,7 +890,7 @@ app.get('/api/activities/youth-programs', async (req, res) => {
 // Serve all HTML pages
 const htmlPages = [
   'index.html', 'profile.html', 'odds.html', 'simulator.html', 
-  'explorer.html', 'career.html', 'activities.html', 'planner.html', 
+  'explorer.html', 'career.html', 'activities.html', 'scholarships.html', 'planner.html', 
   'messages.html', 'essay-assistant.html', 'saved.html', 'team.html', 'account.html'
 ];
 

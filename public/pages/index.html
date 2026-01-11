@@ -6,7 +6,7 @@
   <meta name="description" content="v1.15">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" href="/media/AppIcon.png">
+  <link rel="icon" type="image/png" href="/media/logo/logo128x128.png">
   <link rel="apple-touch-icon" href="/media/AppIcon.png">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
@@ -121,6 +121,7 @@
             <li><a href="/explorer.html"><img src="/media/icons/Search256x256.png" alt="College Explorer" class="header-nav-icon"></a></li>
             <li><a href="/career.html"><img src="/media/icons/DollarSign256x256.png" alt="Career & Salary" class="header-nav-icon"></a></li>
             <li><a href="/activities.html"><img src="/media/icons/Activity256x256.png" alt="Activities" class="header-nav-icon"></a></li>
+            <li><a href="/scholarships.html"><img src="/media/icons/Scholarships256x256.png" alt="Scholarships" class="header-nav-icon"></a></li>
             <li><a href="/planner.html"><img src="/media/icons/Calender256x256.png" alt="4-Year Planner" class="header-nav-icon"></a></li>
             <li><a href="/messages.html"><img src="/media/icons/Chat256x256.png" alt="AI Counselor" class="header-nav-icon"></a></li>
             <li><a href="/essay-assistant.html"><img src="/media/icons/Book256x256.png" alt="Essay Assistant" class="header-nav-icon"></a></li>
@@ -143,6 +144,7 @@
       <li><a href="/explorer.html"><img src="/media/icons/Search256x256.png" alt="College Explorer" class="nav-icon"> College Explorer</a></li>
       <li><a href="/career.html"><img src="/media/icons/DollarSign256x256.png" alt="Career & Salary Paths" class="nav-icon"> Career & Salary Paths</a></li>
       <li><a href="/activities.html"><img src="/media/icons/Activity256x256.png" alt="Activities" class="nav-icon"> Activity & Internship Recs</a></li>
+      <li><a href="/scholarships.html"><img src="/media/icons/Scholarships256x256.png" alt="Scholarships" class="nav-icon"> Scholarships</a></li>
       <li><a href="/planner.html"><img src="/media/icons/Calender256x256.png" alt="4-Year Planner" class="nav-icon"> 4-Year Planner</a></li>
       <li><a href="/messages.html"><img src="/media/icons/Chat256x256.png" alt="AI Counselor" class="nav-icon"> AI Counselor</a></li>
       <li><a href="/essay-assistant.html"><img src="/media/icons/Book256x256.png" alt="Essay Assistant" class="nav-icon"> Essay Assistant</a></li>
@@ -220,23 +222,10 @@
       <div id="blog-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; overflow-y: auto; padding: 80px 1rem 80px 1rem;">
         <div style="max-width: 600px; margin: 0 auto 2rem auto; background: var(--white); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2 style="color: var(--primary-green); margin: 0;">Why We Made Path Pal</h2>
+            <h2 id="blog-modal-title" style="color: var(--primary-green); margin: 0;"></h2>
             <button onclick="closeBlogPost()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
           <div id="blog-content" style="color: var(--text-dark); line-height: 1.6;">
-            <p style="margin-bottom: 1.5rem;">It started with a simple observation: while some students had access to private college counselors, expensive test prep, and personalized guidance, many public school students were navigating the college application process completely alone.</p>
-            
-            <p style="margin-bottom: 1.5rem;">We saw students who had the potential to get into great schools but didn't know where to start. They didn't know which colleges matched their profile, how to improve their chances, or what activities would strengthen their applications. Their schools were understaffed, with one counselor responsible for hundreds of students. Private counseling cost thousands of dollars that their families couldn't afford.</p>
-            
-            <p style="margin-bottom: 1.5rem;">That's when we realized something had to change. Every student deserves access to quality college guidance, regardless of their school's resources or their family's income. So we built Path Pal.</p>
-            
-            <p style="margin-bottom: 1.5rem;">Path Pal was created to level the playing field. We wanted to give every student, especially those in public schools without dedicated college counselors, the same tools and guidance that were previously only available to those who could pay for it.</p>
-            
-            <p style="margin-bottom: 1.5rem;">Our AI counselor is available 24/7, answering questions about college admissions, course selection, and test preparation. Our admissions odds calculator shows students where they stand and how to improve. Our "What If" simulator lets them test different scenarios before making changes. All of this is free and accessible to anyone.</p>
-            
-            <p style="margin-bottom: 1.5rem;">We built Path Pal because we believe that access to quality college guidance shouldn't depend on your zip code or your family's income. Every student deserves a fair shot at reaching their dream schools, and we're here to make sure they get it.</p>
-            
-            <p style="margin-bottom: 0;">This is more than just an app to us. It's our mission to ensure that every student, regardless of their circumstances, has the tools and support they need to succeed. That's why we made Path Pal.</p>
           </div>
         </div>
       </div>
@@ -278,6 +267,11 @@
           <h3>Activity Recs</h3>
           <p>Get suggestions</p>
         </a>
+        <a href="/scholarships.html" class="tile">
+          <div class="tile-icon"><img src="/media/icons/Scholarships256x256.png" alt="Scholarships"></div>
+          <h3>Scholarships</h3>
+          <p>Get financial aid</p>
+        </a>
         <a href="/planner.html" class="tile">
           <div class="tile-icon"><img src="/media/icons/Calender256x256.png" alt="Calendar"></div>
           <h3>Plan Your Path</h3>
@@ -303,12 +297,15 @@
       <!-- Divider -->
       <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
 
-      <!-- Blog Post Section -->
-      <section class="blog-post-section" onclick="showBlogPost()" style="margin: 1.5rem 0; padding: 0; border: 2px solid var(--primary-green); border-radius: 12px; background: var(--white); cursor: pointer; transition: background 0.2s; overflow: hidden;" onmouseover="this.style.background='var(--light-mint)'" onmouseout="this.style.background='var(--white)'">
-        <img src="/media/blogs/BlogPost%231.png" alt="Blog Post Image" style="width: 100%; height: auto; display: block;">
-        <div style="padding: 1rem; text-align: center;">
-          <h3 style="color: var(--primary-green); margin: 0 0 0.5rem 0;">Why We Made Path Pal</h3>
-          <p style="color: var(--text-dark); margin: 0; font-size: 0.9rem;">Blog Post • 11/23/2025</p>
+      <!-- Blog Posts Carousel Section -->
+      <section class="blog-posts-section" style="margin: 1.5rem 0;">
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Latest Blog Posts</h3>
+        <div id="blog-carousel-container" style="position: relative;">
+          <div id="blog-carousel" style="display: flex; overflow-x: hidden; scroll-behavior: smooth; position: relative; width: 100%;">
+            <!-- Blog posts will be loaded here -->
+          </div>
+          <button id="blog-carousel-prev" onclick="prevBlogPost()" style="display: none; position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: var(--primary-green); color: var(--white); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(13, 140, 121, 0.9)'" onmouseout="this.style.background='var(--primary-green)'">‹</button>
+          <button id="blog-carousel-next" onclick="nextBlogPost()" style="display: none; position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: var(--primary-green); color: var(--white); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(13, 140, 121, 0.9)'" onmouseout="this.style.background='var(--primary-green)'">›</button>
         </div>
       </section>
 
@@ -399,10 +396,121 @@
       localStorage.setItem('browser-popup-dismissed', 'true');
     }
 
+    // Blog posts carousel
+    let currentBlogIndex = 0;
+    let blogPosts = [];
+
+    async function loadBlogPosts() {
+      try {
+        const response = await fetch('/api/blog-posts');
+        blogPosts = await response.json();
+        displayBlogCarousel();
+      } catch (error) {
+        console.error('Error loading blog posts:', error);
+      }
+    }
+
+    function displayBlogCarousel() {
+      const carousel = document.getElementById('blog-carousel');
+      const prevButton = document.getElementById('blog-carousel-prev');
+      const nextButton = document.getElementById('blog-carousel-next');
+      
+      if (!carousel || blogPosts.length === 0) return;
+
+      carousel.innerHTML = '';
+      
+      blogPosts.forEach((post, index) => {
+        const postCard = document.createElement('div');
+        postCard.className = 'blog-post-card';
+        postCard.style.cssText = 'min-width: 100%; width: 100%; max-width: 100%; flex-shrink: 0; padding: 0; border: 2px solid var(--primary-green); border-radius: 12px; background: var(--white); cursor: pointer; transition: background 0.2s; overflow: hidden; box-sizing: border-box;';
+        postCard.onmouseover = function() {
+          this.style.background = 'var(--light-mint)';
+        };
+        postCard.onmouseout = function() {
+          this.style.background = 'var(--white)';
+        };
+        postCard.onclick = (e) => {
+          e.stopPropagation();
+          showBlogPost(index);
+        };
+
+        const imagePath = encodeURIComponent(post.image);
+        postCard.innerHTML = `
+          <div style="width: 100%; aspect-ratio: 3/2; overflow: hidden; background: var(--border-color); display: flex; align-items: center; justify-content: center;">
+            <img src="/media/blogs/${imagePath}" alt="${escapeHtml(post.title)}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          </div>
+          <div style="padding: 1rem; text-align: center;">
+            <h3 style="color: var(--primary-green); margin: 0 0 0.5rem 0;">${escapeHtml(post.title)}</h3>
+            <p style="color: var(--text-dark); margin: 0; font-size: 0.9rem;">Blog Post • ${post.date}</p>
+          </div>
+        `;
+
+        carousel.appendChild(postCard);
+      });
+
+      // Show/hide navigation buttons
+      if (blogPosts.length > 1) {
+        prevButton.style.display = 'block';
+        nextButton.style.display = 'block';
+        updateCarouselButtons();
+      } else {
+        prevButton.style.display = 'none';
+        nextButton.style.display = 'none';
+      }
+
+      // Update carousel position
+      updateCarouselPosition();
+    }
+
+    function updateCarouselPosition() {
+      const carousel = document.getElementById('blog-carousel');
+      if (carousel) {
+        carousel.scrollLeft = currentBlogIndex * carousel.offsetWidth;
+      }
+    }
+
+    function updateCarouselButtons() {
+      const prevButton = document.getElementById('blog-carousel-prev');
+      const nextButton = document.getElementById('blog-carousel-next');
+      
+      if (prevButton) {
+        prevButton.style.opacity = currentBlogIndex === 0 ? '0.5' : '1';
+        prevButton.style.cursor = currentBlogIndex === 0 ? 'not-allowed' : 'pointer';
+      }
+      if (nextButton) {
+        nextButton.style.opacity = currentBlogIndex >= blogPosts.length - 1 ? '0.5' : '1';
+        nextButton.style.cursor = currentBlogIndex >= blogPosts.length - 1 ? 'not-allowed' : 'pointer';
+      }
+    }
+
+    function nextBlogPost() {
+      if (currentBlogIndex < blogPosts.length - 1) {
+        currentBlogIndex++;
+        updateCarouselPosition();
+        updateCarouselButtons();
+      }
+    }
+
+    function prevBlogPost() {
+      if (currentBlogIndex > 0) {
+        currentBlogIndex--;
+        updateCarouselPosition();
+        updateCarouselButtons();
+      }
+    }
+
     // Show blog post modal
-    function showBlogPost() {
+    function showBlogPost(index) {
+      if (index < 0 || index >= blogPosts.length) return;
+      
+      const post = blogPosts[index];
       const modal = document.getElementById('blog-modal');
-      if (modal) {
+      const titleEl = document.getElementById('blog-modal-title');
+      const contentEl = document.getElementById('blog-content');
+      
+      if (modal && titleEl && contentEl) {
+        titleEl.textContent = post.title;
+        contentEl.innerHTML = `<p style="margin-bottom: 1.5rem; white-space: pre-wrap;">${escapeHtml(post.text).replace(/\n/g, '</p><p style="margin-bottom: 1.5rem; white-space: pre-wrap;">')}</p>`;
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
       }
@@ -424,6 +532,13 @@
         closeBlogPost();
       }
     });
+
+    // Escape HTML utility
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
 
     // Major deadlines list
     function getMajorDeadlines() {
@@ -883,6 +998,9 @@
       
       // Load college news
       loadCollegeNews();
+      
+      // Load blog posts
+      loadBlogPosts();
       
       // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
       setTimeout(checkBrowserMode, 100);
