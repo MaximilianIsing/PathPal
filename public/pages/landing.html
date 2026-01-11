@@ -11,6 +11,19 @@
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
   <script>
+    // Check if device is mobile based on screen resolution and aspect ratio
+    function isMobileByScreen() {
+      const width = window.innerWidth || screen.width;
+      const height = window.innerHeight || screen.height;
+      const aspectRatio = width / height;
+      
+      // Mobile devices typically have:
+      // - Width <= 768px, or
+      // - Portrait orientation with width <= 1024px, or
+      // - Aspect ratio < 1 (portrait) with small width
+      return width <= 768 || (aspectRatio < 1 && width <= 1024);
+    }
+
     // Check PC mode and hide desktop message if enabled
     (async function() {
       try {
@@ -25,8 +38,13 @@
               desktopMessage.classList.remove('show');
             }
           };
-          // Update carousel images to use PC versions
+          // Update carousel images to use PC versions ONLY if not mobile
+          // Mobile users always keep the original /media/carousel/ images
           const updateCarouselImages = () => {
+            // Only update if NOT a mobile device (based on screen size/aspect ratio)
+            if (isMobileByScreen()) {
+              return; // Keep original mobile images
+            }
             const carouselImages = document.querySelectorAll('.carousel-slide img');
             carouselImages.forEach(img => {
               const currentSrc = img.src;
@@ -37,7 +55,7 @@
           };
           // Hide immediately
           hideDesktopMessage();
-          // Update carousel images immediately
+          // Update carousel images immediately (only if not mobile)
           updateCarouselImages();
           // Also hide after DOM loads (in case app.js adds .show class)
           if (document.readyState === 'loading') {
@@ -291,7 +309,7 @@
     </div>
     <div class="desktop-footer-bar">
       <span class="desktop-footer-left">© Path Pal 2025</span>
-      <span class="desktop-footer-right">v1.18</span>
+      <span class="desktop-footer-right">v1.19</span>
     </div>
   </div>
 
@@ -359,6 +377,19 @@
       setTimeout(setViewportHeight, 100);
     });
     
+    // Check if device is mobile based on screen resolution and aspect ratio
+    function isMobileByScreen() {
+      const width = window.innerWidth || screen.width;
+      const height = window.innerHeight || screen.height;
+      const aspectRatio = width / height;
+      
+      // Mobile devices typically have:
+      // - Width <= 768px, or
+      // - Portrait orientation with width <= 1024px, or
+      // - Aspect ratio < 1 (portrait) with small width
+      return width <= 768 || (aspectRatio < 1 && width <= 1024);
+    }
+
     // Check if on desktop and redirect to main page (which shows desktop message)
     // UNLESS PC mode is enabled
     function isMobileDevice() {
@@ -374,14 +405,17 @@
         if (!data.pcMode && !isMobileDevice()) {
           window.location.href = '/pages/index.html';
         } else if (data.pcMode) {
-          // Update carousel images to use PC versions
-          const carouselImages = document.querySelectorAll('.carousel-slide img');
-          carouselImages.forEach(img => {
-            const currentSrc = img.src;
-            if (currentSrc.includes('/media/carousel/')) {
-              img.src = currentSrc.replace('/media/carousel/', '/media/carousel-pc/');
-            }
-          });
+          // Update carousel images to use PC versions ONLY if not mobile
+          // Mobile users always keep the original /media/carousel/ images
+          if (!isMobileByScreen()) {
+            const carouselImages = document.querySelectorAll('.carousel-slide img');
+            carouselImages.forEach(img => {
+              const currentSrc = img.src;
+              if (currentSrc.includes('/media/carousel/')) {
+                img.src = currentSrc.replace('/media/carousel/', '/media/carousel-pc/');
+              }
+            });
+          }
         }
       } catch (error) {
         // If API check fails, use default behavior (redirect desktop users)
