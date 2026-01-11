@@ -42,11 +42,18 @@ self.addEventListener('fetch', (event) => {
       .then((cachedResponse) => {
         // Fetch from network in background to update cache
         const fetchPromise = fetch(event.request).then((networkResponse) => {
-          // Update cache with new response
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          // Only cache responses that are ok and not partial (206) responses
+          // Partial responses (206) are not supported by Cache API
+          if (networkResponse.status === 200 && networkResponse.ok) {
+            // Update cache with new response
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone).catch((err) => {
+                // Silently ignore cache errors (e.g., for non-cacheable responses)
+                console.warn('Failed to cache response:', err);
+              });
+            });
+          }
           return networkResponse;
         }).catch(() => {
           // Network failed, ignore (we'll use cache)

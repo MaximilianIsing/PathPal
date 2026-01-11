@@ -102,6 +102,24 @@ app.get('/api/blog-posts', (req, res) => {
   }
 });
 
+// API endpoint to get daily tips
+app.get('/api/daily-tips', (req, res) => {
+  try {
+    const tipsPath = path.join(__dirname, 'public', 'media', 'home-page', 'tips.json');
+    if (!fs.existsSync(tipsPath)) {
+      return res.json([]);
+    }
+
+    const jsonText = fs.readFileSync(tipsPath, 'utf8');
+    const tips = JSON.parse(jsonText);
+
+    res.json(tips);
+  } catch (error) {
+    console.error('Error reading tips JSON:', error);
+    res.status(500).json({ error: 'Failed to load tips' });
+  }
+});
+
 // Read GPT key from environment variable (for Render) or file (for local dev)
 let GPT_API_KEY = process.env.GPT_API_KEY || '';
 if (!GPT_API_KEY) {

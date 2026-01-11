@@ -429,7 +429,7 @@
       const totalCareers = letterJobs.length;
 
       if (letterJobs.length === 0) {
-        container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-light);">No careers found for this letter.</div>';
+        container.innerHTML = `<div style="padding: 1rem; text-align: center; color: var(--text-light);">No careers starting with the letter "${currentLetter}".</div>`;
         if (pagination) pagination.innerHTML = '';
         return;
       }
@@ -482,15 +482,12 @@
       const lettersContainer = document.getElementById('career-list-letters');
       if (!lettersContainer) return;
 
-      const availableLetters = Object.keys(jobsByLetter).sort();
+      // Generate all letters A-Z
+      const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
       
-      if (availableLetters.length === 0) {
-        lettersContainer.innerHTML = '';
-        return;
-      }
-
-      lettersContainer.innerHTML = availableLetters.map(letter => {
+      lettersContainer.innerHTML = allLetters.map(letter => {
         const isActive = letter === currentLetter;
+        const hasCareers = jobsByLetter[letter] && jobsByLetter[letter].length > 0;
         return `
           <button 
             onclick="goToLetter('${letter}')" 
@@ -505,6 +502,7 @@
               font-weight: ${isActive ? 'bold' : 'normal'};
               cursor: pointer;
               transition: all 0.2s;
+              opacity: ${hasCareers ? '1' : '0.6'};
             "
             onmouseover="if ('${letter}' !== '${currentLetter}') this.style.background='#c0d9d5'"
             onmouseout="if ('${letter}' !== '${currentLetter}') this.style.background='var(--border-color)'"

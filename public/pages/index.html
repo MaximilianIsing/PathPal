@@ -329,6 +329,19 @@
       <!-- Divider -->
       <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
 
+      <!-- Daily Tip Section -->
+      <section class="daily-tip-section" style="margin: 1.5rem 0 1rem 0;">
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Daily Tips</h3>
+        <div id="daily-tip-container" style="background: var(--light-mint); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+            Loading tip...
+          </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1rem 0;"></div>
+
       <!-- Privacy Policy Link -->
       <div style="text-align: center; margin: 1.5rem 0 0.5rem 0;">
         <a href="https://maximilianising.github.io/PathPal/PRIVACY_POLICY.html" target="_blank" style="color: var(--primary-green); font-size: 0.85rem; font-style: italic; text-decoration: none;">Privacy Policy</a>
@@ -596,6 +609,51 @@
       }
     });
 
+    // Load daily tip
+    async function loadDailyTip() {
+      try {
+        const response = await fetch('/api/daily-tips');
+        const tips = await response.json();
+        
+        // Get today's date in YYYY-MM-DD format and formatted date string
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const formattedDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        if (!tips || tips.length === 0) {
+          document.getElementById('daily-tip-container').innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-light);">No tip available today.</div>';
+          return;
+        }
+        
+        // Find today's tip
+        let todaysTip = tips.find(tip => tip.date === todayStr);
+        
+        // If no tip for today, use the most recent tip before today, or the first tip
+        if (!todaysTip) {
+          const pastTips = tips.filter(tip => tip.date <= todayStr).sort((a, b) => b.date.localeCompare(a.date));
+          todaysTip = pastTips.length > 0 ? pastTips[0] : tips[0];
+        }
+
+        if (todaysTip) {
+          const tipContainer = document.getElementById('daily-tip-container');
+          tipContainer.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div style="flex: 1;">
+                <div style="color: var(--primary-green); font-size: 0.85rem; font-weight: bold; margin-bottom: 0.25rem; text-align: center;">${escapeHtml(formattedDate)}</div>
+                ${todaysTip.category ? `<div style="color: var(--text-light); font-size: 0.75rem; font-style: italic; text-align: center; margin-bottom: 1rem;">${escapeHtml(todaysTip.category)}</div>` : ''}
+                <div style="color: var(--text-dark); font-size: 1rem; line-height: 1.6; font-family: 'Arvo', serif;">${escapeHtml(todaysTip.tip)}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          document.getElementById('daily-tip-container').innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-light);">No tip available today.</div>';
+        }
+      } catch (error) {
+        console.error('Error loading daily tip:', error);
+        document.getElementById('daily-tip-container').innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-light);">Unable to load tip.</div>';
+      }
+    }
+
     // Escape HTML utility
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -610,15 +668,15 @@
       
       return [
         // Early Action/Early Decision deadlines (typically November)
-        { name: "EA Deadline", month: 10, day: 1, year: currentYear, recurring: true },
+        { name: "EA Deadline", month: 10, day: 1, year: currentYear, recurring: true, priority: true },
         { name: "ED Deadline", month: 10, day: 15, year: currentYear, recurring: true },
         { name: "EA Deadline", month: 10, day: 15, year: currentYear, recurring: true },
         { name: "ED Deadline", month: 11, day: 1, year: currentYear, recurring: true },
         { name: "EA Deadline", month: 11, day: 1, year: currentYear, recurring: true },
         { name: "ED Deadline", month: 11, day: 15, year: currentYear, recurring: true },
-        
+
         // Regular Decision deadlines (typically January)
-        { name: "RD Deadline", month: 0, day: 1, year: nextYear, recurring: true },
+        { name: "RD Deadline", month: 0, day: 1, year: nextYear, recurring: true, priority: true },
         { name: "RD Deadline", month: 0, day: 5, year: nextYear, recurring: true },
         { name: "RD Deadline", month: 0, day: 15, year: nextYear, recurring: true },
         { name: "RD Deadline", month: 1, day: 1, year: nextYear, recurring: true },
@@ -1062,12 +1120,15 @@
       // Load college news
       loadCollegeNews();
       
-      // Load blog posts
-      loadBlogPosts();
-      
-      // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
-      setTimeout(checkBrowserMode, 100);
-    });
+    // Load blog posts
+    loadBlogPosts();
+
+    // Load daily tip
+    loadDailyTip();
+
+    // Check if should show browser banner (wait a bit for isStandaloneMode to be available)
+    setTimeout(checkBrowserMode, 100);
+  });
   </script>
   <script src="/js/auth.js"></script>
   <script>

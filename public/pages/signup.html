@@ -50,6 +50,31 @@
               } else {
                 // Show and play video on PC
                 video.style.display = 'block';
+                
+                // Restore saved timestamp if available (wait for video to be ready)
+                const restoreTimestamp = () => {
+                  const savedTime = localStorage.getItem('landing-video-timestamp');
+                  if (savedTime !== null && !isNaN(parseFloat(savedTime))) {
+                    video.currentTime = parseFloat(savedTime);
+                  }
+                };
+                
+                if (video.readyState >= 1) {
+                  // Video metadata already loaded
+                  restoreTimestamp();
+                } else {
+                  // Wait for metadata to load before setting currentTime
+                  video.addEventListener('loadedmetadata', restoreTimestamp, { once: true });
+                }
+                
+                // Save timestamp periodically while video plays (only add listener once)
+                if (!video.hasAttribute('data-timestamp-listener')) {
+                  video.setAttribute('data-timestamp-listener', 'true');
+                  video.addEventListener('timeupdate', () => {
+                    localStorage.setItem('landing-video-timestamp', video.currentTime.toString());
+                  });
+                }
+                
                 video.play().catch(err => {
                   console.error('Error playing background video:', err);
                 });
