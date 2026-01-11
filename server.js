@@ -266,6 +266,15 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // Get current date in readable format
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -277,7 +286,7 @@ app.post('/api/chat', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful college admissions counselor and academic advisor. Provide personalized, actionable advice for students planning their college path.'
+            content: `You are a helpful college admissions counselor and academic advisor. Provide personalized, actionable advice for students planning their college path. Today's date is ${currentDate}.`
           },
           ...(context || []),
           {

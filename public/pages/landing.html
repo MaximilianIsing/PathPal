@@ -10,6 +10,35 @@
   <link rel="apple-touch-icon" href="/media/AppIcon.png">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
+  <script>
+    // Check PC mode and hide desktop message if enabled
+    (async function() {
+      try {
+        const response = await fetch('/api/pc-mode');
+        const data = await response.json();
+        if (data.pcMode) {
+          document.documentElement.classList.add('pc-mode-enabled');
+          const hideDesktopMessage = () => {
+            const desktopMessage = document.querySelector('.desktop-message');
+            if (desktopMessage) {
+              desktopMessage.style.display = 'none';
+              desktopMessage.classList.remove('show');
+            }
+          };
+          // Hide immediately
+          hideDesktopMessage();
+          // Also hide after DOM loads (in case app.js adds .show class)
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hideDesktopMessage);
+          }
+          // And hide after a short delay to catch late additions
+          setTimeout(hideDesktopMessage, 100);
+        }
+      } catch (error) {
+        console.error('Error checking PC mode:', error);
+      }
+    })();
+  </script>
   <style>
     html, body {
       margin: 0;
@@ -224,6 +253,25 @@
   </style>
 </head>
 <body>
+  <!-- Desktop Message -->
+  <div class="desktop-message">
+    <div class="desktop-message-content">
+      <div class="desktop-message-icon">
+        <img src="/media/icons/Mobile256x256.png" alt="Mobile">
+      </div>
+      <div class="desktop-message-logo">
+        <img src="/media/logo/logo64x64.png" alt="Path Pal Logo">
+        <h1>Path Pal</h1>
+      </div>
+      <h2>Mobile Device Required</h2>
+      <p>Path Pal is designed for mobile devices. Please open this site on your mobile phone or tablet to get started.</p>
+    </div>
+    <div class="desktop-footer-bar">
+      <span class="desktop-footer-left">© Path Pal 2025</span>
+      <span class="desktop-footer-right">v1.16</span>
+    </div>
+  </div>
+
   <div class="landing-container">
     <!-- Image Carousel -->
     <div class="carousel-container" id="carousel-container">
@@ -289,15 +337,27 @@
     });
     
     // Check if on desktop and redirect to main page (which shows desktop message)
+    // UNLESS PC mode is enabled
     function isMobileDevice() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
              (window.innerWidth <= 768 && window.innerHeight <= 1024);
     }
 
-    // Redirect desktop users to main page
-    if (!isMobileDevice()) {
-      window.location.href = '/pages/index.html';
-    }
+    // Redirect desktop users to main page ONLY if PC mode is not enabled
+    (async function() {
+      try {
+        const response = await fetch('/api/pc-mode');
+        const data = await response.json();
+        if (!data.pcMode && !isMobileDevice()) {
+          window.location.href = '/pages/index.html';
+        }
+      } catch (error) {
+        // If API check fails, use default behavior (redirect desktop users)
+        if (!isMobileDevice()) {
+          window.location.href = '/pages/index.html';
+        }
+      }
+    })();
 
     let currentSlide = 0;
     const carouselContent = document.getElementById('carousel-content');
