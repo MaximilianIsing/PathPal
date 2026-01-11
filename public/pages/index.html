@@ -626,8 +626,10 @@
         priorityDeadline = priorityDeadlines[0];
       }
 
-      // Get next 6 (or 6 minus priority count) regular deadlines
-      const regularCount = 6 - (priorityDeadline ? 1 : 0);
+      // Get next deadlines (5 for mobile, 6 for desktop, minus priority count)
+      const isMobile = window.innerWidth < 768;
+      const maxDeadlines = isMobile ? 5 : 6;
+      const regularCount = maxDeadlines - (priorityDeadline ? 1 : 0);
       const nextRegular = upcomingDeadlines.slice(0, regularCount);
       
       // Combine: regular deadlines first, then priority deadline

@@ -36,11 +36,13 @@ function isStandaloneMode() {
 // Navigation menu toggle
 document.addEventListener('DOMContentLoaded', () => {
   const menuToggle = document.querySelector('.menu-toggle');
-  const nav = document.querySelector('nav');
-  const navLinks = document.querySelectorAll('nav a');
+  // Select the sidebar nav (not the header-nav-menu nav)
+  const nav = document.querySelector('nav:not(.header-nav-menu)');
+  const navLinks = document.querySelectorAll('nav:not(.header-nav-menu) a');
   
   if (menuToggle && nav) {
-    menuToggle.addEventListener('click', () => {
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       nav.classList.toggle('active');
     });
   }
