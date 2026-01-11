@@ -20,9 +20,10 @@ When you create an account and use Path Pal, we may collect the following inform
   - Zip code (used to find local activities and opportunities)
   - Academic information (GPA, weighted/unweighted status)
   - Standardized test scores (SAT, ACT, PSAT)
+  - AP scores and AP courses
   - Intended majors and career goals
-  - AP courses and activities
-  - Interests and extracurricular activities
+  - Activities and interests
+  - Extracurricular activities
 - **Profile Pictures**: If you choose to upload a profile picture
 - **Transcript Uploads**: If you choose to upload academic transcripts (images or PDF files) for automatic course extraction, we process these files to extract course information. Uploads are limited to 3 per day per user.
 - **Usage Data**: Information about how you interact with the Service, including:
@@ -102,7 +103,7 @@ Path Pal uses OpenAI's GPT-4 and GPT-4 Vision APIs to provide AI-powered feature
 - Essay generation and refinement (Essay Assistant feature)
 - Automatic course extraction from uploaded transcripts
 
-When you use these features, your messages, relevant profile information, essay prompts, essay content, and uploaded transcript images may be sent to OpenAI for processing. Transcript images are processed using GPT-4 Vision to extract course information (course names, grades, and course types) and are not stored by OpenAI after processing. Essay content and prompts are sent to GPT-4 for generation and refinement purposes. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
+When you use these features, your messages, relevant profile information (including AP scores, test scores, GPA, intended majors, activities, and academic information), essay prompts, essay content, and uploaded transcript images may be sent to OpenAI for processing. Transcript images are processed using GPT-4 Vision to extract course information (course names, grades, and course types) and are not stored by OpenAI after processing. Essay content and prompts are sent to GPT-4 for generation and refinement purposes. OpenAI's use of your data is governed by their Privacy Policy. We recommend reviewing [OpenAI's Privacy Policy](https://openai.com/policies/privacy-policy) for more information.
 
 **Transcript Processing**: When you upload a transcript, the image or PDF is converted to an image format, compressed to reduce file size, and sent to OpenAI's GPT-4 Vision API for processing. The transcript image itself is not stored on our servers after processing. We only store the extracted course information (course names, grades, and course types) in your profile. We track upload metadata (user ID, date, and timestamp) to enforce rate limiting (3 uploads per day per user) and for service improvement purposes.
 

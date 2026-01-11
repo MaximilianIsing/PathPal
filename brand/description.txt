@@ -5,19 +5,19 @@ Navigate your path to college success with Path Pal, the all-in-one mobile app t
 KEY FEATURES
 
 AI College Counselor
-Get instant, personalized advice 24/7 from your virtual college admissions counselor. Ask questions about applications, course selection, test prep, and more. Your AI counselor is always available to help you make informed decisions about your college journey.
+Get instant, personalized advice 24/7 from your virtual college admissions counselor. Ask questions about applications, course selection, test prep, and more. Your AI counselor uses your complete academic profile including AP scores to provide personalized guidance tailored just for you.
 
 Admissions Odds Calculator
-See your real-time acceptance probability for any college. Get AI-powered tips on how to improve your chances of getting in. Understand where you stand and what you need to work on to reach your dream schools.
+See your real-time acceptance probability for any college using advanced z-score calculations based on test score percentiles. Get AI-powered tips on how to improve your chances of getting in. Understand where you stand and what you need to work on to reach your dream schools.
 
 What If Simulator
-Test different scenarios before you make changes. What if you raised your SAT score? What if you added more activities? See how hypothetical changes affect your admission odds so you can plan strategically.
+Test different scenarios before you make changes. What if you raised your SAT score? What if you added more activities? See how hypothetical changes affect your admission odds with accurate calculations using z-scores and test score percentiles so you can plan strategically.
 
 College Explorer
-Discover thousands of colleges with powerful search and filtering tools. Find schools that match your budget, location preferences, test requirements, and more. Search by name, filter by acceptance rate, tuition, test requirements, and student population.
+Discover thousands of colleges with powerful search and filtering tools. Find schools that match your budget, location preferences, test requirements, and more. Search by name, filter by acceptance rate, tuition, test requirements, and student population. Get AI-powered recommendations tailored to your profile.
 
 Career and Salary Insights
-Explore career paths and median salaries by major. Make informed decisions about your future before you commit to a major. Understand the real-world outcomes of your academic choices.
+Explore career paths and median salaries by major with comprehensive A-Z navigation. Make informed decisions about your future before you commit to a major. Understand the real-world outcomes of your academic choices.
 
 Personalized Activity Recommendations
 Get tailored suggestions for extracurricular activities and internships that strengthen your college applications. Build a well-rounded profile that stands out to admissions officers.
@@ -28,8 +28,20 @@ Build your complete roadmap from freshman year to graduation. Track courses, act
 Saved Colleges
 Bookmark your favorite schools and track your application progress all in one place. Keep everything organized as you research and apply to colleges.
 
+Scholarships Finder
+Discover and search for scholarship opportunities to help fund your college education. Find scholarships that match your profile and maximize your financial aid options.
+
+Daily Tips
+Receive personalized daily tips and advice to help guide your college planning journey. Get actionable insights delivered daily to help you stay on track with your college goals.
+
+Deadline Tracker
+Keep track of important college application deadlines including Early Action and Regular Decision dates. Never miss a critical deadline with priority alerts for November 1 Early Action and January 1 Regular Decision deadlines.
+
+Latest College News
+Stay informed with the latest college admissions news and education-related updates. Get curated news articles about college admissions, financial aid, test prep, and more to help you stay current with the college planning landscape.
+
 Complete Profile Management
-Keep all your academic information, test scores, and goals organized in one secure profile. Your data stays private and is used to provide personalized recommendations just for you.
+Keep all your academic information, test scores, AP scores, and goals organized in one secure profile. Your data stays private and is used to provide personalized recommendations just for you.
 
 WHY PATH PAL
 
