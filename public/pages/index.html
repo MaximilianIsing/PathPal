@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="v1.14">
+  <meta name="description" content="v1.15">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/media/AppIcon.png">
@@ -11,12 +11,13 @@
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
   <script>
-    // Check PC mode and hide desktop message if enabled
+    // Check PC mode and hide desktop message if enabled (only on desktop resolution)
     (async function() {
       try {
         const response = await fetch('/api/pc-mode');
         const data = await response.json();
-        if (data.pcMode) {
+        // Only enable PC mode if server allows it AND screen width is >= 768px (desktop)
+        if (data.pcMode && window.innerWidth >= 768) {
           document.documentElement.classList.add('pc-mode-enabled');
           const hideDesktopMessage = () => {
             const desktopMessage = document.querySelector('.desktop-message');
@@ -78,7 +79,7 @@
     </div>
     <div class="desktop-footer-bar">
       <span class="desktop-footer-left">© Path Pal 2025</span>
-      <span class="desktop-footer-right">v1.14</span>
+      <span class="desktop-footer-right">v1.15</span>
     </div>
   </div>
 
@@ -126,7 +127,6 @@
             <li><a href="/saved.html"><img src="/media/icons/Star256x256.png" alt="Saved Colleges" class="header-nav-icon"></a></li>
             <li><a href="/account.html"><img src="/media/icons/SignOut256x256.png" alt="Account Options" class="header-nav-icon"></a></li>
             <li><a href="/team.html"><img src="/media/icons/Team256x256.png" alt="Our Team" class="header-nav-icon"></a></li>
-            <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="header-nav-icon"></a></li>
           </ul>
         </nav>
       </div>
@@ -152,7 +152,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.14
+      v1.15
     </div>
   </nav>
 
@@ -292,6 +292,11 @@
           <div class="tile-icon"><img src="/media/icons/SignOut256x256.png" alt="Account"></div>
           <h3>Account Options</h3>
           <p>Settings & preferences</p>
+        </a>
+        <a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank" class="tile">
+          <div class="tile-icon"><img src="/media/icons/Feedback256x256.png" alt="Feedback"></div>
+          <h3>Feedback</h3>
+          <p>Share your thoughts</p>
         </a>
       </section>
 
@@ -483,7 +488,7 @@
         { name: "FAFSA Deadline", month: 5, day: 1, year: nextYear, recurring: true },
         
         // Common App
-        { name: "Common App Opens", month: 7, day: 1, year: currentYear, recurring: true },
+        { name: "Common App Opens", month: 7, day: 1, year: currentYear, recurring: true, priority: true },
         
         // Scholarship Deadlines
         { name: "Merit Scholarship Deadline", month: 11, day: 1, year: currentYear, recurring: true },
@@ -493,10 +498,64 @@
         // AP Exams
         { name: "AP Exam Registration", month: 10, day: 15, year: currentYear, recurring: true },
         { name: "AP Exams Begin", month: 4, day: 30, year: nextYear, recurring: true },
-        
+        { name: "AP Exam Late Registration", month: 2, day: 1, year: nextYear, recurring: true },
+
         // College Visits
         { name: "College Visit Season", month: 2, day: 1, year: nextYear, recurring: true },
         { name: "College Visit Season", month: 3, day: 1, year: nextYear, recurring: true },
+
+        // CSS Profile
+        { name: "CSS Profile Opens", month: 9, day: 15, year: currentYear, recurring: true },
+        { name: "CSS Profile Priority Deadline", month: 0, day: 1, year: nextYear, recurring: true },
+        { name: "CSS Profile Deadline", month: 1, day: 15, year: nextYear, recurring: true },
+
+        // Common App Additional
+        { name: "Common App Priority Deadline", month: 10, day: 15, year: currentYear, recurring: true },
+
+        // Enrollment & Housing
+        { name: "National Decision Day", month: 4, day: 1, year: nextYear, recurring: true },
+        { name: "Enrollment Deposit Deadline", month: 4, day: 15, year: nextYear, recurring: true },
+        { name: "Housing Application Deadline", month: 4, day: 30, year: nextYear, recurring: true },
+
+        // Financial Aid
+        { name: "Financial Aid Priority Deadline", month: 1, day: 15, year: nextYear, recurring: true },
+        { name: "Financial Aid Verification Deadline", month: 2, day: 15, year: nextYear, recurring: true },
+        { name: "Merit Aid Deadline", month: 11, day: 15, year: currentYear, recurring: true },
+
+        // More Scholarship Deadlines
+        { name: "National Merit Scholarship", month: 9, day: 30, year: currentYear, recurring: true },
+        { name: "Gates Scholarship Deadline", month: 8, day: 15, year: currentYear, recurring: true },
+        { name: "Coca-Cola Scholars Deadline", month: 9, day: 30, year: currentYear, recurring: true },
+        { name: "QuestBridge Deadline", month: 8, day: 1, year: currentYear, recurring: true },
+        { name: "Posse Scholarship Deadline", month: 8, day: 15, year: currentYear, recurring: true },
+        { name: "Dell Scholars Deadline", month: 11, day: 1, year: currentYear, recurring: true },
+
+        // Early Decision II
+        { name: "ED II Deadline", month: 0, day: 1, year: nextYear, recurring: true },
+        { name: "ED II Deadline", month: 0, day: 5, year: nextYear, recurring: true },
+        { name: "ED II Deadline", month: 0, day: 15, year: nextYear, recurring: true },
+
+        // Rolling Admission
+        { name: "Rolling Admission Opens", month: 8, day: 1, year: currentYear, recurring: true },
+        { name: "Rolling Admission Priority", month: 10, day: 1, year: currentYear, recurring: true },
+
+        // International Student Deadlines
+        { name: "International Student ED Deadline", month: 10, day: 15, year: currentYear, recurring: true },
+        { name: "International Student RD Deadline", month: 0, day: 1, year: nextYear, recurring: true },
+
+        // Transfer Deadlines
+        { name: "Spring Transfer Deadline", month: 9, day: 15, year: currentYear, recurring: true },
+        { name: "Fall Transfer Deadline", month: 2, day: 15, year: nextYear, recurring: true },
+        { name: "Fall Transfer Priority Deadline", month: 2, day: 1, year: nextYear, recurring: true },
+
+        // Waitlist & Response
+        { name: "Waitlist Response Deadline", month: 4, day: 15, year: nextYear, recurring: true },
+        { name: "Waitlist Decision Deadline", month: 5, day: 1, year: nextYear, recurring: true },
+
+        // Orientation & Enrollment
+        { name: "New Student Orientation Registration", month: 4, day: 15, year: nextYear, recurring: true },
+        { name: "Course Registration Opens", month: 5, day: 1, year: nextYear, recurring: true },
+        { name: "Housing Deposit Deadline", month: 4, day: 20, year: nextYear, recurring: true },
       ];
     }
 
@@ -505,57 +564,102 @@
       const deadlines = getMajorDeadlines();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+      const currentYear = today.getFullYear();
+      const nextYear = currentYear + 1;
+
       // Process deadlines and calculate next occurrence
       const upcomingDeadlines = [];
-      
+      const priorityDeadlines = [];
+
       deadlines.forEach(deadline => {
         let deadlineDate = new Date(deadline.year, deadline.month, deadline.day);
         deadlineDate.setHours(0, 0, 0, 0);
-        
-        // If deadline is in the past and recurring, move to next year
+
+        // If deadline is in the past and recurring, find the next occurrence
         if (deadlineDate < today && deadline.recurring) {
-          deadlineDate = new Date(deadline.year + 1, deadline.month, deadline.day);
-          deadlineDate.setHours(0, 0, 0, 0);
+          // Try current year first
+          let nextDate = new Date(currentYear, deadline.month, deadline.day);
+          nextDate.setHours(0, 0, 0, 0);
+          if (nextDate < today) {
+            // If current year has passed, move to next year
+            nextDate = new Date(nextYear, deadline.month, deadline.day);
+            nextDate.setHours(0, 0, 0, 0);
+          }
+          deadlineDate = nextDate;
+        } else if (deadline.recurring && deadlineDate >= today) {
+          // If deadline is in future but set to nextYear, check if there's a closer occurrence this year
+          if (deadline.year === nextYear) {
+            const thisYearDate = new Date(currentYear, deadline.month, deadline.day);
+            thisYearDate.setHours(0, 0, 0, 0);
+            if (thisYearDate >= today) {
+              deadlineDate = thisYearDate;
+            }
+          }
         }
-        
+
         // Only include future deadlines
         if (deadlineDate >= today) {
           const daysUntil = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-          upcomingDeadlines.push({
+          const deadlineObj = {
             name: deadline.name,
             date: deadlineDate,
-            daysUntil: daysUntil
-          });
+            daysUntil: daysUntil,
+            priority: deadline.priority || false
+          };
+          
+          if (deadline.priority) {
+            priorityDeadlines.push(deadlineObj);
+          } else {
+            upcomingDeadlines.push(deadlineObj);
+          }
         }
       });
-      
+
       // Sort by date
+      priorityDeadlines.sort((a, b) => a.date - b.date);
       upcomingDeadlines.sort((a, b) => a.date - b.date);
+
+      // Get next priority deadline (always include the next one)
+      let displayDeadlines = [];
+      let priorityDeadline = null;
+      if (priorityDeadlines.length > 0) {
+        priorityDeadline = priorityDeadlines[0];
+      }
+
+      // Get next 6 (or 6 minus priority count) regular deadlines
+      const regularCount = 6 - (priorityDeadline ? 1 : 0);
+      const nextRegular = upcomingDeadlines.slice(0, regularCount);
       
-      // Get next 5
-      const next5 = upcomingDeadlines.slice(0, 5);
-      const hasMore = upcomingDeadlines.length > 5;
-      
+      // Combine: regular deadlines first, then priority deadline
+      displayDeadlines = nextRegular;
+      if (priorityDeadline) {
+        displayDeadlines.push(priorityDeadline);
+      }
+
+      // Sort combined list by date
+      displayDeadlines.sort((a, b) => a.date - b.date);
+
       // Display
       const container = document.getElementById('deadlines-container');
       if (!container) return;
-      
-      if (next5.length === 0) {
+
+      if (displayDeadlines.length === 0) {
         container.innerHTML = '<div style="color: var(--text-light); font-size: 0.75rem;">No upcoming deadlines</div>';
         return;
       }
-      
+
       let html = '';
-      next5.forEach(deadline => {
+      displayDeadlines.forEach(deadline => {
         const dateStr = deadline.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const daysText = deadline.daysUntil === 0 ? 'Today' : deadline.daysUntil === 1 ? 'Tomorrow' : `${deadline.daysUntil} days`;
+        const fontWeight = deadline.priority ? 'bold' : 'normal';
+        const prefix = deadline.priority ? '... ' : '';
         html += `<div style="color: var(--text-light); font-size: 0.7rem; display: flex; justify-content: space-between; gap: 0.5rem;">
-          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${deadline.name}</span>
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: ${fontWeight};">${prefix}${deadline.name}</span>
           <span style="color: var(--primary-green); font-weight: bold; flex-shrink: 0;">${dateStr} (${daysText})</span>
         </div>`;
       });
-      
+
       container.innerHTML = html;
     }
 

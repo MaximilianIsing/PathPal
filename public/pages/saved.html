@@ -14,7 +14,8 @@
       try {
         const response = await fetch('/api/pc-mode');
         const data = await response.json();
-        if (data.pcMode) {
+        // Only enable PC mode if server allows it AND screen width is >= 768px (desktop)
+        if (data.pcMode && window.innerWidth >= 768) {
           document.documentElement.classList.add('pc-mode-enabled');
           const hideDesktopMessage = () => {
             const desktopMessage = document.querySelector('.desktop-message');
@@ -81,7 +82,6 @@
             <li><a href="/saved.html"><img src="/media/icons/Star256x256.png" alt="Saved Colleges" class="header-nav-icon"></a></li>
             <li><a href="/account.html"><img src="/media/icons/SignOut256x256.png" alt="Account Options" class="header-nav-icon"></a></li>
             <li><a href="/team.html"><img src="/media/icons/Team256x256.png" alt="Our Team" class="header-nav-icon"></a></li>
-            <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="header-nav-icon"></a></li>
           </ul>
         </nav>
       </div>
@@ -106,7 +106,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.14
+      v1.15
     </div>
   </nav>
 

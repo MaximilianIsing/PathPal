@@ -397,10 +397,6 @@ body.page-transitioning {
   box-sizing: border-box;
 }
 
-.pc-mode-enabled header .container {
-  max-width: 805px;
-}
-
 /* Header */
 header {
   background: var(--light-mint);
@@ -598,10 +594,12 @@ main {
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin: 1.5rem 0;
+  padding-top: 4px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .tile {
@@ -1160,5 +1158,9 @@ footer p {
   width: 2px;
   height: 70%;
   background: var(--border-color);
+}
+
+.pc-mode-enabled header .container {
+  max-width: 805px;
 }
 
