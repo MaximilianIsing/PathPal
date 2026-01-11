@@ -831,16 +831,18 @@ function getYouthProgramsByZipcode(zipcode) {
 app.get('/api/search-jobs', (req, res) => {
   try {
     const query = (req.query.q || '').toLowerCase().trim();
+    const jobs = readONETsFromCSV();
     
     if (!query) {
-      return res.json([]);
+      // If no query, return all jobs sorted alphabetically
+      const sortedJobs = jobs.sort((a, b) => a.occupation.localeCompare(b.occupation));
+      return res.json(sortedJobs);
     }
     
-    const jobs = readONETsFromCSV();
-    const matches = jobs.filter(job => 
+    const matches = jobs.filter(job =>
       job.occupation.toLowerCase().includes(query) ||
       job.code.toLowerCase().includes(query)
-    ).slice(0, 20); // Limit to 20 results
+    ).slice(0, 8); // Limit to 8 results
     
     res.json(matches);
   } catch (error) {
@@ -881,6 +883,21 @@ app.get('/api/career-lmi', async (req, res) => {
     }
     
     const data = await response.json();
+    
+    // Handle cases where API returns empty or invalid data
+    // Check if data is empty, null, or doesn't contain expected structure
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      console.warn('CareerOneStop API returned empty data for ONET code:', onetCode);
+      return res.status(404).json({ error: 'No data available for this career code' });
+    }
+    
+    // Check if response contains an error message in the data
+    if (data.error || data.Error || data.message || data.Message) {
+      const errorMsg = data.error || data.Error || data.message || data.Message;
+      console.error('CareerOneStop API returned error in response:', errorMsg);
+      return res.status(400).json({ error: errorMsg });
+    }
+    
     res.json(data);
   } catch (error) {
     console.error('Error fetching career LMI:', error);

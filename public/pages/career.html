@@ -115,8 +115,14 @@
     <div class="container" style="overflow: visible;">
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Career & Salary Paths</h2>
 
-      <!-- Job Search -->
-      <div style="position: relative; margin-bottom: 1.5rem;">
+      <!-- Toggle Button -->
+      <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem;">
+        <button id="career-search-toggle" style="flex: 1; padding: 0.75rem 1.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-size: 1rem; cursor: pointer; font-weight: bold;">Career Search</button>
+        <button id="career-list-toggle" style="flex: 1; padding: 0.75rem 1.5rem; background: var(--border-color); color: var(--text-dark); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-size: 1rem; cursor: pointer;">Career List</button>
+      </div>
+
+      <!-- Job Search View -->
+      <div id="career-search-view" style="position: relative; margin-bottom: 1.5rem;">
         <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Search for a Career</h3>
         <div class="form-group" style="position: relative;">
           <input 
@@ -133,6 +139,16 @@
         </div>
       </div>
 
+      <!-- Career List View -->
+      <div id="career-list-view" style="display: none;">
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">All Careers</h3>
+        <div id="career-list-container" style="margin-top: 1rem;">
+          <div style="padding: 1rem; text-align: center; color: var(--text-light);">Loading careers...</div>
+        </div>
+        <div id="career-list-pagination" style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 1rem;"></div>
+        <div id="career-list-letters" style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;"></div>
+      </div>
+
       <!-- Outcome Charts -->
       <div id="career-outcomes" style="display: none;">
         <div class="card">
@@ -143,20 +159,8 @@
 
         <!-- Career Path Cards -->
         <div class="card">
-          <h3>Example Career Paths</h3>
+          <h3>Career Information</h3>
           <div id="career-paths" style="margin-top: 1rem;"></div>
-        </div>
-
-        <!-- Top Industries -->
-        <div class="card">
-          <h3>Top Industries</h3>
-          <div id="top-industries" style="margin-top: 1rem;"></div>
-        </div>
-
-        <!-- Strong Colleges for This Path -->
-        <div class="card">
-          <h3>Strong Colleges for This Career Path</h3>
-          <div id="strong-colleges" style="margin-top: 1rem;"></div>
         </div>
       </div>
     </div>
@@ -229,18 +233,40 @@
       return div.innerHTML;
     }
 
-    function selectJob(code, occupation) {
+    function selectJob(code, occupation, fromCareerList = false) {
       selectedJob = { code, occupation };
       const jobSearchInput = document.getElementById('job-search-input');
       const jobSearchResults = document.getElementById('job-search-results');
       const selectedJobInfo = document.getElementById('selected-job-info');
       const selectedJobName = document.getElementById('selected-job-name');
       
-      if (jobSearchInput) jobSearchInput.value = occupation;
-      if (jobSearchResults) jobSearchResults.style.display = 'none';
-      if (selectedJobInfo) selectedJobInfo.style.display = 'block';
-      if (selectedJobName) selectedJobName.textContent = occupation;
-      loadCareerLMI(code);
+      // Check if we're in Career List view (or if explicitly told we are)
+      const careerListView = document.getElementById('career-list-view');
+      const isInCareerList = fromCareerList || (careerListView && careerListView.style.display !== 'none');
+      
+      if (isInCareerList) {
+        // Switch to Career Search view
+        showCareerSearch();
+        // Hide career outcomes if visible
+        const careerOutcomes = document.getElementById('career-outcomes');
+        if (careerOutcomes) {
+          careerOutcomes.style.display = 'none';
+        }
+        // Set the search input and trigger search after a short delay to ensure view is switched
+        if (jobSearchInput) {
+          jobSearchInput.value = occupation;
+          setTimeout(() => {
+            searchJobs(occupation);
+          }, 100);
+        }
+      } else {
+        // Normal behavior for Career Search view
+        if (jobSearchInput) jobSearchInput.value = occupation;
+        if (jobSearchResults) jobSearchResults.style.display = 'none';
+        if (selectedJobInfo) selectedJobInfo.style.display = 'block';
+        if (selectedJobName) selectedJobName.textContent = occupation;
+        loadCareerLMI(code);
+      }
     }
 
     async function loadCareerLMI(onetCode) {
@@ -324,26 +350,206 @@
 
       // Display SOC description if available
       if (socInfo.SocDescription) {
-        const socCodeDisplay = socInfo.SocCode ? `<div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>` : '';
         careerPathsHtml += `
           <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid var(--primary-green);">
-            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${escapeHtml(socInfo.SocTitle || 'Job Description')}</h4>
-            ${socCodeDisplay}
+            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">Career Description</h4>
             <div style="color: var(--text-dark); line-height: 1.6;">${escapeHtml(socInfo.SocDescription)}</div>
           </div>
         `;
+        if (socInfo.SocCode) {
+          careerPathsHtml += `<div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem; font-style: italic;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>`;
+        }
       } else if (socInfo.SocTitle && !lmi.TypicalTraining) {
         // If we have a title but no description and no training, still show the title
-        const socCodeDisplay = socInfo.SocCode ? `<div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>` : '';
         careerPathsHtml = `
           <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary-green);">
-            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${escapeHtml(socInfo.SocTitle)}</h4>
-            ${socCodeDisplay}
+            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">Career Description</h4>
           </div>
         `;
+        if (socInfo.SocCode) {
+          careerPathsHtml += `<div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem; font-style: italic;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>`;
+        }
       }
       
       document.getElementById('career-paths').innerHTML = careerPathsHtml;
+    }
+
+    // Career List functionality
+    let currentLetter = 'A';
+    let currentPage = 1;
+    const careersPerPage = 10;
+    let jobsByLetter = {};
+    let allJobs = [];
+
+    async function loadAllJobs() {
+      try {
+        const response = await fetch('/api/search-jobs?q='); // Empty query to get all
+        if (!response.ok) {
+          throw new Error('Failed to fetch all jobs');
+        }
+        allJobs = await response.json();
+        // Sort alphabetically by occupation name
+        allJobs.sort((a, b) => a.occupation.localeCompare(b.occupation));
+        
+        // Group jobs by first letter
+        jobsByLetter = {};
+        allJobs.forEach(job => {
+          const firstLetter = job.occupation.charAt(0).toUpperCase();
+          if (!jobsByLetter[firstLetter]) {
+            jobsByLetter[firstLetter] = [];
+          }
+          jobsByLetter[firstLetter].push(job);
+        });
+        
+        // Set current letter to first available letter
+        const availableLetters = Object.keys(jobsByLetter).sort();
+        if (availableLetters.length > 0) {
+          currentLetter = availableLetters[0];
+          currentPage = 1; // Reset to first page when loading
+        }
+        
+        displayCareerList();
+        displayLetterNavigation();
+      } catch (error) {
+        console.error('Error loading all jobs:', error);
+        const container = document.getElementById('career-list-container');
+        if (container) {
+          container.innerHTML = '<div style="padding: 1rem; color: var(--danger);">Error loading careers. Please try again.</div>';
+        }
+      }
+    }
+
+    function displayCareerList() {
+      const container = document.getElementById('career-list-container');
+      const pagination = document.getElementById('career-list-pagination');
+      
+      if (!container) return;
+
+      const letterJobs = jobsByLetter[currentLetter] || [];
+      const totalCareers = letterJobs.length;
+
+      if (letterJobs.length === 0) {
+        container.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-light);">No careers found for this letter.</div>';
+        if (pagination) pagination.innerHTML = '';
+        return;
+      }
+
+      // Pagination logic
+      const totalPages = Math.ceil(letterJobs.length / careersPerPage);
+      const startIndex = (currentPage - 1) * careersPerPage;
+      const endIndex = startIndex + careersPerPage;
+      const pageJobs = letterJobs.slice(startIndex, endIndex);
+
+      container.innerHTML = `
+        <h4 style="color: var(--primary-green); margin-bottom: 1rem; font-size: 1.2rem;">${currentLetter} (${totalCareers} ${totalCareers === 1 ? 'career' : 'careers'})</h4>
+        ${pageJobs.map(job => `
+          <div 
+            style="padding: 1rem; margin-bottom: 0.75rem; background: var(--light-mint); border-radius: 8px; border-left: 4px solid var(--primary-green); cursor: pointer; transition: background 0.15s;"
+            onmouseover="this.style.background='#d8f0ee'"
+            onmouseout="this.style.background='var(--light-mint)'"
+            onclick="selectJob('${job.code}', '${job.occupation.replace(/'/g, "\\'")}', true)"
+          >
+            <div style="font-weight: bold; color: var(--primary-green); margin-bottom: 0.25rem;">${escapeHtml(job.occupation)}</div>
+            <div style="font-size: 0.9rem; color: var(--text-light);">ONET Code: ${escapeHtml(job.code)}</div>
+          </div>
+        `).join('')}
+      `;
+
+      // Show pagination controls if there are multiple pages
+      if (pagination) {
+        if (totalPages > 1) {
+          let paginationHtml = '';
+          if (currentPage > 1) {
+            paginationHtml += `<button onclick="goToPage(${currentPage - 1})" style="padding: 0.5rem 1rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; cursor: pointer;">Previous</button>`;
+          }
+          paginationHtml += `<span style="padding: 0.5rem 1rem; color: var(--text-dark);">Page ${currentPage} of ${totalPages}</span>`;
+          if (currentPage < totalPages) {
+            paginationHtml += `<button onclick="goToPage(${currentPage + 1})" style="padding: 0.5rem 1rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; cursor: pointer;">Next</button>`;
+          }
+          pagination.innerHTML = paginationHtml;
+        } else {
+          pagination.innerHTML = '';
+        }
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      displayCareerList();
+    }
+
+    function displayLetterNavigation() {
+      const lettersContainer = document.getElementById('career-list-letters');
+      if (!lettersContainer) return;
+
+      const availableLetters = Object.keys(jobsByLetter).sort();
+      
+      if (availableLetters.length === 0) {
+        lettersContainer.innerHTML = '';
+        return;
+      }
+
+      lettersContainer.innerHTML = availableLetters.map(letter => {
+        const isActive = letter === currentLetter;
+        return `
+          <button 
+            onclick="goToLetter('${letter}')" 
+            style="
+              padding: 0.5rem 1rem; 
+              background: ${isActive ? 'var(--primary-green)' : 'var(--border-color)'}; 
+              color: ${isActive ? 'var(--white)' : 'var(--text-dark)'}; 
+              border: none; 
+              border-radius: 8px; 
+              font-family: 'Arvo', serif; 
+              font-size: 0.9rem;
+              font-weight: ${isActive ? 'bold' : 'normal'};
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+            onmouseover="if ('${letter}' !== '${currentLetter}') this.style.background='#c0d9d5'"
+            onmouseout="if ('${letter}' !== '${currentLetter}') this.style.background='var(--border-color)'"
+          >
+            ${letter}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function goToLetter(letter) {
+      currentLetter = letter;
+      currentPage = 1; // Reset to first page when switching letters
+      displayCareerList();
+      displayLetterNavigation();
+    }
+
+    function showCareerSearch() {
+      document.getElementById('career-search-view').style.display = 'block';
+      document.getElementById('career-list-view').style.display = 'none';
+      document.getElementById('career-search-toggle').style.background = 'var(--primary-green)';
+      document.getElementById('career-search-toggle').style.color = 'var(--white)';
+      document.getElementById('career-search-toggle').style.fontWeight = 'bold';
+      document.getElementById('career-list-toggle').style.background = 'var(--border-color)';
+      document.getElementById('career-list-toggle').style.color = 'var(--text-dark)';
+      document.getElementById('career-list-toggle').style.fontWeight = 'normal';
+    }
+
+    function showCareerList() {
+      document.getElementById('career-search-view').style.display = 'none';
+      document.getElementById('career-list-view').style.display = 'block';
+      document.getElementById('career-list-toggle').style.background = 'var(--primary-green)';
+      document.getElementById('career-list-toggle').style.color = 'var(--white)';
+      document.getElementById('career-list-toggle').style.fontWeight = 'bold';
+      document.getElementById('career-search-toggle').style.background = 'var(--border-color)';
+      document.getElementById('career-search-toggle').style.color = 'var(--text-dark)';
+      document.getElementById('career-search-toggle').style.fontWeight = 'normal';
+      // Hide career outcomes and information when switching to list view
+      const careerOutcomes = document.getElementById('career-outcomes');
+      if (careerOutcomes) {
+        careerOutcomes.style.display = 'none';
+      }
+      if (allJobs.length === 0) {
+        loadAllJobs();
+      }
     }
 
     // Set up job search input event listener
@@ -375,6 +581,10 @@
           }
         });
       }
+
+      // Set up toggle buttons
+      document.getElementById('career-search-toggle').addEventListener('click', showCareerSearch);
+      document.getElementById('career-list-toggle').addEventListener('click', showCareerList);
     });
 
     // Legacy career data (keeping for backward compatibility if needed)
@@ -611,23 +821,6 @@
       `).join('');
 
       // Top industries and strong colleges sections removed
-
-      // Strong colleges
-      const collegesContainer = document.getElementById('strong-colleges');
-      if (collegesContainer) {
-        collegesContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          ${data.strongColleges.map((college, index) => `
-            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--light-mint); border-radius: 8px;">
-              <span style="font-size: 1.5rem;">${index + 1}.</span>
-              <span style="flex: 1; font-weight: bold; color: var(--primary-green);">${college}</span>
-              <button class="btn btn-secondary" onclick="exploreCollege('${college}')" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                Explore
-              </button>
-            </div>
-          `).join('')}
-        </div>
-      `;
     }
 
     function exploreCollege(collegeName) {
