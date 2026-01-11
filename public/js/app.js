@@ -157,12 +157,22 @@ window.addEventListener('pageshow', () => {
   document.body.classList.remove('page-transitioning');
 });
 
-// Service Worker Registration
+// Service Worker Registration with update checking
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         console.log('SW registered: ', registration);
+        // Check for updates periodically (every hour)
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+        // Also check on page visibility (when user returns to tab)
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            registration.update();
+          }
+        });
       })
       .catch((registrationError) => {
         console.log('SW registration failed: ', registrationError);
