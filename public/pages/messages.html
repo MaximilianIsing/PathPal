@@ -1540,10 +1540,26 @@
           }
         }
         
+        // Format AP courses for display
+        let apCoursesText = 'not specified';
+        if (profile.apCourses && Array.isArray(profile.apCourses) && profile.apCourses.length > 0) {
+          apCoursesText = profile.apCourses
+            .filter(ap => ap && ap.course) // Filter out empty entries
+            .map(ap => {
+              const course = ap.course || '';
+              const score = ap.score ? ` (Score: ${ap.score})` : '';
+              return `${course}${score}`;
+            })
+            .join(', ');
+          if (!apCoursesText) {
+            apCoursesText = 'not specified';
+          }
+        }
+        
         const context = [
           {
             role: 'system',
-            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. ${lengthInstruction} The student's profile: Name: ${profile.name || 'not set'}, Grade: ${profile.grade || 'not set'}, Zip Code: ${profile.zipcode || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Activities: ${activitiesText}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
+            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. ${lengthInstruction} The student's profile: Name: ${profile.name || 'not set'}, Grade: ${profile.grade || 'not set'}, Zip Code: ${profile.zipcode || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, AP Courses: ${apCoursesText}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Activities: ${activitiesText}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
           },
           ...chatHistory.slice(-4).map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'assistant',

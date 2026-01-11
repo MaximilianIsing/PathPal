@@ -25,14 +25,32 @@
               desktopMessage.classList.remove('show');
             }
           };
+          // Update carousel images to use PC versions
+          const updateCarouselImages = () => {
+            const carouselImages = document.querySelectorAll('.carousel-slide img');
+            carouselImages.forEach(img => {
+              const currentSrc = img.src;
+              if (currentSrc.includes('/media/carousel/')) {
+                img.src = currentSrc.replace('/media/carousel/', '/media/carousel-pc/');
+              }
+            });
+          };
           // Hide immediately
           hideDesktopMessage();
+          // Update carousel images immediately
+          updateCarouselImages();
           // Also hide after DOM loads (in case app.js adds .show class)
           if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', hideDesktopMessage);
+            document.addEventListener('DOMContentLoaded', () => {
+              hideDesktopMessage();
+              updateCarouselImages();
+            });
           }
           // And hide after a short delay to catch late additions
-          setTimeout(hideDesktopMessage, 100);
+          setTimeout(() => {
+            hideDesktopMessage();
+            updateCarouselImages();
+          }, 100);
         }
       } catch (error) {
         console.error('Error checking PC mode:', error);
@@ -219,6 +237,11 @@
       text-decoration: underline;
     }
 
+    /* PC Mode Styles */
+    .pc-mode-enabled .landing-content {
+      max-width: 480px; /* 20% increase from 400px */
+    }
+
     @media (max-width: 480px) {
       html, body {
         height: 100svh; /* Small viewport height - accounts for mobile browser UI */
@@ -350,6 +373,15 @@
         const data = await response.json();
         if (!data.pcMode && !isMobileDevice()) {
           window.location.href = '/pages/index.html';
+        } else if (data.pcMode) {
+          // Update carousel images to use PC versions
+          const carouselImages = document.querySelectorAll('.carousel-slide img');
+          carouselImages.forEach(img => {
+            const currentSrc = img.src;
+            if (currentSrc.includes('/media/carousel/')) {
+              img.src = currentSrc.replace('/media/carousel/', '/media/carousel-pc/');
+            }
+          });
         }
       } catch (error) {
         // If API check fails, use default behavior (redirect desktop users)
