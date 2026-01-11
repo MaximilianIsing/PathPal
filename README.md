@@ -53,5 +53,5 @@ Path Pal is designed for mobile devices. Desktop users will see a message prompt
 
 For questions, support, or feedback, please contact us at:
 
-**Email**: team@pathpal.us
+**Email**: team@pathpal.us;
 **Support Form**: https://forms.gle/ULMYUSDifpanJ9KMA

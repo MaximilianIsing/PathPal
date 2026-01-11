@@ -496,7 +496,7 @@ nav li {
 
 nav a {
   display: block;
-  padding: 0.55rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   color: var(--text-dark);
   text-decoration: none;
   transition: background 0.3s;
