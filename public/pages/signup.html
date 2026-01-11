@@ -11,6 +11,19 @@
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
   <script>
+    // Check if device is mobile based on screen resolution and aspect ratio
+    function isMobileByScreen() {
+      const width = window.innerWidth || screen.width;
+      const height = window.innerHeight || screen.height;
+      const aspectRatio = width / height;
+      
+      // Mobile devices typically have:
+      // - Width <= 768px, or
+      // - Portrait orientation with width <= 1024px, or
+      // - Aspect ratio < 1 (portrait) with small width
+      return width <= 768 || (aspectRatio < 1 && width <= 1024);
+    }
+
     // Check PC mode and hide desktop message if enabled
     (async function() {
       try {
@@ -25,14 +38,40 @@
               desktopMessage.classList.remove('show');
             }
           };
+          // Setup background video - only play if not mobile
+          const setupBackgroundVideo = () => {
+            const video = document.getElementById('landing-background-video');
+            if (video) {
+              if (isMobileByScreen()) {
+                // Hide video on mobile
+                video.style.display = 'none';
+                video.pause();
+                return; // Don't play video on mobile
+              } else {
+                // Show and play video on PC
+                video.style.display = 'block';
+                video.play().catch(err => {
+                  console.error('Error playing background video:', err);
+                });
+              }
+            }
+          };
           // Hide immediately
           hideDesktopMessage();
+          // Setup background video (only if not mobile)
+          setupBackgroundVideo();
           // Also hide after DOM loads (in case app.js adds .show class)
           if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', hideDesktopMessage);
+            document.addEventListener('DOMContentLoaded', () => {
+              hideDesktopMessage();
+              setupBackgroundVideo();
+            });
           }
           // And hide after a short delay to catch late additions
-          setTimeout(hideDesktopMessage, 100);
+          setTimeout(() => {
+            hideDesktopMessage();
+            setupBackgroundVideo();
+          }, 100);
         }
       } catch (error) {
         console.error('Error checking PC mode:', error);
@@ -47,9 +86,34 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      position: relative;
+    }
+
+    /* Remove white background when PC mode is enabled (to show video) */
+    .pc-mode-enabled {
+      background: transparent !important;
+    }
+
+    .pc-mode-enabled body {
+      background: transparent !important;
+    }
+
+    /* Background video - hidden by default, shown via JavaScript only on PC */
+    .landing-background-video {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+      pointer-events: none;
     }
 
     .auth-container {
+      position: relative;
+      z-index: 10;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -168,6 +232,34 @@
       display: block;
     }
 
+    /* Logo header - PC mode only */
+    .auth-logo-header {
+      display: none;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .pc-mode-enabled .auth-logo-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .auth-logo-header .logo-image {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 0;
+    }
+
+    .auth-logo-header .logo-text {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary-green);
+      font-family: 'Arvo', serif;
+      margin: 0;
+    }
+
     .success-message {
       background: #e8f5e9;
       color: #27ae60;
@@ -185,7 +277,18 @@
   </style>
 </head>
 <body>
+  <!-- Background Video (PC Mode Only) -->
+  <video class="landing-background-video" id="landing-background-video" autoplay loop muted playsinline>
+    <source src="/media/background/landing.webm" type="video/webm">
+  </video>
+
   <div class="auth-container">
+    <!-- Logo Header (PC Mode Only) -->
+    <div class="auth-logo-header">
+      <img src="/media/logo/logo128x128.png" alt="Path Pal Logo" class="logo-image">
+      <h1 class="logo-text">Path Pal</h1>
+    </div>
+    
     <div class="auth-card">
       <h2>Get Started</h2>
       
