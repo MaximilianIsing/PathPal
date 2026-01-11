@@ -1,0 +1,4599 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/webp" sizes="32x32" href="media-webp/logo/Logo32x32.webp">
+    <link rel="icon" type="image/webp" sizes="64x64" href="media-webp/logo/Logo64x64.webp">
+    <link rel="apple-touch-icon" sizes="180x180" href="media-webp/logo/Logo180x180.webp">
+    <link rel="manifest" href="manifest.json">
+    <title data-lang="pdf.meta.title">AI Designer | Stagify.ai</title>
+    <meta name="description" data-lang-attr="pdf.meta.description|content" content="Chat with AI Designer to get help with design questions, upload files for analysis, and get professional design advice instantly.">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="robots" content="index, follow">
+    <meta name="keywords" data-lang-attr="pdf.meta.keywords|content" content="AI Designer, AI design assistant, design consultation, AI chat, design help, interior design AI, room staging AI, virtual staging assistant, AI interior designer">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="AI Designer | Stagify.ai - AI-Powered Design Assistant">
+    <meta property="og:description" content="Chat with AI Designer to get help with design questions, upload files for analysis, and get professional design advice instantly.">
+    <meta property="og:url" content="https://stagify.ai/ai-designer.html">
+    <meta property="og:site_name" content="Stagify.ai">
+    <meta property="og:image" content="https://stagify.ai/media-webp/logo/Logo180x180.webp">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Designer | Stagify.ai - AI-Powered Design Assistant">
+    <meta name="twitter:description" content="Chat with AI Designer to get help with design questions, upload files for analysis, and get professional design advice instantly.">
+    <meta name="twitter:image" content="https://stagify.ai/media-webp/logo/Logo180x180.webp">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://stagify.ai/ai-designer.html">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="author" content="Stagify.ai">
+    <meta name="publisher" content="Stagify.ai">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Stagify.ai AI Designer">
+    
+    <!-- Hreflang Tags for Multi-language Support -->
+    <link rel="alternate" hreflang="en" href="https://stagify.ai/ai-designer.html">
+    <link rel="alternate" hreflang="es" href="https://stagify.ai/ai-designer.html">
+    <link rel="alternate" hreflang="zh" href="https://stagify.ai/ai-designer.html">
+    <link rel="alternate" hreflang="x-default" href="https://stagify.ai/ai-designer.html">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "AI Designer - Stagify.ai",
+      "description": "AI-powered design assistant for room staging and interior design. Chat with AI to get design advice, upload images for staging, and receive professional design recommendations.",
+      "url": "https://stagify.ai/ai-designer.html",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Stagify.ai"
+      },
+      "featureList": [
+        "AI-powered design consultation",
+        "Image upload and analysis",
+        "Room staging assistance",
+        "Interior design advice",
+        "Real-time chat interface"
+      ],
+      "keywords": "AI Designer, AI design assistant, design consultation, AI chat, design help, interior design AI, room staging AI"
+    }
+    </script>
+    
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="preload" href="languages/english.json" as="fetch" crossorigin>
+    <script src="scripts/language-loader.js" defer></script>
+    <style>
+      /* Beta badge styling */
+      .beta-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 50%, #5c1a1a 100%);
+        border-radius: 6px;
+        padding: 1px 8px;
+        margin-right: 6px;
+        box-shadow: 0 2px 4px rgba(153, 27, 27, 0.4);
+      }
+      
+      .beta-badge em {
+        font-style: italic;
+        color: white;
+        font-size: 0.85em;
+        font-weight: 600;
+      }
+      
+      /* Prevent horizontal scrolling */
+      html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+      }
+      
+      /* Ensure hero section doesn't constrain chat container */
+      section.hero {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 20px !important;
+        box-sizing: border-box;
+      }
+      
+      .chat-container {
+        width: 100%;
+        max-width: 1400px;
+        min-width: min(100%, 1400px);
+        margin: 0 auto;
+        height: calc(100vh - 120px);
+        max-height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .chat-input-container {
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      .chat-messages {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-width: 0;
+        width: 100%;
+        min-height: 0;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      
+      /* Drag and drop styles */
+      .chat-messages.drag-over {
+        border: 2px dashed #2563eb;
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      /* Drop files message - centered when shown on drag */
+      .chat-container::before {
+        content: 'Drop files here to upload';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(37, 99, 235, 0.9);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        z-index: 100;
+        pointer-events: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        transition: opacity 0.2s ease-in;
+      }
+      
+      .chat-container.drag-over::before {
+        opacity: 1;
+      }
+      
+      .message {
+        display: flex;
+        gap: 12px;
+        animation: fadeIn 0.3s ease-in;
+        min-width: 0;
+        width: 100%;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .message.user {
+        flex-direction: row-reverse;
+      }
+      
+      .message-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+      
+      .message.user .message-avatar {
+        width: 36px;
+        height: 36px;
+        align-self: flex-start;
+        margin-top: 0;
+      }
+      
+      .message.user .message-avatar {
+        background: #2563eb;
+        padding: 0;
+        overflow: hidden;
+      }
+      
+      .message.user .message-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      
+      .message.assistant .message-avatar {
+        background: transparent;
+        color: white;
+        padding: 0;
+        overflow: hidden;
+      }
+      
+      .message.assistant .message-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      
+      .message-content {
+        padding: 12px 16px;
+        border-radius: 12px;
+        max-width: min(70%, 600px);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      
+      .message.assistant .message-content {
+        white-space: pre-wrap;
+      }
+      
+      .message.assistant .message-content strong {
+        font-weight: 600;
+      }
+      
+      .message.assistant .message-content ul,
+      .message.assistant .message-content ol {
+        margin: 8px 0;
+        padding-left: 24px;
+      }
+      
+      .message.assistant .message-content li {
+        margin: 4px 0;
+      }
+      
+      .message.user .message-content {
+        background: #2563eb;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+      
+      .message.assistant .message-content {
+        background: rgba(255, 255, 255, 0.8);
+        color: #1e3a8a;
+        border-bottom-left-radius: 4px;
+      }
+      
+      .message-files-container {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-width: 100%;
+      }
+      
+      .message-file {
+        margin-top: 0;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        display: inline-block;
+        box-sizing: border-box;
+        width: fit-content;
+        max-width: 100%;
+      }
+      
+      .message-file img {
+        max-width: 300px;
+        max-height: 200px;
+        border-radius: 6px;
+        height: auto;
+        width: auto;
+        display: block;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.2s;
+        object-fit: contain;
+      }
+      
+      .message-file img:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+      }
+      
+      /* For single image, allow it to be larger */
+      .message-files-container.single-image .message-file img {
+        max-width: 100%;
+        max-height: 300px;
+      }
+      
+      .message-file a {
+        color: inherit;
+        text-decoration: underline;
+      }
+      
+      .chat-input-container {
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 24px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        padding: 8px 16px 12px 16px;
+        min-width: 0;
+        box-sizing: border-box;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      
+      .file-preview-container {
+        display: none;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.2);
+        margin-bottom: 8px;
+      }
+      
+      .file-preview-container.has-files {
+        display: block;
+      }
+      
+      .file-preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .file-preview-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        background: rgba(37, 99, 235, 0.1);
+        border-radius: 6px;
+        font-size: 14px;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        color: #1e3a8a;
+      }
+      
+      .file-preview-item img {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+      
+      .file-preview-item .file-info {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .file-preview-item .file-name {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .file-preview-item .file-size {
+        font-size: 12px;
+        color: #6b7280;
+      }
+      
+      .file-preview-item .file-remove {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 18px;
+        line-height: 1;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      
+      .file-preview-item .file-remove:hover {
+        opacity: 1;
+      }
+      
+      .chat-input-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        min-width: 0;
+        width: 100%;
+        position: relative;
+      }
+      
+      .input-bottom-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: absolute;
+        bottom: 0;
+        left: 2px;
+        padding-bottom: 4px;
+        z-index: 10;
+        pointer-events: auto;
+      }
+      
+      .reload-btn {
+        padding: 8px;
+        background: transparent;
+        color: #2563eb;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+        height: 36px;
+        width: 36px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 11;
+        pointer-events: auto;
+      }
+      
+      .reload-btn img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(99%) contrast(96%);
+        width: 20px !important;
+        height: 20px !important;
+        object-fit: contain;
+        transition: filter 0.2s;
+      }
+      
+      .reload-btn:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .reload-btn:hover img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(110%) contrast(96%);
+      }
+      
+      .bug-report-btn {
+        padding: 8px;
+        background: transparent;
+        color: #2563eb;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+        height: 40px;
+        width: 40px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 11;
+        pointer-events: auto;
+        margin-right: 8px;
+        transform: translate(-60px, 42px);
+      }
+      
+      .bug-report-btn img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(99%) contrast(96%);
+        width: 28px !important;
+        height: 28px !important;
+        object-fit: contain;
+        transition: filter 0.2s;
+      }
+      
+      .bug-report-btn:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .bug-report-btn:hover img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(110%) contrast(96%);
+      }
+      
+      .bug-report-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(4px);
+      }
+      
+      .bug-report-popup.active {
+        display: flex;
+      }
+      
+      .bug-report-popup-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
+      
+      .bug-report-popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .bug-report-popup-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin: 0;
+      }
+      
+      .bug-report-popup-close {
+        background: transparent;
+        border: none;
+        font-size: 28px;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: background 0.2s;
+      }
+      
+      .bug-report-popup-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .bug-report-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .bug-report-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .bug-report-form-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+      }
+      
+      .bug-report-form-input,
+      .bug-report-form-textarea {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.2s;
+      }
+      
+      .bug-report-form-input:focus,
+      .bug-report-form-textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      
+      .bug-report-form-textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+      
+      .bug-report-form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 8px;
+      }
+      
+      .bug-report-form-submit,
+      .bug-report-form-cancel {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .bug-report-form-submit {
+        background: #2563eb;
+        color: white;
+      }
+      
+      .bug-report-form-submit:hover {
+        background: #1d4ed8;
+      }
+      
+      .bug-report-form-submit:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+      
+      .bug-report-form-cancel {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      
+      .bug-report-form-cancel:hover {
+        background: #e5e7eb;
+      }
+      
+      .message-tag-selector {
+        position: relative;
+        margin-left: 8px;
+        transform: translate(-5px, 0px);
+      }
+      
+      .message-tag-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        background: #2563eb;
+        border: none;
+        border-radius: 18px;
+        cursor: pointer;
+        transition: background 0.2s;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        height: 32px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 11;
+        pointer-events: auto;
+      }
+      
+      .message-tag-btn:hover {
+        background: #1d4ed8;
+      }
+      
+      .message-tag-text {
+        color: white;
+        font-weight: bold;
+        font-family: inherit;
+      }
+      
+      .message-tag-chevron {
+        color: white;
+        transition: transform 0.2s;
+      }
+      
+      .message-tag-selector.open .message-tag-chevron {
+        transform: rotate(180deg);
+      }
+      
+      .message-tag-dropdown {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+        min-width: 165px;
+        padding: 8px;
+        display: none;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+      }
+      
+      .message-tag-selector.open .message-tag-dropdown {
+        display: block;
+      }
+      
+      .message-tag-option {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.2s;
+      }
+      
+      .message-tag-option:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .message-tag-option-name {
+        color: #1e3a8a;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .file-upload-btn {
+        padding: 8px;
+        background: transparent;
+        color: #2563eb;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+        height: 36px;
+        width: 36px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 11;
+        pointer-events: auto;
+      }
+      
+      .file-upload-btn img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(99%) contrast(96%);
+        width: 20px !important;
+        height: 20px !important;
+        object-fit: contain;
+        transition: filter 0.2s;
+      }
+      
+      .file-upload-btn:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .file-upload-btn:hover img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(110%) contrast(96%);
+      }
+      
+      .file-upload-btn input {
+        display: none;
+      }
+      
+      .chat-input-wrapper {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-left: 0;
+        margin-bottom: 40px;
+        margin-top: -5px;
+      }
+      
+      .chat-input-wrapper::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 56px;
+        height: 40px;
+        z-index: 5;
+        pointer-events: none;
+      }
+      
+      .chat-input {
+        width: 100%;
+        padding: 12px 16px 12px 8px;
+        border: none;
+        border-radius: 0;
+        font-size: 16px;
+        font-family: inherit;
+        resize: none;
+        min-height: 48px;
+        max-height: 50px;
+        background: transparent;
+        color: #1e3a8a;
+        line-height: 1.5;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin: 0;
+      }
+      
+      .chat-input::placeholder {
+        color: #6b7280;
+      }
+      
+      .chat-input:focus {
+        outline: none;
+      }
+      
+      .chat-input.multi-line {
+        overflow-y: auto;
+      }
+      
+      .send-btn {
+        padding: 8px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        height: 48px;
+        width: 48px;
+        flex-shrink: 0;
+        position: absolute;
+        bottom: 32px;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .send-btn img {
+        width: 30px !important;
+        height: 30px !important;
+        object-fit: contain;
+        transition: filter 0.2s;
+      }
+      
+      .send-btn:not(:disabled) img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(99%) contrast(96%);
+      }
+      
+      .send-btn:hover:not(:disabled) {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .send-btn:hover:not(:disabled) img {
+        filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(2598%) hue-rotate(212deg) brightness(110%) contrast(96%);
+      }
+      
+      .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .send-btn:disabled img {
+        filter: brightness(0) invert(0.4);
+      }
+      
+      .send-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+        position: relative;
+      }
+      
+      .model-selector {
+        position: relative;
+      }
+      
+      .model-selector-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+        color: #1e3a8a;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .model-selector-btn:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .model-selector-text {
+        color: #1e3a8a;
+        font-weight: bold;
+        font-family: inherit;
+      }
+      
+      .model-selector-chevron {
+        color: #1e3a8a;
+        transition: transform 0.2s;
+      }
+      
+      .model-selector.open .model-selector-chevron {
+        transform: rotate(180deg);
+      }
+      
+      .model-dropdown {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+        min-width: 200px;
+        padding: 8px;
+        display: none;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+      }
+      
+      .model-selector.open .model-dropdown {
+        display: block;
+      }
+      
+      .model-dropdown-header {
+        padding: 12px 16px 8px 16px;
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .model-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      
+      .model-option:hover {
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .model-option-content {
+        flex: 1;
+      }
+      
+      .model-option-name {
+        color: #1e3a8a;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      
+      .model-option-description {
+        color: #6b7280;
+        font-size: 12px;
+      }
+      
+      .model-badge {
+        background: #2563eb;
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 12px;
+      }
+      
+      .typing-indicator {
+        padding: 12px 16px;
+        color: #6b7280;
+        font-style: italic;
+      }
+      
+      .empty-state {
+        text-align: center;
+        color: #6b7280;
+        padding: 40px 20px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .empty-state h3 {
+        color: #1e3a8a;
+        margin-bottom: 8px;
+      }
+      
+      /* AI-generated image container - relative positioning for download button */
+      /* Masked image carousel - Simple implementation */
+      .masked-image-carousel {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+      }
+      
+      .masked-image-carousel-viewport {
+        position: relative;
+        display: inline-block;
+        overflow: hidden;
+      }
+      
+      .masked-image-carousel-track {
+        display: flex;
+        transition: transform 0.3s ease;
+      }
+      
+      .masked-image-carousel-item {
+        flex: 0 0 100%;
+        position: relative;
+      }
+      
+      .masked-image-carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        color: white;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+        transition: background 0.2s;
+      }
+      
+      .masked-image-carousel-nav:hover {
+        background: rgba(0, 0, 0, 0.8);
+      }
+      
+      .masked-image-carousel-nav:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      
+      .masked-image-carousel-nav.prev {
+        left: 10px;
+      }
+      
+      .masked-image-carousel-nav.next {
+        right: 10px;
+      }
+      
+      /* Right arrow positioned inside image container */
+      .masked-image-carousel-item .ai-image-container .masked-image-carousel-nav.next {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      
+      .masked-image-carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 0;
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 15;
+      }
+      
+      /* Dots positioned inside image container */
+      .masked-image-carousel-item .ai-image-container .masked-image-carousel-dots {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .masked-image-carousel-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.3);
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.2s, transform 0.2s;
+      }
+      
+      .masked-image-carousel-dot:hover {
+        background: rgba(0, 0, 0, 0.5);
+        transform: scale(1.2);
+      }
+      
+      .masked-image-carousel-dot.active {
+        background: #2563eb;
+        transform: scale(1.3);
+      }
+      
+      .ai-image-container {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+      }
+      
+      /* AI-generated image styles - smaller by default, clickable */
+      .ai-generated-image {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        display: block;
+        margin: 0;
+        width: auto;
+        height: auto;
+        box-sizing: border-box;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.2s;
+        transform-origin: center;
+      }
+      
+      /* Scale image when hovering over container (image or button) */
+      .ai-image-container:hover .ai-generated-image {
+        opacity: 0.9;
+        transform: scale(1.02);
+      }
+      
+      /* Download button for AI-generated images */
+      .ai-image-download-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        border: none;
+        border-radius: 6px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        transform-origin: center;
+      }
+      
+      .ai-image-download-btn img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+      }
+      
+      .ai-image-download-btn:hover {
+        background: rgba(0, 0, 0, 0.9);
+        transform: scale(1.1);
+      }
+      
+      .ai-image-download-btn:active {
+        transform: scale(0.95);
+      }
+      
+      /* Move download button to maintain distance from edge when image scales */
+      /* When image scales by 1.02 from center, the top-right corner moves outward */
+      /* For a typical 300px image: corner moves by ~1.5px (half of 3px increase) */
+      /* We use a small fixed value that works well for most image sizes */
+      .ai-image-container:hover .ai-image-download-btn {
+        transform: translate(1.5px, -1.5px);
+      }
+      
+      .ai-image-container:hover .ai-image-download-btn:hover {
+        transform: translate(1.5px, -1.5px) scale(1.1);
+      }
+      
+      .ai-image-container:hover .ai-image-download-btn:active {
+        transform: translate(1.5px, -1.5px) scale(0.95);
+      }
+      
+      /* Mask button - styled like download button, positioned to the left */
+      .ai-image-mask-btn {
+        position: absolute;
+        top: 8px;
+        right: 48px; /* Position to the left of download button (36px button + 8px gap + 4px spacing) */
+        background: rgba(0, 0, 0, 0.7);
+        border: none;
+        border-radius: 6px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        transform-origin: center;
+      }
+      
+      .ai-image-mask-btn img {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+      }
+      
+      .ai-image-mask-btn:hover {
+        background: rgba(0, 0, 0, 0.9);
+        transform: scale(1.1);
+      }
+      
+      .ai-image-mask-btn:active {
+        transform: scale(0.95);
+      }
+      
+      /* Move mask button to maintain distance from edge when image scales (same as download button) */
+      .ai-image-container:hover .ai-image-mask-btn {
+        transform: translate(1.5px, -1.5px);
+      }
+      
+      .ai-image-container:hover .ai-image-mask-btn:hover {
+        transform: translate(1.5px, -1.5px) scale(1.1);
+      }
+      
+      .ai-image-container:hover .ai-image-mask-btn:active {
+        transform: translate(1.5px, -1.5px) scale(0.95);
+      }
+      
+      /* Mask editor modal */
+      .mask-editor-modal {
+        display: none;
+        position: fixed;
+        z-index: 10001;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-in;
+      }
+      
+      .mask-editor-canvas-container.processing {
+        filter: blur(3px);
+        opacity: 0.7;
+        transition: filter 0.3s, opacity 0.3s;
+      }
+      
+      .mask-editor-canvas-container.processing .mask-editor-canvas,
+      .mask-editor-canvas-container.processing #mask-editor-mask-canvas {
+        pointer-events: none;
+        cursor: not-allowed;
+      }
+      
+      .mask-editor-canvas-container.processing #mask-editor-mask-canvas {
+        opacity: 0.5;
+      }
+      
+      .mask-editor-modal.active {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      
+      .mask-editor-content {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+      
+      .mask-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #1e3a8a;
+      }
+      
+      .mask-editor-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        color: #1e3a8a;
+      }
+      
+      .mask-editor-close {
+        background: transparent;
+        border: none;
+        color: #1e3a8a;
+        font-size: 32px;
+        cursor: pointer;
+        padding: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      
+      .mask-editor-close:hover {
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
+      }
+      
+      .mask-editor-canvas-container {
+        position: relative;
+        display: inline-block;
+        border: 2px solid #2563eb;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+      }
+      
+      .mask-editor-canvas {
+        display: block;
+        max-width: 100%;
+        max-height: 70vh;
+        cursor: crosshair;
+      }
+      
+      #mask-editor-mask-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: auto;
+        mix-blend-mode: multiply;
+      }
+      
+      .mask-editor-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: #1e3a8a;
+      }
+      
+      .mask-editor-brush-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      
+      .mask-editor-brush-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e3a8a;
+      }
+      
+      .mask-editor-brush-slider {
+        flex: 1;
+        min-width: 150px;
+        max-width: 300px;
+        height: 6px;
+        border-radius: 3px;
+        background: #e5e7eb;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      
+      .mask-editor-brush-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #2563eb;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      }
+      
+      .mask-editor-brush-slider::-webkit-slider-thumb:hover {
+        background: #1d4ed8;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.5);
+      }
+      
+      .mask-editor-brush-slider::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #2563eb;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      }
+      
+      .mask-editor-brush-slider::-moz-range-thumb:hover {
+        background: #1d4ed8;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.5);
+      }
+      
+      .mask-editor-brush-slider::-moz-range-track {
+        height: 6px;
+        border-radius: 3px;
+        background: #e5e7eb;
+      }
+      
+      .mask-editor-brush-size-display {
+        min-width: 40px;
+        text-align: center;
+        font-weight: 600;
+        color: #2563eb;
+      }
+      
+      .mask-editor-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      
+      .mask-editor-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .mask-editor-btn-primary {
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .mask-editor-btn-primary img {
+        width: 16px;
+        height: 16px;
+        margin-left: 8px;
+        filter: brightness(0) invert(1);
+        object-fit: contain;
+      }
+      
+      .mask-editor-btn-primary:hover {
+        background: #1d4ed8;
+      }
+      
+      .mask-editor-btn-secondary {
+        background: #f3f4f6;
+        color: #1e3a8a;
+        border: 1px solid #e5e7eb;
+      }
+      
+      .mask-editor-btn-secondary:hover {
+        background: #e5e7eb;
+        border-color: #2563eb;
+        color: #2563eb;
+      }
+      
+      .mask-editor-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .mask-editor-prompt-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .mask-editor-prompt-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e3a8a;
+      }
+      
+      .mask-editor-prompt-input {
+        padding: 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #1e3a8a;
+        font-size: 14px;
+        font-family: inherit;
+      }
+      
+      .mask-editor-prompt-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      
+      .mask-editor-prompt-input::placeholder {
+        color: #9ca3af;
+      }
+      
+      /* Image modal/lightbox */
+      .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease-in;
+        cursor: pointer;
+      }
+      
+      .image-modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .image-modal-content {
+        max-width: 95%;
+        max-height: 95%;
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        animation: zoomIn 0.3s ease-in;
+        cursor: default;
+      }
+      
+      @keyframes zoomIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      
+      .image-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        cursor: pointer;
+        z-index: 10001;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        transition: background 0.2s;
+        font-size: 0;
+        line-height: 1;
+      }
+      
+      .image-modal-close::before {
+        content: '×';
+        display: block;
+        color: white;
+        font-size: 40px;
+        font-weight: bold;
+        transform: translateY(-3px);
+      }
+      
+      .image-modal-close:hover {
+        background: rgba(0, 0, 0, 0.8);
+      }
+      
+      @media (max-width: 768px) {
+        .chat-container {
+          height: calc(100vh - 100px);
+          padding: 10px;
+        }
+        
+        .message-content {
+          max-width: 75%;
+        }
+        
+        .chat-input-container {
+          padding: 12px;
+        }
+        
+        .file-preview-item {
+          max-width: 100%;
+        }
+      }
+      
+      /* Custom Stagify Scrollbar */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #2563eb rgba(255, 255, 255, 0.2);
+      }
+      
+      *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      
+      *::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      
+      *::-webkit-scrollbar-thumb {
+        background: #2563eb;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      
+      *::-webkit-scrollbar-thumb:hover {
+        background: #1d4ed8;
+        background-clip: padding-box;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background Video -->
+    <video id="background-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+      <source src="background.mp4" type="video/mp4">
+    </video>
+
+    <header class="site-header">
+      <nav class="nav">
+        <div class="brand"><img src="media-webp/logo/Logo64x64.webp" alt="Stagify.ai Logo" class="brand-logo" fetchpriority="high"><span class="brand-strong">stagify</span><span class="brand-light">.ai</span></div>
+        <div class="nav-center">
+          <a href="index.html" class="nav-link" data-lang="navigation.home">Home</a>
+          <a href="ai-designer.html" class="nav-link desktop-only" data-lang-html="navigation.pdfTo3d">AI Designer</a>
+          <a href="why.html#why" class="nav-link" data-lang="navigation.whyUs">Why Us?</a>
+          <a href="faq.html#faq" class="nav-link" data-lang="navigation.faq">FAQ</a>
+          <a href="contact.html#contact" class="nav-link" data-lang="navigation.contactUs">Contact Us</a>
+        </div>
+        <div class="mobile-test-text">
+          <div data-lang="hero.title.upload">Upload.</div>
+          <div data-lang="hero.title.stage">Stage.</div>
+          <div data-lang="hero.title.imagine">Imagine.</div>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="language-picker-container">
+        <div class="language-selector">
+          <label for="language-select" class="sr-only">Select language</label>
+          <select id="language-select" class="language-dropdown">
+            <option value="english" selected>EN</option>
+            <option value="spanish">ES</option>
+            <option value="chinese">中文</option>
+          </select>
+        </div>
+      </div>
+
+      <section class="hero" style="grid-template-columns: 1fr; padding: 20px; width: 100%; max-width: 100%; box-sizing: border-box;">
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div class="empty-state">
+              <h3 data-lang="pdf.title">AI Designer</h3>
+              <p data-lang="pdf.emptyState">Start a conversation by typing a message or uploading a file</p>
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <div class="file-preview-container" id="file-preview-container">
+              <div class="file-preview-list" id="file-preview-list"></div>
+            </div>
+            
+            <div class="chat-input-row">
+              <div class="input-bottom-controls">
+                <label class="file-upload-btn" data-lang-attr="pdf.uploadFile|title" title="Upload file">
+                  <img src="media-webp/file.webp" alt="Upload file">
+                  <input type="file" id="file-input" multiple accept="image/*,.pdf,.txt,.doc,.docx,.jpg,.jpeg">
+                </label>
+                
+                <button class="reload-btn" id="reload-btn" title="Reload chat">
+                  <img src="media-webp/Reload.webp" alt="Reload chat">
+                </button>
+                
+                <div class="message-tag-selector">
+                  <button class="message-tag-btn" id="message-tag-btn">
+                    <span class="message-tag-text" data-lang="pdf.messageTag.auto">Auto</span>
+                    <svg class="message-tag-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div class="message-tag-dropdown" id="message-tag-dropdown">
+                    <div class="message-tag-option" data-tag="auto">
+                      <div class="message-tag-option-name" data-lang="pdf.messageTag.auto">Auto</div>
+                    </div>
+                    <div class="message-tag-option" data-tag="generate">
+                      <div class="message-tag-option-name" data-lang="pdf.messageTag.generate">Generate</div>
+                    </div>
+                    <div class="message-tag-option" data-tag="stage">
+                      <div class="message-tag-option-name" data-lang="pdf.messageTag.stage">Stage/Modify</div>
+                    </div>
+                    <div class="message-tag-option" data-tag="cad-stage">
+                      <div class="message-tag-option-name" data-lang="pdf.messageTag.cadStage">Stage (Floor Plan)</div>
+                    </div>
+                    <div class="message-tag-option" data-tag="describe">
+                      <div class="message-tag-option-name" data-lang="pdf.messageTag.describe">Describe/Recall</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="chat-input-wrapper">
+                <textarea 
+                  id="chat-input" 
+                  class="chat-input" 
+                  data-lang="pdf.inputPlaceholder"
+                  placeholder="Type your message..."
+                  rows="1"
+                  maxlength="5000"
+                ></textarea>
+              </div>
+              
+              <div class="send-controls">
+                <button id="send-btn" class="send-btn" title="Send message">
+                  <img src="media-webp/Send.webp" alt="Send">
+                </button>
+                <button class="bug-report-btn" id="bug-report-btn" title="Report a bug">
+                  <img src="media-webp/Bug.webp" alt="Report bug">
+                </button>
+                <div class="model-selector">
+                  <button class="model-selector-btn" id="model-selector-btn">
+                    <span class="model-selector-text">Fast</span>
+                    <svg class="model-selector-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div class="model-dropdown" id="model-dropdown">
+                    <div class="model-dropdown-header" data-lang="pdf.modelSelector.chooseModel">Choose your model</div>
+                    <div class="model-option" data-model="fast">
+                      <div class="model-option-content">
+                        <div class="model-option-name" data-lang="pdf.modelSelector.fast">Fast</div>
+                        <div class="model-option-description" data-lang="pdf.modelSelector.fastDescription">Standard quality, faster</div>
+                      </div>
+                    </div>
+                    <div class="model-option" data-model="pro">
+                      <div class="model-option-content">
+                        <div class="model-option-name" data-lang="pdf.modelSelector.pro">Pro</div>
+                        <div class="model-option-description" data-lang="pdf.modelSelector.proDescription">Higher quality, slower</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <!-- Bug Report Popup -->
+    <div class="bug-report-popup" id="bug-report-popup">
+      <div class="bug-report-popup-content">
+        <div class="bug-report-popup-header">
+          <h2 class="bug-report-popup-title">Report a Bug</h2>
+          <button class="bug-report-popup-close" id="bug-report-popup-close">&times;</button>
+        </div>
+        <form class="bug-report-form" id="bug-report-form">
+          <div class="bug-report-form-group">
+            <label class="bug-report-form-label" for="bug-report-description">Description *</label>
+            <textarea 
+              id="bug-report-description" 
+              class="bug-report-form-textarea" 
+              placeholder="Please describe the bug you encountered..."
+              required
+            ></textarea>
+          </div>
+          <div class="bug-report-form-group">
+            <label class="bug-report-form-label" for="bug-report-steps">Steps to Reproduce</label>
+            <textarea 
+              id="bug-report-steps" 
+              class="bug-report-form-textarea" 
+              placeholder="1. Step one...&#10;2. Step two...&#10;3. Step three..."
+            ></textarea>
+          </div>
+          <div class="bug-report-form-group">
+            <label class="bug-report-form-label" for="bug-report-email">Email (optional)</label>
+            <input 
+              type="email" 
+              id="bug-report-email" 
+              class="bug-report-form-input" 
+              placeholder="your@email.com"
+            />
+          </div>
+          <div class="bug-report-form-actions">
+            <button type="button" class="bug-report-form-cancel" id="bug-report-cancel">Cancel</button>
+            <button type="submit" class="bug-report-form-submit" id="bug-report-submit">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const chatMessages = document.getElementById('chat-messages');
+      const chatInput = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('send-btn');
+      const fileInput = document.getElementById('file-input');
+      const chatContainer = document.querySelector('.chat-container');
+      
+      let conversationHistory = [];
+      let selectedFiles = [];
+      let isProcessing = false; // Track if we're currently processing a message
+      let dragCounter = 0; // Track drag enter/leave events to handle nested elements
+      
+      // Load welcome message on page load
+      async function loadWelcomeMessage() {
+        try {
+          // Remove empty state immediately
+          const emptyState = chatMessages.querySelector('.empty-state');
+          if (emptyState) {
+            emptyState.remove();
+          }
+          
+          // Show typing indicator while loading welcome message
+          const typingId = showTypingIndicator('welcome');
+          
+          // Generate a simple user ID (you can enhance this with actual user identification)
+          const userId = localStorage.getItem('userId') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('userId', userId);
+          
+          const response = await fetch(`/api/welcome-message?userId=${encodeURIComponent(userId)}`);
+          const data = await response.json();
+          
+          // Remove typing indicator
+          removeTypingIndicator(typingId);
+          
+          if (data.message) {
+            // Add welcome message
+            addMessage('assistant', data.message);
+            
+            // Add to conversation history
+            conversationHistory.push({ role: 'assistant', content: data.message });
+          }
+        } catch (error) {
+          console.error('Error loading welcome message:', error);
+          // Remove typing indicator if it exists
+          const typingIndicator = document.getElementById('typing-indicator');
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+          // If welcome message fails, just remove empty state (already removed above)
+        }
+      }
+      
+      // Load welcome message when page loads
+      loadWelcomeMessage();
+      
+      // Reload button functionality
+      const reloadBtn = document.getElementById('reload-btn');
+      reloadBtn.addEventListener('click', function() {
+        // Reset conversation history
+        conversationHistory = [];
+        
+        // Clear chat messages
+        chatMessages.innerHTML = '';
+        
+        // Clear file selection
+        selectedFiles = [];
+        updateFilePreview();
+        
+        // Clear input
+        chatInput.value = '';
+        
+        // Reset processing state
+        isProcessing = false;
+        updateSendButtonState();
+        
+        // Load welcome message (same as page load)
+        loadWelcomeMessage();
+      });
+      
+      // Format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+      }
+      
+      // Update file preview
+      function updateFilePreview() {
+        const container = document.getElementById('file-preview-container');
+        const list = document.getElementById('file-preview-list');
+        
+        if (selectedFiles.length === 0) {
+          container.classList.remove('has-files');
+          list.innerHTML = '';
+          return;
+        }
+        
+        container.classList.add('has-files');
+        list.innerHTML = '';
+        
+        selectedFiles.forEach((file, index) => {
+          const item = document.createElement('div');
+          item.className = 'file-preview-item';
+          
+          if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+            item.appendChild(img);
+          } else {
+            const icon = document.createElement('div');
+            icon.style.cssText = 'width: 40px; height: 40px; background: #2563eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;';
+            icon.textContent = file.name.split('.').pop().toUpperCase().substring(0, 3);
+            item.appendChild(icon);
+          }
+          
+          const fileInfo = document.createElement('div');
+          fileInfo.className = 'file-info';
+          
+          const fileName = document.createElement('div');
+          fileName.className = 'file-name';
+          fileName.textContent = file.name;
+          
+          const fileSize = document.createElement('div');
+          fileSize.className = 'file-size';
+          fileSize.textContent = formatFileSize(file.size);
+          
+          fileInfo.appendChild(fileName);
+          fileInfo.appendChild(fileSize);
+          item.appendChild(fileInfo);
+          
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'file-remove';
+          removeBtn.innerHTML = '×';
+          removeBtn.onclick = () => {
+            selectedFiles.splice(index, 1);
+            updateFilePreview();
+          };
+          item.appendChild(removeBtn);
+          
+          list.appendChild(item);
+        });
+      }
+      
+      // Format markdown text to HTML
+      function formatMarkdown(text) {
+        if (!text) return '';
+        
+        // Split into lines for processing
+        const lines = text.split('\n');
+        let html = '';
+        let inList = false;
+        
+        lines.forEach((line, index) => {
+          // Check for bullet points: * item, - item, or • item
+          const bulletMatch = line.match(/^[\*\-\+•]\s+(.+)$/);
+          
+          if (bulletMatch) {
+            if (!inList) {
+              html += '<ul>';
+              inList = true;
+            }
+            let itemText = bulletMatch[1];
+            // Process bold and italic within list items
+            itemText = itemText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            itemText = itemText.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+            html += `<li>${itemText}</li>`;
+          } else {
+            if (inList) {
+              html += '</ul>';
+              inList = false;
+            }
+            
+            if (line.trim()) {
+              // Process bold and italic in regular lines
+              let processedLine = line
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+              html += processedLine;
+            }
+            
+            // Add line break if not last line
+            if (index < lines.length - 1) {
+              html += '<br>';
+            }
+          }
+        });
+        
+        if (inList) {
+          html += '</ul>';
+        }
+        
+        return html;
+      }
+      
+      // Handle input (fixed height, no auto-resize)
+      chatInput.addEventListener('input', function() {
+        // Enforce character limit (maxlength should handle this, but just in case)
+        if (this.value.length > 5000) {
+          this.value = this.value.substring(0, 5000);
+        }
+        
+        // Show scrollbar only if content exceeds one line
+        if (this.scrollHeight > 48) {
+          this.classList.add('multi-line');
+        } else {
+          this.classList.remove('multi-line');
+        }
+        
+        if (!isProcessing) {
+          updateSendButtonState();
+        }
+      });
+      
+      // Check on focus to show scrollbar if needed
+      chatInput.addEventListener('focus', function() {
+        if (this.scrollHeight > 48) {
+          this.classList.add('multi-line');
+        }
+      });
+      
+      // Hide scrollbar when not focused if content fits in one line
+      chatInput.addEventListener('blur', function() {
+        if (this.scrollHeight <= 48) {
+          this.classList.remove('multi-line');
+        }
+      });
+      
+      // Send message on Enter (Shift+Enter for new line)
+      chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          // Only send if not currently processing and send button is enabled
+          if (!isProcessing && !sendBtn.disabled) {
+            sendMessage();
+          }
+        }
+      });
+      
+      // Send button click
+      sendBtn.addEventListener('click', sendMessage);
+      
+      // Helper function to handle files (used by both file input and drag & drop)
+      function handleFiles(files) {
+        // Filter files to only accept the same types as the file input
+        const acceptedTypes = ['image/', '.pdf', '.txt', '.doc', '.docx', '.jpg', '.jpeg'];
+        const filteredFiles = Array.from(files).filter(file => {
+          return acceptedTypes.some(type => 
+            file.type.startsWith(type) || 
+            file.name.toLowerCase().endsWith(type.replace('.', '.'))
+          );
+        });
+        
+        if (filteredFiles.length > 0) {
+          // Check how many files can still be added (max 3 total)
+          const remainingSlots = 3 - selectedFiles.length;
+          if (remainingSlots > 0) {
+            const filesToAdd = filteredFiles.slice(0, remainingSlots);
+            selectedFiles.push(...filesToAdd);
+            updateFilePreview();
+            if (!isProcessing) {
+              updateSendButtonState();
+            }
+            
+            // Show message if user tried to add more than allowed
+            if (filteredFiles.length > remainingSlots) {
+              const excessCount = filteredFiles.length - remainingSlots;
+              alert(`Maximum of 3 files allowed. Only ${remainingSlots} file(s) added. ${excessCount} file(s) were not added.`);
+            }
+          } else {
+            alert('Maximum of 3 files allowed. Please remove some files before adding more.');
+          }
+        }
+      }
+      
+      // File upload - add to preview instead of uploading immediately
+      fileInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+        e.target.value = ''; // Reset input
+      });
+      
+      // Drag and drop functionality
+      chatMessages.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+        if (e.dataTransfer.types.includes('Files')) {
+          chatMessages.classList.add('drag-over');
+          chatContainer.classList.add('drag-over');
+        }
+      });
+      
+      chatMessages.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types.includes('Files')) {
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      });
+      
+      chatMessages.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+        if (dragCounter === 0) {
+          chatMessages.classList.remove('drag-over');
+          chatContainer.classList.remove('drag-over');
+        }
+      });
+      
+      chatMessages.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        chatMessages.classList.remove('drag-over');
+        chatContainer.classList.remove('drag-over');
+        
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+          handleFiles(files);
+        }
+      });
+      
+      // Also handle drag and drop on the chat container for better coverage
+      chatContainer.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types.includes('Files')) {
+          dragCounter++;
+          chatMessages.classList.add('drag-over');
+          chatContainer.classList.add('drag-over');
+        }
+      });
+      
+      chatContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types.includes('Files')) {
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      });
+      
+      chatContainer.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Only remove if we're leaving the container entirely
+        if (!chatContainer.contains(e.relatedTarget)) {
+          dragCounter = 0;
+          chatMessages.classList.remove('drag-over');
+          chatContainer.classList.remove('drag-over');
+        }
+      });
+      
+      chatContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        chatMessages.classList.remove('drag-over');
+        chatContainer.classList.remove('drag-over');
+        
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+          handleFiles(files);
+        }
+      });
+      
+      // Handle paste events for images
+      document.addEventListener('paste', function(e) {
+        // Only handle paste if the chat container is visible and user isn't typing in another input
+        const activeElement = document.activeElement;
+        const isTypingInOtherInput = activeElement && 
+                                     activeElement.tagName === 'INPUT' && 
+                                     activeElement !== chatInput &&
+                                     activeElement.type !== 'file';
+        
+        // Don't intercept paste if user is typing in another input field
+        if (isTypingInOtherInput) return;
+        
+        // Check if chat container is visible
+        if (!chatContainer || chatContainer.offsetParent === null) return;
+        
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        
+        // Look for image items in the clipboard
+        const imageItems = Array.from(items).filter(item => item.type.indexOf('image') !== -1);
+        
+        if (imageItems.length > 0) {
+          e.preventDefault();
+          
+          // Process each image
+          imageItems.forEach((item, index) => {
+            if (index === 0) { // Only process the first image to avoid multiple alerts
+              const blob = item.getAsFile();
+              if (blob) {
+                // Convert blob to File object with a proper name
+                const fileName = `pasted-image-${Date.now()}.png`;
+                const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+                
+                // Use the existing handleFiles function
+                handleFiles([file]);
+              }
+            }
+          });
+        }
+      });
+      
+      // Initialize send button state
+      updateSendButtonState();
+      
+      function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message && selectedFiles.length === 0) return;
+        
+        // Get message tag
+        const messageTagBtn = document.getElementById('message-tag-btn');
+        const messageTagValue = messageTagBtn ? messageTagBtn.getAttribute('data-tag') || 'auto' : 'auto';
+        
+        // Show user message in chat
+        const userMessageText = message || (selectedFiles.length > 0 ? `Uploaded ${selectedFiles.length} file(s)` : '');
+        if (userMessageText) {
+          addMessage('user', userMessageText, selectedFiles);
+        }
+        
+        // Clear input and files
+        chatInput.value = '';
+        const filesToSend = [...selectedFiles];
+        selectedFiles = [];
+        updateFilePreview();
+        
+        // Disable send button while processing (but allow typing and file selection)
+        isProcessing = true;
+        updateSendButtonState();
+        
+        // Determine message type based on user input
+        const messageLower = message.toLowerCase();
+        let messageType = 'general';
+        if (messageLower.includes('generate') || messageLower.includes('create an image') || messageLower.includes('make an image') || messageLower.includes('draw') || messageLower.includes('show me an image of')) {
+          messageType = 'generating';
+        } else if (messageLower.includes('stage') || messageLower.includes('design') || messageLower.includes('furniture') || messageLower.includes('decorate')) {
+          messageType = 'staging';
+        } else if (messageLower.includes('describe') || messageLower.includes('analyze') || messageLower.includes('look at') || messageLower.includes('show me') || (messageLower.includes('image') && (messageLower.includes('how') || messageLower.includes('what')))) {
+          messageType = 'analyzing';
+        }
+        
+        // Show typing indicator
+        const typingId = showTypingIndicator(messageType);
+        
+        // Store images in conversation history and send
+        const userMessageContent = [];
+        if (message && message.trim()) {
+          userMessageContent.push({ type: 'text', text: message });
+        }
+        
+        // Convert files to base64 and store in conversation history
+        const filePromises = filesToSend.map(file => {
+          return new Promise((resolve) => {
+            if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                userMessageContent.push({
+                  type: 'image_url',
+                  image_url: { url: e.target.result },
+                  filename: file.name // Store filename for annotation matching
+                });
+                resolve();
+              };
+              reader.readAsDataURL(file);
+            } else {
+              // For non-image files, just store the filename
+              userMessageContent.push({
+                type: 'text',
+                text: `[File: ${file.name}]`
+              });
+              resolve();
+            }
+          });
+        });
+        
+        // Wait for all files to be read, then send
+        Promise.all(filePromises).then(() => {
+          // Add user message to conversation history (avoid duplicates)
+          const userMessage = { 
+            role: 'user', 
+            content: userMessageContent.length > 0 ? userMessageContent : userMessageText
+          };
+          
+          // Check if the last message is the same (avoid duplicates)
+          const lastMessage = conversationHistory[conversationHistory.length - 1];
+          const isDuplicate = lastMessage && 
+            lastMessage.role === 'user' && 
+            JSON.stringify(lastMessage.content) === JSON.stringify(userMessage.content);
+          
+          if (!isDuplicate) {
+            conversationHistory.push(userMessage);
+          }
+          
+          // Send to backend
+          if (filesToSend.length > 0) {
+            // Send with files
+            const formData = new FormData();
+            filesToSend.forEach(file => {
+              formData.append('files', file);
+            });
+            if (message) {
+              formData.append('message', message);
+            }
+            // Send conversation history so backend can access previous images
+            formData.append('conversationHistory', JSON.stringify(conversationHistory));
+            
+            // Get userId from localStorage
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+              formData.append('userId', userId);
+            }
+            
+            // Add model to formData
+            const selectedModel = window.getSelectedModelApiName ? window.getSelectedModelApiName() : 'gpt-4o-mini';
+            formData.append('model', selectedModel);
+            
+            // Add message tag to formData
+            if (messageTagValue && messageTagValue !== 'auto') {
+              formData.append('messageTag', messageTagValue);
+            }
+            
+            fetch('/api/chat-upload', {
+              method: 'POST',
+              body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+              removeTypingIndicator(typingId);
+              
+              if (data.error) {
+                addMessage('assistant', 'Sorry, I encountered an error: ' + data.error);
+              } else if (data.contextLimitReached) {
+                // Context limit reached - show message and don't add to history
+                addMessage('assistant', data.response);
+              } else {
+                // Update user message in conversation history with annotations if available
+                if (data.imageAnnotations && Object.keys(data.imageAnnotations).length > 0) {
+                  // Find the last user message in conversation history
+                  for (let i = conversationHistory.length - 1; i >= 0; i--) {
+                    const msg = conversationHistory[i];
+                    if (msg.role === 'user' && Array.isArray(msg.content)) {
+                      // Update images with their annotations
+                      msg.content.forEach(item => {
+                        if (item.type === 'image_url') {
+                          // Try to match by filename
+                          const filename = item.filename;
+                          if (filename && data.imageAnnotations[filename]) {
+                            item.annotation = data.imageAnnotations[filename];
+                          } else {
+                            // Try matching by checking all annotation keys
+                            const matchingKey = Object.keys(data.imageAnnotations).find(key => 
+                              filename && (filename.includes(key) || key.includes(filename))
+                            );
+                            if (matchingKey) {
+                              item.annotation = data.imageAnnotations[matchingKey];
+                            }
+                          }
+                        }
+                      });
+                      break;
+                    }
+                  }
+                }
+                
+                // Handle staged images (single or array)
+                const stagedImages = data.stagedImages || (data.stagedImage ? [data.stagedImage] : []);
+                if (stagedImages.length > 0) {
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the staged image(s) to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    stagedImages.forEach((stagedImage, index) => {
+                      const stagedImageDiv = document.createElement('div');
+                      stagedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                      
+                      const imageContainer = createAIImageWithDownload(stagedImage, `Staged Room ${stagedImages.length > 1 ? `(${index + 1})` : ''}`, `staged-room-${index}`);
+                      stagedImageDiv.appendChild(imageContainer);
+                      
+                      lastMessage.appendChild(stagedImageDiv);
+                    });
+                  }
+                  
+                  // Store staged image(s) in conversation history
+                  const contentItems = [{ type: 'text', text: data.response }];
+                  stagedImages.forEach((stagedImage, index) => {
+                    const annotationKey = stagedImages.length === 1 ? 'staged_0' : `staged_${index}`;
+                    const annotation = data.stagedImageAnnotations && data.stagedImageAnnotations[annotationKey] ? data.stagedImageAnnotations[annotationKey] : null;
+                    contentItems.push({ 
+                      type: 'image_url', 
+                      image_url: { url: stagedImage },
+                      isStaged: true,
+                      _annotation: annotation // Store annotation for backend context building
+                    });
+                  });
+                  
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: contentItems
+                  };
+                  
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.generatedImages || data.generatedImage) {
+                  // If image generation was processed, display the generated image(s)
+                  const generatedImages = data.generatedImages || (data.generatedImage ? [data.generatedImage] : []);
+                  
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the generated image(s) to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    generatedImages.forEach((generatedImage, index) => {
+                      const generatedImageDiv = document.createElement('div');
+                      generatedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                      
+                      const imageContainer = createAIImageWithDownload(generatedImage, `Generated Image ${generatedImages.length > 1 ? `(${index + 1})` : ''}`, `generated-image-${index}`);
+                      generatedImageDiv.appendChild(imageContainer);
+                      
+                      lastMessage.appendChild(generatedImageDiv);
+                    });
+                  }
+                  
+                  // Store generated image(s) in conversation history so they can be accessed later
+                  const contentItems = [{ type: 'text', text: data.response }];
+                  generatedImages.forEach((generatedImage, index) => {
+                    const annotationKey = generatedImages.length === 1 ? 'generated_0' : `generated_${index}`;
+                    const annotation = data.generatedImageAnnotations && data.generatedImageAnnotations[annotationKey] ? data.generatedImageAnnotations[annotationKey] : null;
+                    contentItems.push({ 
+                      type: 'image_url', 
+                      image_url: { url: generatedImage },
+                      isGenerated: true, // Mark as generated image for backend
+                      _annotation: annotation // Store annotation for backend context building
+                    });
+                  });
+                  
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: contentItems
+                  };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.cadImage || (data.cadImages && data.cadImages.length > 0)) {
+                  // If CAD processing was done, display the CAD image(s)
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Normalize to array
+                  const cadImages = data.cadImages || (data.cadImage ? [data.cadImage] : []);
+                  
+                  if (cadImages.length > 0) {
+                    // Then add the CAD image(s) to the last assistant message
+                    const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                    if (lastMessage) {
+                      cadImages.forEach((cadImage, index) => {
+                        const cadImageDiv = document.createElement('div');
+                        cadImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                        
+                        const imageTitle = cadImages.length > 1 ? `3D Render from Blueprint (${index + 1})` : '3D Render from Blueprint';
+                        const imageContainer = createAIImageWithDownload(cadImage, imageTitle, `cad-render-${index}`);
+                        cadImageDiv.appendChild(imageContainer);
+                        
+                        lastMessage.appendChild(cadImageDiv);
+                      });
+                    }
+                    
+                    // Store CAD image(s) in conversation history
+                    const cadAnnotation = data.cadImageAnnotation || null;
+                    const cadAnnotations = data.cadImageAnnotations || {};
+                    const cadAssistantMessage = { 
+                      role: 'assistant', 
+                      content: [
+                        { type: 'text', text: data.response },
+                        ...cadImages.map((cadImage, index) => ({
+                          type: 'image_url', 
+                          image_url: { url: cadImage },
+                          isGenerated: true, // Mark as generated image for backend
+                          _annotation: cadImages.length === 1 ? cadAnnotation : (cadAnnotations[`cad_${index}`] || null) // Store annotation for backend context building
+                        }))
+                      ]
+                    };
+                  
+                  const lastMsg2 = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate2 = lastMsg2 && 
+                    lastMsg2.role === 'assistant' && 
+                    JSON.stringify(lastMsg2.content) === JSON.stringify(cadAssistantMessage.content);
+                  
+                  if (!isDuplicate2) {
+                    conversationHistory.push(cadAssistantMessage);
+                  }
+                  }
+                } else if (data.recalledImage) {
+                  // If an image was recalled for display, show it
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the recalled image to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    const recalledImageDiv = document.createElement('div');
+                    recalledImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                    
+                    const imageContainer = createAIImageWithDownload(data.recalledImage, 'Recalled Image', 'recalled-image');
+                    recalledImageDiv.appendChild(imageContainer);
+                    
+                    lastMessage.appendChild(recalledImageDiv);
+                  }
+                  
+                  // Store the message in conversation history (don't duplicate the image)
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: data.response
+                  };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.recalledImage) {
+                  // If an image was recalled for display, show it
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the recalled image to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    const recalledImageDiv = document.createElement('div');
+                    recalledImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                    
+                    const imageContainer = createAIImageWithDownload(data.recalledImage, 'Recalled Image', 'recalled-image');
+                    recalledImageDiv.appendChild(imageContainer);
+                    
+                    lastMessage.appendChild(recalledImageDiv);
+                  }
+                  
+                  // Store the message in conversation history (don't duplicate the image)
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: data.response
+                  };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.requestedImage) {
+                  // If an image was requested for display, show it
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the requested image to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    const requestedImageDiv = document.createElement('div');
+                    requestedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                    
+                    const imageContainer = createAIImageWithDownload(data.requestedImage, 'Requested Image', 'requested-image');
+                    requestedImageDiv.appendChild(imageContainer);
+                    
+                    lastMessage.appendChild(requestedImageDiv);
+                  }
+                  
+                  // Store the message in conversation history (don't duplicate the image)
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: data.response
+                  };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else {
+                  addMessage('assistant', data.response);
+                  const assistantMessage = { role: 'assistant', content: data.response };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                }
+              }
+            })
+            .catch(error => {
+              removeTypingIndicator(typingId);
+              addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+              console.error('Error:', error);
+            })
+            .finally(() => {
+              isProcessing = false;
+              sendBtn.disabled = false;
+              chatInput.disabled = false;
+              fileInput.disabled = false;
+              updateSendButtonState();
+              chatInput.focus();
+            });
+          } else {
+            // Send text only - also include conversation history for context
+            // Check if the last message is the same (avoid duplicates)
+            const userMessage = { 
+              role: 'user', 
+              content: message 
+            };
+            const lastMessage = conversationHistory[conversationHistory.length - 1];
+            const isDuplicate = lastMessage && 
+              lastMessage.role === 'user' && 
+              JSON.stringify(lastMessage.content) === JSON.stringify(userMessage.content);
+            
+            if (!isDuplicate) {
+              conversationHistory.push(userMessage);
+            }
+            
+        // Determine message type based on user input
+        const messageLower = message.toLowerCase();
+        let messageType = 'general';
+        if (messageLower.includes('generate') || messageLower.includes('create an image') || messageLower.includes('make an image') || messageLower.includes('draw') || messageLower.includes('show me an image of')) {
+          messageType = 'generating';
+        } else if (messageLower.includes('stage') || messageLower.includes('design') || messageLower.includes('furniture') || messageLower.includes('decorate')) {
+          messageType = 'staging';
+        } else if (messageLower.includes('describe') || messageLower.includes('analyze') || messageLower.includes('look at') || messageLower.includes('show me') || (messageLower.includes('image') && (messageLower.includes('how') || messageLower.includes('what')))) {
+          messageType = 'analyzing';
+        }
+        
+        // Show typing indicator
+        const typingId = showTypingIndicator(messageType);
+            
+            // Get userId from localStorage
+            const userId = localStorage.getItem('userId');
+            
+            fetch('/api/chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messages: conversationHistory,
+                userId: userId,
+                model: window.getSelectedModelApiName ? window.getSelectedModelApiName() : 'gpt-4o-mini',
+                messageTag: messageTagValue && messageTagValue !== 'auto' ? messageTagValue : undefined
+              }),
+            })
+            .then(response => response.json())
+            .then(data => {
+              removeTypingIndicator(typingId);
+              
+              if (data.error) {
+                addMessage('assistant', 'Sorry, I encountered an error: ' + data.error);
+              } else if (data.contextLimitReached) {
+                // Context limit reached - show message and don't add to history
+                addMessage('assistant', data.response);
+              } else {
+                // If staging was processed, display the staged image
+                // Handle staged images (single or array)
+                const stagedImages = data.stagedImages || (data.stagedImage ? [data.stagedImage] : []);
+                if (stagedImages.length > 0) {
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the staged image(s) to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    stagedImages.forEach((stagedImage, index) => {
+                      const stagedImageDiv = document.createElement('div');
+                      stagedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                      
+                      const imageContainer = createAIImageWithDownload(stagedImage, `Staged Room ${stagedImages.length > 1 ? `(${index + 1})` : ''}`, `staged-room-${index}`);
+                      stagedImageDiv.appendChild(imageContainer);
+                      
+                      lastMessage.appendChild(stagedImageDiv);
+                    });
+                  }
+                  
+                  // Store staged image(s) in conversation history
+                  const contentItems = [{ type: 'text', text: data.response }];
+                  stagedImages.forEach((stagedImage) => {
+                    contentItems.push({ 
+                      type: 'image_url', 
+                      image_url: { url: stagedImage },
+                      isStaged: true
+                    });
+                  });
+                  
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: contentItems
+                  };
+                  
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.generatedImages || data.generatedImage) {
+                  // Handle generated images (single or array)
+                  const generatedImages = data.generatedImages || (data.generatedImage ? [data.generatedImage] : []);
+                  
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the generated image(s) to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    generatedImages.forEach((generatedImage, index) => {
+                      const generatedImageDiv = document.createElement('div');
+                      generatedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                      
+                      const imageContainer = createAIImageWithDownload(generatedImage, `Generated Image ${generatedImages.length > 1 ? `(${index + 1})` : ''}`, `generated-image-${index}`);
+                      generatedImageDiv.appendChild(imageContainer);
+                      
+                      lastMessage.appendChild(generatedImageDiv);
+                    });
+                  }
+                  
+                  // Store generated image(s) in conversation history
+                  const contentItems = [{ type: 'text', text: data.response }];
+                  generatedImages.forEach((generatedImage) => {
+                    contentItems.push({ 
+                      type: 'image_url', 
+                      image_url: { url: generatedImage },
+                      isGenerated: true
+                    });
+                  });
+                  
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: contentItems
+                  };
+                  
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else if (data.cadImage || (data.cadImages && data.cadImages.length > 0)) {
+                  // If CAD processing was done, display the CAD image(s)
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Normalize to array
+                  const cadImages = data.cadImages || (data.cadImage ? [data.cadImage] : []);
+                  
+                  if (cadImages.length > 0) {
+                    // Then add the CAD image(s) to the last assistant message
+                    const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                    if (lastMessage) {
+                      cadImages.forEach((cadImage, index) => {
+                        const cadImageDiv = document.createElement('div');
+                        cadImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                        
+                        const imageTitle = cadImages.length > 1 ? `3D Render from Blueprint (${index + 1})` : '3D Render from Blueprint';
+                        const imageContainer = createAIImageWithDownload(cadImage, imageTitle, `cad-render-${index}`);
+                        cadImageDiv.appendChild(imageContainer);
+                        
+                        lastMessage.appendChild(cadImageDiv);
+                      });
+                    }
+                    
+                    // Store CAD image(s) in conversation history
+                    const cadAnnotation2 = data.cadImageAnnotation || null;
+                    const cadAnnotations2 = data.cadImageAnnotations || {};
+                    const cadAssistantMessage = { 
+                      role: 'assistant', 
+                      content: [
+                        { type: 'text', text: data.response },
+                        ...cadImages.map((cadImage, index) => ({
+                          type: 'image_url', 
+                          image_url: { url: cadImage },
+                          isGenerated: true,
+                          _annotation: cadImages.length === 1 ? cadAnnotation2 : (cadAnnotations2[`cad_${index}`] || null) // Store annotation for backend context building
+                        }))
+                      ]
+                    };
+                  
+                  const lastMsg2 = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate2 = lastMsg2 && 
+                    lastMsg2.role === 'assistant' && 
+                    JSON.stringify(lastMsg2.content) === JSON.stringify(cadAssistantMessage.content);
+                  
+                  if (!isDuplicate2) {
+                    conversationHistory.push(cadAssistantMessage);
+                  }
+                  }
+                } else if (data.requestedImage) {
+                  // If an image was requested for display, show it
+                  // Add the AI response text first
+                  addMessage('assistant', data.response);
+                  
+                  // Then add the requested image to the last assistant message
+                  const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+                  if (lastMessage) {
+                    const requestedImageDiv = document.createElement('div');
+                    requestedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                    
+                    const imageContainer = createAIImageWithDownload(data.requestedImage, 'Requested Image', 'requested-image');
+                    requestedImageDiv.appendChild(imageContainer);
+                    
+                    lastMessage.appendChild(requestedImageDiv);
+                  }
+                  
+                  // Store the message in conversation history (don't duplicate the image)
+                  const assistantMessage = { 
+                    role: 'assistant', 
+                    content: data.response
+                  };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                } else {
+                  addMessage('assistant', data.response);
+                  const assistantMessage = { role: 'assistant', content: data.response };
+                  
+                  // Check for duplicates
+                  const lastMsg = conversationHistory[conversationHistory.length - 1];
+                  const isDuplicate = lastMsg && 
+                    lastMsg.role === 'assistant' && 
+                    JSON.stringify(lastMsg.content) === JSON.stringify(assistantMessage.content);
+                  
+                  if (!isDuplicate) {
+                    conversationHistory.push(assistantMessage);
+                  }
+                }
+              }
+            })
+            .catch(error => {
+              removeTypingIndicator(typingId);
+              addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+              console.error('Error:', error);
+            })
+            .finally(() => {
+              isProcessing = false;
+              sendBtn.disabled = false;
+              chatInput.disabled = false;
+              fileInput.disabled = false;
+              updateSendButtonState();
+              chatInput.focus();
+            });
+          }
+        });
+      }
+      
+      // Update send button state based on input and whether we're processing
+      function updateSendButtonState() {
+        const hasContent = chatInput.value.trim() || selectedFiles.length > 0;
+        sendBtn.disabled = !hasContent || isProcessing;
+      }
+      
+      // Update send button when input changes
+      chatInput.addEventListener('input', function() {
+        updateSendButtonState();
+      });
+      
+      // Update send button when files are added/removed
+      const originalUpdateFilePreview = updateFilePreview;
+      updateFilePreview = function() {
+        originalUpdateFilePreview();
+        updateSendButtonState();
+      };
+      
+      // Initialize send button state
+      updateSendButtonState();
+      
+      function addMessage(role, content, files = null) {
+        // Remove empty state if present
+        const emptyState = chatMessages.querySelector('.empty-state');
+        if (emptyState) {
+          emptyState.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        if (role === 'user') {
+          const userImg = document.createElement('img');
+          userImg.src = 'media-webp/User.webp';
+          userImg.alt = 'User';
+          avatar.appendChild(userImg);
+        } else {
+          const logoImg = document.createElement('img');
+          logoImg.src = 'media-webp/logo/Logo64x64.webp';
+          logoImg.alt = 'Stagify';
+          avatar.appendChild(logoImg);
+        }
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        // Add text content with formatting
+        const textDiv = document.createElement('div');
+        if (role === 'assistant') {
+          // Format markdown for AI messages
+          textDiv.innerHTML = formatMarkdown(content);
+        } else {
+          textDiv.textContent = content;
+        }
+        contentDiv.appendChild(textDiv);
+        
+        // Add files if present
+        if (files) {
+          const filesArray = Array.isArray(files) ? files : [files];
+          const imageFiles = filesArray.filter(f => f && f.name && f.type && f.type.startsWith('image/'));
+          const nonImageFiles = filesArray.filter(f => f && f.name && (!f.type || !f.type.startsWith('image/')));
+          
+          // Create container for all files
+          if (imageFiles.length > 0 || nonImageFiles.length > 0) {
+            const filesContainer = document.createElement('div');
+            filesContainer.className = 'message-files-container';
+            // Add class for single image styling
+            if (imageFiles.length === 1 && nonImageFiles.length === 0) {
+              filesContainer.classList.add('single-image');
+            }
+            
+            // Add image files in organized grid
+            imageFiles.forEach(file => {
+              const fileDiv = document.createElement('div');
+              fileDiv.className = 'message-file';
+              
+              const img = document.createElement('img');
+              const imageSrc = URL.createObjectURL(file);
+              img.src = imageSrc;
+              img.alt = file.name;
+              img.addEventListener('click', () => openImageModal(imageSrc));
+              fileDiv.appendChild(img);
+              
+              filesContainer.appendChild(fileDiv);
+            });
+            
+            // Add non-image files
+            nonImageFiles.forEach(file => {
+              const fileDiv = document.createElement('div');
+              fileDiv.className = 'message-file';
+              const fileInfo = document.createElement('div');
+              fileInfo.textContent = `📄 ${file.name}`;
+              fileDiv.appendChild(fileInfo);
+              filesContainer.appendChild(fileDiv);
+            });
+            
+            contentDiv.appendChild(filesContainer);
+          }
+        }
+        
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(contentDiv);
+        chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      function showTypingIndicator(messageType = 'general') {
+        // Remove any existing typing indicator first
+        const existingIndicator = document.getElementById('typing-indicator');
+        if (existingIndicator) {
+          removeTypingIndicator('typing-indicator');
+        }
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message assistant';
+        typingDiv.id = 'typing-indicator';
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        const logoImg = document.createElement('img');
+        logoImg.src = 'media-webp/logo/Logo64x64.webp';
+        logoImg.alt = 'Stagify';
+        avatar.appendChild(logoImg);
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        const typing = document.createElement('div');
+        typing.className = 'typing-indicator';
+        
+        // Messages based on type
+        let messages = [];
+        if (messageType === 'generating') {
+          messages = [
+            'generating image...',
+            'creating your image...',
+            'bringing your vision to life...',
+            'crafting the details...',
+            'rendering...',
+            'almost there...',
+            'finalizing details...',
+            'polishing the result...',
+            'just a moment...'
+          ];
+        } else if (messageType === 'staging') {
+          messages = [
+            'staging your room...',
+            'adding furniture...',
+            'selecting decor...',
+            'arranging elements...',
+            'applying styles...',
+            'creating the design...',
+            'generating the layout...',
+            'refining details...',
+            'almost ready...'
+          ];
+        } else if (messageType === 'analyzing') {
+          messages = [
+            'analyzing image...',
+            'examining details...',
+            'identifying elements...',
+            'processing visual data...',
+            'understanding the space...',
+            'reviewing composition...',
+            'studying the layout...',
+            'almost done...'
+          ];
+        } else if (messageType === 'welcome') {
+          messages = [
+            'preparing your welcome...',
+            'getting ready for you...',
+            'setting things up...',
+            'preparing a warm welcome...',
+            'getting everything ready for you...',
+            'almost ready to greet you...',
+            'setting up your space...',
+            'preparing something special...',
+          ];
+        } else {
+          messages = [
+            'thinking...',
+            'processing your request...',
+            'analyzing...',
+            'considering options...',
+            'working on it...',
+            'almost there...',
+            'just a moment...',
+            'preparing response...'
+          ];
+        }
+        
+        // Start with a random message
+        let currentIndex = Math.floor(Math.random() * messages.length);
+        typing.textContent = messages[currentIndex];
+        
+        // Rotate messages randomly every 1.5 seconds (avoiding immediate repetition)
+        const messageInterval = setInterval(() => {
+          let nextIndex;
+          do {
+            nextIndex = Math.floor(Math.random() * messages.length);
+          } while (nextIndex === currentIndex && messages.length > 1);
+          currentIndex = nextIndex;
+          typing.textContent = messages[currentIndex];
+        }, 1500);
+        
+        // Store interval ID so we can clear it later
+        typingDiv.dataset.intervalId = messageInterval;
+        
+        contentDiv.appendChild(typing);
+        typingDiv.appendChild(avatar);
+        typingDiv.appendChild(contentDiv);
+        chatMessages.appendChild(typingDiv);
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        return 'typing-indicator';
+      }
+      
+      function removeTypingIndicator(id) {
+        const indicator = document.getElementById(id);
+        if (indicator) {
+          // Clear the message rotation interval
+          if (indicator.dataset.intervalId) {
+            clearInterval(parseInt(indicator.dataset.intervalId));
+          }
+          indicator.remove();
+        }
+      }
+      
+      // Image modal functions
+      function openImageModal(imageSrc) {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('image-modal-img');
+        if (modal && modalImg) {
+          modalImg.src = imageSrc;
+          modal.classList.add('active');
+          document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+      }
+      
+      function closeImageModal() {
+        const modal = document.getElementById('image-modal');
+        if (modal) {
+          modal.classList.remove('active');
+          document.body.style.overflow = ''; // Restore scrolling
+        }
+      }
+      
+      // Download image function
+      function downloadImage(imageSrc, filename = 'image') {
+        // Convert base64 data URL to blob
+        fetch(imageSrc)
+          .then(res => res.blob())
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'image.png';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          })
+          .catch(error => {
+            console.error('Error downloading image:', error);
+            // Fallback: try direct download for data URLs
+            try {
+              const a = document.createElement('a');
+              a.href = imageSrc;
+              a.download = filename || 'image.png';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            } catch (e) {
+              console.error('Fallback download also failed:', e);
+            }
+          });
+      }
+      
+      // Helper function to create AI image with download button
+      function createAIImageWithDownload(imageSrc, altText, imageType = 'image') {
+        const container = document.createElement('div');
+        container.className = 'ai-image-container';
+        
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.alt = altText;
+        img.className = 'ai-generated-image';
+        img.addEventListener('click', () => openImageModal(imageSrc));
+        
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'ai-image-download-btn';
+        downloadBtn.title = 'Download image';
+        downloadBtn.setAttribute('aria-label', 'Download image');
+        
+        const downloadIcon = document.createElement('img');
+        downloadIcon.src = 'media-webp/download.webp';
+        downloadIcon.alt = 'Download';
+        downloadBtn.appendChild(downloadIcon);
+        downloadBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent opening modal when clicking download
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          const extension = imageSrc.includes('data:image/png') ? 'png' : 
+                          imageSrc.includes('data:image/jpeg') || imageSrc.includes('data:image/jpg') ? 'jpg' : 
+                          imageSrc.includes('data:image/webp') ? 'webp' : 'png';
+          const filename = `${imageType}-${timestamp}.${extension}`;
+          downloadImage(imageSrc, filename);
+        });
+        
+        container.appendChild(img);
+        container.appendChild(downloadBtn);
+        
+        // Add mask button for all AI-generated images
+        // This includes staged images, generated images, CAD renders, recalled images, etc.
+        const maskBtn = document.createElement('button');
+        maskBtn.className = 'ai-image-mask-btn';
+        maskBtn.title = 'Edit with mask';
+        maskBtn.setAttribute('aria-label', 'Edit with mask');
+        
+        const maskIcon = document.createElement('img');
+        maskIcon.src = 'media-webp/Mask.webp';
+        maskIcon.alt = 'Mask';
+        maskBtn.appendChild(maskIcon);
+        
+        maskBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openMaskEditor(imageSrc, imageType);
+        });
+        container.appendChild(maskBtn);
+        
+        return container;
+      }
+      
+      // Create or update masked image carousel - Simple, clean implementation
+      function createOrUpdateMaskedImageCarousel(originalSrc, maskedVersions, originalContainer) {
+        // Check if carousel already exists
+        let carousel = originalContainer && originalContainer.classList.contains('masked-image-carousel') 
+          ? originalContainer 
+          : null;
+        
+        // If carousel exists, append new items instead of recreating
+        if (carousel) {
+          const track = carousel.querySelector('.masked-image-carousel-track');
+          
+          if (track) {
+            // Get current number of items (original + existing masked versions)
+            const currentItemCount = track.querySelectorAll('.masked-image-carousel-item').length;
+            const newMaskedVersions = maskedVersions.slice(currentItemCount - 1); // Get only new versions
+            
+            // Add new masked versions
+            newMaskedVersions.forEach((maskedImage, index) => {
+              // Ensure maskedImage is actually a URL string, not undefined or the original
+              if (!maskedImage) {
+                console.error('Invalid masked image URL:', maskedImage, 'for index', index);
+                return; // Skip invalid entries
+              }
+              const maskedItem = document.createElement('div');
+              maskedItem.className = 'masked-image-carousel-item';
+              const maskedImageContainer = createAIImageWithDownload(maskedImage, `Edited Image ${currentItemCount + index}`, 'masked-edit');
+              maskedItem.appendChild(maskedImageContainer);
+              track.appendChild(maskedItem);
+              
+              // Add next button to the new image container
+              const nextBtn = document.createElement('button');
+              nextBtn.className = 'masked-image-carousel-nav next';
+              nextBtn.innerHTML = '›';
+              nextBtn.setAttribute('aria-label', 'Next image');
+              maskedImageContainer.appendChild(nextBtn);
+              
+              // Add click handler - use carousel's updateCarousel function
+              nextBtn.addEventListener('click', () => {
+                if (carousel._updateCarousel && carousel._getCurrentIndex && carousel._setCurrentIndex) {
+                  let currentIdx = carousel._getCurrentIndex();
+                  const items = track.querySelectorAll('.masked-image-carousel-item');
+                  const totalItemsCount = items.length;
+                  
+                  if (currentIdx < totalItemsCount - 1) {
+                    currentIdx++;
+                    carousel._setCurrentIndex(currentIdx);
+                    carousel._updateCarousel();
+                  }
+                }
+              });
+            });
+            
+            // Update dots in all image containers to include new items
+            const totalItems = 1 + maskedVersions.length;
+            const allImageContainers = track.querySelectorAll('.ai-image-container');
+            allImageContainers.forEach((container) => {
+              let containerDots = container.querySelector('.masked-image-carousel-dots');
+              if (!containerDots) {
+                containerDots = document.createElement('div');
+                containerDots.className = 'masked-image-carousel-dots';
+                container.appendChild(containerDots);
+              }
+              
+              const currentDotCount = containerDots.querySelectorAll('.masked-image-carousel-dot').length;
+              for (let i = currentDotCount; i < totalItems; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'masked-image-carousel-dot';
+                dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+                containerDots.appendChild(dot);
+                
+                // Add click handler - use carousel's updateCarousel function
+                dot.addEventListener('click', () => {
+                  if (carousel._setCurrentIndex && carousel._updateCarousel) {
+                    carousel._setCurrentIndex(i);
+                    carousel._updateCarousel();
+                  }
+                });
+              }
+            });
+            
+            // Move to the most recent image (last item) and update arrow states
+            const newTotalItems = track.querySelectorAll('.masked-image-carousel-item').length;
+            const newCurrentIndex = newTotalItems - 1;
+            
+            // Update carousel state and move to new item
+            if (carousel._setCurrentIndex && carousel._updateCarousel) {
+              carousel._setCurrentIndex(newCurrentIndex);
+            } else {
+              // Fallback: directly update if functions not available
+              if (track) {
+                track.style.transform = `translateX(-${newCurrentIndex * 100}%)`;
+                
+                // Update dots in all containers
+                const allItems = track.querySelectorAll('.masked-image-carousel-item');
+                allItems.forEach((item) => {
+                  const itemDots = item.querySelector('.masked-image-carousel-dots');
+                  if (itemDots) {
+                    itemDots.querySelectorAll('.masked-image-carousel-dot').forEach((dot, idx) => {
+                      dot.classList.toggle('active', idx === newCurrentIndex);
+                    });
+                  }
+                });
+                
+                // Update nav buttons
+                const prevBtn = carousel.querySelector('.masked-image-carousel-nav.prev');
+                if (prevBtn) prevBtn.disabled = newCurrentIndex === 0;
+                track.querySelectorAll('.masked-image-carousel-nav.next').forEach((btn) => {
+                  btn.disabled = newCurrentIndex === newTotalItems - 1;
+                });
+              }
+            }
+            
+            return carousel; // Return existing carousel with new items added
+          }
+        }
+        
+        // Create new carousel if it doesn't exist
+        if (!carousel) {
+          carousel = document.createElement('div');
+          carousel.className = 'masked-image-carousel';
+        } else {
+          carousel.innerHTML = '';
+        }
+        
+        // Create viewport (only as wide as image)
+        const viewport = document.createElement('div');
+        viewport.className = 'masked-image-carousel-viewport';
+        
+        const track = document.createElement('div');
+        track.className = 'masked-image-carousel-track';
+        
+        // Add navigation arrows (will be positioned relative to visible image)
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'masked-image-carousel-nav prev';
+        prevBtn.innerHTML = '‹';
+        prevBtn.setAttribute('aria-label', 'Previous image');
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'masked-image-carousel-nav next';
+        nextBtn.innerHTML = '›';
+        nextBtn.setAttribute('aria-label', 'Next image');
+        
+        // Add original image as first item
+        const originalItem = document.createElement('div');
+        originalItem.className = 'masked-image-carousel-item';
+        const originalImageContainer = createAIImageWithDownload(originalSrc, 'Original Image', 'original');
+        originalItem.appendChild(originalImageContainer);
+        track.appendChild(originalItem);
+        
+        // Add all masked versions
+        maskedVersions.forEach((maskedImage, index) => {
+          const maskedItem = document.createElement('div');
+          maskedItem.className = 'masked-image-carousel-item';
+          // Ensure maskedImage is actually a URL string
+          if (!maskedImage) {
+            console.error('Invalid masked image URL (undefined) for index', index);
+            return; // Skip invalid entries
+          }
+          if (maskedImage === originalSrc) {
+            console.warn('Masked image is same as original for index', index, '- this might be an issue');
+          }
+          console.log('Adding masked version', index + 1, ':', maskedImage.substring(0, 50) + '...');
+          const maskedImageContainer = createAIImageWithDownload(maskedImage, `Edited Image ${index + 1}`, 'masked-edit');
+          maskedItem.appendChild(maskedImageContainer);
+          track.appendChild(maskedItem);
+        });
+        
+        viewport.appendChild(track);
+        viewport.appendChild(prevBtn);
+        carousel.appendChild(viewport);
+        
+        // Add next button and dots to each image container (positioned inside the image)
+        const allImageContainers = track.querySelectorAll('.ai-image-container');
+        const totalItems = 1 + maskedVersions.length; // Original + masked versions
+        
+        allImageContainers.forEach((container) => {
+          // Add next button
+          const nextBtnClone = nextBtn.cloneNode(true);
+          container.appendChild(nextBtnClone);
+          
+          // Add click handler to each clone
+          nextBtnClone.addEventListener('click', () => {
+            if (currentIndex < totalItemsCount - 1) {
+              currentIndex++;
+              updateCarousel();
+            }
+          });
+          
+          // Add dots indicator
+          const dots = document.createElement('div');
+          dots.className = 'masked-image-carousel-dots';
+          
+          for (let i = 0; i < totalItems; i++) {
+            const dot = document.createElement('button');
+            dot.className = 'masked-image-carousel-dot';
+            if (i === 0) dot.classList.add('active');
+            dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+            dots.appendChild(dot);
+          }
+          
+          container.appendChild(dots);
+        });
+        
+        // Carousel functionality
+        let currentIndex = 0;
+        let items = track.querySelectorAll('.masked-image-carousel-item');
+        let totalItemsCount = items.length;
+        
+        function updateCarousel() {
+          // Refresh items count in case new items were added
+          items = track.querySelectorAll('.masked-image-carousel-item');
+          totalItemsCount = items.length;
+          
+          // Move track to show current item
+          track.style.transform = `translateX(-${currentIndex * 100}%)`;
+          
+          // Update dots in all image containers
+          items.forEach((item) => {
+            const itemDots = item.querySelector('.masked-image-carousel-dots');
+            if (itemDots) {
+              itemDots.querySelectorAll('.masked-image-carousel-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+              });
+            }
+          });
+          
+          // Update nav buttons
+          prevBtn.disabled = currentIndex === 0;
+          
+          // Update all next buttons (they're inside each image container)
+          const allNextButtons = track.querySelectorAll('.masked-image-carousel-nav.next');
+          allNextButtons.forEach((btn) => {
+            btn.disabled = currentIndex === totalItemsCount - 1;
+          });
+        }
+        
+        // Store updateCarousel function on carousel for access when appending
+        carousel._updateCarousel = updateCarousel;
+        carousel._getCurrentIndex = () => currentIndex;
+        carousel._setCurrentIndex = (idx) => { 
+          currentIndex = idx;
+          updateCarousel();
+        };
+        
+        // Navigation handlers
+        prevBtn.addEventListener('click', () => {
+          if (currentIndex > 0) {
+            currentIndex--;
+            updateCarousel();
+          }
+        });
+        
+        // Next button click is handled by the clones inside image containers
+        
+        // Dot navigation - attach to dots in all image containers
+        items.forEach((item) => {
+          const itemDots = item.querySelector('.masked-image-carousel-dots');
+          if (itemDots) {
+            itemDots.querySelectorAll('.masked-image-carousel-dot').forEach((dot, index) => {
+              dot.addEventListener('click', () => {
+                currentIndex = index;
+                updateCarousel();
+              });
+            });
+          }
+        });
+        
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        viewport.addEventListener('touchstart', (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        viewport.addEventListener('touchend', (e) => {
+          touchEndX = e.changedTouches[0].screenX;
+          const diff = touchStartX - touchEndX;
+          const swipeThreshold = 50;
+          
+          if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0 && currentIndex < totalItemsCount - 1) {
+              currentIndex++;
+              updateCarousel();
+            } else if (diff < 0 && currentIndex > 0) {
+              currentIndex--;
+              updateCarousel();
+            }
+          }
+        });
+        
+        // Initialize - if there are masked versions, start at the most recent (last) one
+        if (maskedVersions.length > 0) {
+          currentIndex = maskedVersions.length; // Last item (original is index 0, so last masked version is at length)
+        }
+        updateCarousel();
+        
+        return carousel;
+      }
+      
+      // Mask editor functionality
+      // Track original image containers and their masked versions
+      const maskedImageData = new Map(); // Map<originalImageSrc, {container, originalSrc, maskedVersions: []}>
+      
+      function openMaskEditor(imageSrc, imageType) {
+        const modal = document.getElementById('mask-editor-modal');
+        if (!modal) {
+          createMaskEditorModal();
+        }
+        
+        // Find the original image container
+        let originalContainer = null;
+        const allContainers = document.querySelectorAll('.ai-image-container');
+        for (const container of allContainers) {
+          const img = container.querySelector('.ai-generated-image');
+          if (img && img.src === imageSrc) {
+            originalContainer = container;
+            break;
+          }
+        }
+        
+        // Check if this image is already in a carousel
+        const carouselItem = document.querySelector(`.masked-image-carousel-item img[src="${imageSrc}"]`);
+        if (carouselItem) {
+          originalContainer = carouselItem.closest('.masked-image-carousel');
+        }
+        
+        // Determine the original image source
+        // If this image is in a carousel, find the original (first image in carousel)
+        let originalImageSrc = imageSrc;
+        if (carouselItem) {
+          const carousel = carouselItem.closest('.masked-image-carousel');
+          if (carousel) {
+            const firstItem = carousel.querySelector('.masked-image-carousel-item:first-child img');
+            if (firstItem) {
+              originalImageSrc = firstItem.src;
+            }
+          }
+        }
+        
+        // Store reference to original container and image source
+        if (!maskedImageData.has(originalImageSrc)) {
+          maskedImageData.set(originalImageSrc, {
+            container: originalContainer,
+            originalSrc: originalImageSrc,
+            maskedVersions: []
+          });
+        }
+        
+        const existingModal = document.getElementById('mask-editor-modal');
+        const canvas = document.getElementById('mask-editor-canvas');
+        const promptInput = document.getElementById('mask-editor-prompt');
+        
+        // Load image onto canvas
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          // Calculate display size (max 70vh height, maintain aspect ratio)
+          const maxHeight = window.innerHeight * 0.7;
+          const maxWidth = window.innerWidth * 0.9;
+          let displayWidth = img.width;
+          let displayHeight = img.height;
+          
+          if (displayHeight > maxHeight) {
+            displayWidth = (maxHeight / displayHeight) * displayWidth;
+            displayHeight = maxHeight;
+          }
+          if (displayWidth > maxWidth) {
+            displayHeight = (maxWidth / displayWidth) * displayHeight;
+            displayWidth = maxWidth;
+          }
+          
+          // Set canvas display size
+          canvas.style.width = displayWidth + 'px';
+          canvas.style.height = displayHeight + 'px';
+          
+          // Set canvas actual size (for drawing)
+          const scaleX = displayWidth / img.width;
+          const scaleY = displayHeight / img.height;
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          
+          // Initialize mask canvas (transparent overlay)
+          const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+          maskCanvas.width = img.width;
+          maskCanvas.height = img.height;
+          maskCanvas.style.width = displayWidth + 'px';
+          maskCanvas.style.height = displayHeight + 'px';
+          const maskCtx = maskCanvas.getContext('2d');
+          maskCtx.fillStyle = 'rgba(37, 99, 235, 0.4)'; // Blue overlay for mask (Stagify blue)
+          
+          // Store image source and scale for later use
+          canvas.dataset.imageSrc = imageSrc;
+          canvas.dataset.imageType = imageType;
+          canvas.dataset.scaleX = scaleX;
+          canvas.dataset.scaleY = scaleY;
+          canvas.dataset.originalWidth = img.width;
+          canvas.dataset.originalHeight = img.height;
+          
+          existingModal.classList.add('active');
+          initMaskDrawing(maskCanvas, scaleX, scaleY);
+          
+          // Clear prompt input and disable button initially
+          if (promptInput) {
+            promptInput.value = '';
+          }
+          
+          // Remove blur effect if it exists (from previous session)
+          const canvasContainer = document.querySelector('.mask-editor-canvas-container');
+          if (canvasContainer) {
+            canvasContainer.classList.remove('processing');
+          }
+          
+          // Update translations when modal opens
+          updateMaskEditorTranslations();
+          
+          updateApplyButtonState();
+        };
+        img.src = imageSrc;
+      }
+      
+      function createMaskEditorModal() {
+        const modal = document.createElement('div');
+        modal.id = 'mask-editor-modal';
+        modal.className = 'mask-editor-modal';
+        
+        modal.innerHTML = `
+          <div class="mask-editor-content">
+            <div class="mask-editor-header">
+              <h2 class="mask-editor-title" data-i18n="pdf.maskEditor.title">Edit with Mask</h2>
+              <button class="mask-editor-close" id="mask-editor-close">&times;</button>
+            </div>
+            <div class="mask-editor-canvas-container">
+              <canvas id="mask-editor-canvas" class="mask-editor-canvas"></canvas>
+              <canvas id="mask-editor-mask-canvas" class="mask-editor-canvas" style="position: absolute; top: 0; left: 0; pointer-events: auto; mix-blend-mode: multiply; cursor: crosshair;"></canvas>
+            </div>
+            <div class="mask-editor-controls">
+              <div class="mask-editor-brush-controls">
+                <label class="mask-editor-brush-label" data-i18n="pdf.maskEditor.brushSize">Brush Size:</label>
+                <input type="range" id="mask-editor-brush-slider" class="mask-editor-brush-slider" min="20" max="150" value="50">
+                <span id="mask-editor-brush-size" class="mask-editor-brush-size-display">50 px</span>
+              </div>
+              <div class="mask-editor-prompt-container">
+                <label class="mask-editor-prompt-label" data-i18n="pdf.maskEditor.promptLabel">What would you like to change in the masked area?</label>
+                <input type="text" id="mask-editor-prompt" class="mask-editor-prompt-input" data-i18n-placeholder="pdf.maskEditor.promptPlaceholder" placeholder="e.g., change the wall color to blue, replace the sofa with a modern chair...">
+              </div>
+              <div class="mask-editor-actions">
+                <button class="mask-editor-btn mask-editor-btn-secondary" id="mask-editor-cancel" data-i18n="pdf.maskEditor.cancel">Cancel</button>
+                <button class="mask-editor-btn mask-editor-btn-secondary" id="mask-editor-clear" data-i18n="pdf.maskEditor.clearMask">Clear Mask</button>
+                <button class="mask-editor-btn mask-editor-btn-primary" id="mask-editor-submit">
+                  <span data-i18n="pdf.maskEditor.applyEdit">Apply Edit</span>
+                  <img src="media-webp/Mask.webp" alt="Mask">
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Apply translations to mask editor
+        updateMaskEditorTranslations();
+        
+        // Event listeners
+        document.getElementById('mask-editor-close').addEventListener('click', closeMaskEditor);
+        document.getElementById('mask-editor-cancel').addEventListener('click', closeMaskEditor);
+        document.getElementById('mask-editor-clear').addEventListener('click', clearMask);
+        document.getElementById('mask-editor-submit').addEventListener('click', submitMaskEdit);
+        document.getElementById('mask-editor-brush-slider').addEventListener('input', (e) => {
+          document.getElementById('mask-editor-brush-size').textContent = e.target.value + ' px';
+        });
+        
+        // Add event listener for prompt input changes
+        const promptInput = document.getElementById('mask-editor-prompt');
+        if (promptInput) {
+          promptInput.addEventListener('input', updateApplyButtonState);
+          promptInput.addEventListener('keyup', updateApplyButtonState);
+        }
+        
+        // Initially disable the button
+        const submitBtn = document.getElementById('mask-editor-submit');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+        }
+        
+        // Close on background click
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closeMaskEditor();
+          }
+        });
+        
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeMaskEditor();
+          }
+        });
+      }
+      
+      // Function to update mask editor translations
+      function updateMaskEditorTranslations() {
+        if (!window.LanguageSystem || !window.LanguageSystem.isLoaded()) {
+          return;
+        }
+        
+        const getText = (key) => {
+          return window.LanguageSystem.getText(key) || key;
+        };
+        
+        // Update title
+        const title = document.querySelector('.mask-editor-title');
+        if (title) {
+          title.textContent = getText('pdf.maskEditor.title');
+        }
+        
+        // Update brush size label
+        const brushLabel = document.querySelector('.mask-editor-brush-label');
+        if (brushLabel) {
+          brushLabel.textContent = getText('pdf.maskEditor.brushSize');
+        }
+        
+        // Update prompt label
+        const promptLabel = document.querySelector('.mask-editor-prompt-label');
+        if (promptLabel) {
+          promptLabel.textContent = getText('pdf.maskEditor.promptLabel');
+        }
+        
+        // Update prompt placeholder
+        const promptInput = document.getElementById('mask-editor-prompt');
+        if (promptInput) {
+          promptInput.placeholder = getText('pdf.maskEditor.promptPlaceholder');
+        }
+        
+        // Update buttons
+        const cancelBtn = document.getElementById('mask-editor-cancel');
+        if (cancelBtn) {
+          cancelBtn.textContent = getText('pdf.maskEditor.cancel');
+        }
+        
+        const clearBtn = document.getElementById('mask-editor-clear');
+        if (clearBtn) {
+          clearBtn.textContent = getText('pdf.maskEditor.clearMask');
+        }
+        
+        const submitBtn = document.getElementById('mask-editor-submit');
+        if (submitBtn) {
+          const submitText = submitBtn.querySelector('span');
+          if (submitText) {
+            submitText.textContent = getText('pdf.maskEditor.applyEdit');
+          }
+        }
+      }
+      
+      let isDrawing = false;
+      let brushSize = 50;
+      
+      function initMaskDrawing(maskCanvas, scaleX, scaleY) {
+        const ctx = maskCanvas.getContext('2d');
+        ctx.globalCompositeOperation = 'source-over';
+        
+        const brushSlider = document.getElementById('mask-editor-brush-slider');
+        brushSlider.addEventListener('input', (e) => {
+          brushSize = parseInt(e.target.value);
+        });
+        
+        let drawing = false;
+        let lastX = null;
+        let lastY = null;
+        
+        function isProcessing() {
+          const canvasContainer = document.querySelector('.mask-editor-canvas-container');
+          return canvasContainer && canvasContainer.classList.contains('processing');
+        }
+        
+        function startDrawing(e) {
+          if (isProcessing()) return; // Prevent drawing while processing
+          drawing = true;
+          lastX = null;
+          lastY = null;
+          draw(e);
+        }
+        
+        function stopDrawing() {
+          drawing = false;
+          lastX = null;
+          lastY = null;
+          updateApplyButtonState(); // Update button state after drawing stops
+        }
+        
+        function draw(e) {
+          if (!drawing || isProcessing()) return; // Prevent drawing while processing
+          
+          const rect = maskCanvas.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / scaleX;
+          const y = (e.clientY - rect.top) / scaleY;
+          
+          // Use lighten composite to prevent darkening on overlap - gives consistent opacity
+          ctx.globalCompositeOperation = 'lighten';
+          
+          // Create a soft gradient brush for smoother, more professional look
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, brushSize / 2);
+          gradient.addColorStop(0, 'rgba(37, 99, 235, 0.5)'); // Center opacity
+          gradient.addColorStop(0.7, 'rgba(37, 99, 235, 0.3)'); // Mid opacity
+          gradient.addColorStop(1, 'rgba(37, 99, 235, 0)'); // Transparent at edges
+          
+          ctx.fillStyle = gradient;
+          
+          // Draw smooth connected strokes if we have a previous position
+          if (lastX !== null && lastY !== null) {
+            // Calculate distance between points
+            const dx = x - lastX;
+            const dy = y - lastY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Draw intermediate circles for smooth strokes
+            const steps = Math.max(1, Math.floor(distance / (brushSize / 4)));
+            for (let i = 0; i <= steps; i++) {
+              const t = i / steps;
+              const px = lastX + dx * t;
+              const py = lastY + dy * t;
+              
+              const stepGradient = ctx.createRadialGradient(px, py, 0, px, py, brushSize / 2);
+              stepGradient.addColorStop(0, 'rgba(37, 99, 235, 0.5)');
+              stepGradient.addColorStop(0.7, 'rgba(37, 99, 235, 0.3)');
+              stepGradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+              
+              ctx.fillStyle = stepGradient;
+              ctx.beginPath();
+              ctx.arc(px, py, brushSize / 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else {
+            // First point - just draw a circle
+            ctx.beginPath();
+            ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // Store current position for next draw
+          lastX = x;
+          lastY = y;
+          
+          // Reset composite operation
+          ctx.globalCompositeOperation = 'source-over';
+          
+          // Update button state after drawing
+          updateApplyButtonState();
+        }
+        
+        maskCanvas.addEventListener('mousedown', startDrawing);
+        maskCanvas.addEventListener('mousemove', draw);
+        maskCanvas.addEventListener('mouseup', stopDrawing);
+        maskCanvas.addEventListener('mouseleave', stopDrawing);
+        
+        // Touch support
+        maskCanvas.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          if (isProcessing()) return; // Prevent drawing while processing
+          drawing = true;
+          const touch = e.touches[0];
+          const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          });
+          startDrawing(mouseEvent);
+        });
+        
+        maskCanvas.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (isProcessing()) return; // Prevent drawing while processing
+          const touch = e.touches[0];
+          const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          });
+          draw(mouseEvent);
+        });
+        
+        maskCanvas.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          stopDrawing();
+        });
+        
+        // Make canvas interactive
+        maskCanvas.style.pointerEvents = 'auto';
+        maskCanvas.style.cursor = 'crosshair';
+      }
+      
+      function clearMask() {
+        const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+        const ctx = maskCanvas.getContext('2d');
+        ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+        updateApplyButtonState();
+      }
+      
+      function checkMaskHasContent() {
+        const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+        if (!maskCanvas || maskCanvas.width === 0 || maskCanvas.height === 0) {
+          return false;
+        }
+        const maskCtx = maskCanvas.getContext('2d');
+        const imageData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+        return imageData.data.some((val, idx) => idx % 4 === 3 && val > 0); // Check alpha channel
+      }
+      
+      function checkPromptHasContent() {
+        const promptInput = document.getElementById('mask-editor-prompt');
+        return promptInput && promptInput.value.trim().length > 0;
+      }
+      
+      function updateApplyButtonState() {
+        const submitBtn = document.getElementById('mask-editor-submit');
+        if (!submitBtn) return;
+        
+        const hasMask = checkMaskHasContent();
+        const hasPrompt = checkPromptHasContent();
+        
+        submitBtn.disabled = !hasMask || !hasPrompt;
+      }
+      
+      function closeMaskEditor() {
+        const modal = document.getElementById('mask-editor-modal');
+        if (modal) {
+          modal.classList.remove('active');
+          clearMask();
+          
+          // Remove blur effect if it exists
+          const canvasContainer = document.querySelector('.mask-editor-canvas-container');
+          if (canvasContainer) {
+            canvasContainer.classList.remove('processing');
+          }
+        }
+      }
+      
+      async function submitMaskEdit() {
+        const canvas = document.getElementById('mask-editor-canvas');
+        const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+        const promptInput = document.getElementById('mask-editor-prompt');
+        const submitBtn = document.getElementById('mask-editor-submit');
+        
+        // Validation is already handled by button state, but double-check
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+          alert('Please describe what you want to change in the masked area.');
+          return;
+        }
+        
+        // Check if mask has any content
+        if (!checkMaskHasContent()) {
+          alert('Please draw a mask over the area you want to edit.');
+          return;
+        }
+        
+        submitBtn.disabled = true;
+        const originalButtonContent = submitBtn.innerHTML;
+        submitBtn.innerHTML = 'Processing... <img src="media-webp/Mask.webp" alt="Mask">';
+        
+        // Add blur effect to canvas container while processing and disable interaction
+        const canvasContainer = document.querySelector('.mask-editor-canvas-container');
+        if (canvasContainer) {
+          canvasContainer.classList.add('processing');
+          // Disable mask canvas interaction
+          const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+          if (maskCanvas) {
+            maskCanvas.style.pointerEvents = 'none';
+            maskCanvas.style.cursor = 'not-allowed';
+          }
+        }
+        
+        try {
+          // Convert mask to white/transparent format (OpenAI expects white areas to be edited)
+          // First, get the original image dimensions
+          const originalWidth = parseInt(canvas.dataset.originalWidth);
+          const originalHeight = parseInt(canvas.dataset.originalHeight);
+          
+          // Create a full-size mask canvas
+          const whiteMaskCanvas = document.createElement('canvas');
+          whiteMaskCanvas.width = originalWidth;
+          whiteMaskCanvas.height = originalHeight;
+          const whiteMaskCtx = whiteMaskCanvas.getContext('2d');
+          
+          // Create mask: white where we want to edit, transparent elsewhere
+          // Draw the mask canvas first (it has blue overlay where user drew)
+          whiteMaskCtx.drawImage(maskCanvas, 0, 0, originalWidth, originalHeight);
+          
+          // Convert the red mask areas to white (OpenAI edits white areas)
+          // Get image data and convert any non-transparent pixels to white
+          const whiteMaskImageData = whiteMaskCtx.getImageData(0, 0, originalWidth, originalHeight);
+          const whiteMaskData = whiteMaskImageData.data;
+          for (let i = 0; i < whiteMaskData.length; i += 4) {
+            const alpha = whiteMaskData[i + 3];
+            if (alpha > 0) {
+              // This pixel is part of the mask, make it white (keep alpha)
+              whiteMaskData[i] = 255;     // R -> white
+              whiteMaskData[i + 1] = 255;  // G -> white
+              whiteMaskData[i + 2] = 255;  // B -> white
+              // alpha stays the same
+            } else {
+              // Transparent areas stay transparent (already 0 alpha)
+              whiteMaskData[i] = 0;
+              whiteMaskData[i + 1] = 0;
+              whiteMaskData[i + 2] = 0;
+            }
+          }
+          whiteMaskCtx.putImageData(whiteMaskImageData, 0, 0);
+          
+          const maskDataUrl = whiteMaskCanvas.toDataURL('image/png');
+          const imageDataUrl = canvas.dataset.imageSrc;
+          
+          // Get selected model
+          const selectedModel = window.getSelectedModelApiName ? window.getSelectedModelApiName() : 'gpt-4o-mini';
+          
+          // Send to backend
+          const response = await fetch('/api/mask-edit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              image: imageDataUrl,
+              mask: maskDataUrl,
+              prompt: prompt,
+              model: selectedModel
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to process masked edit');
+          }
+          
+          // Get the original image source - this is the image being masked (could be original or a masked version)
+          const maskedImageSrc = imageDataUrl;
+          
+          // Find which carousel or container this image belongs to, and get the original image source
+          let originalImageSrc = maskedImageSrc;
+          let originalContainer = null;
+          let imageData = null;
+          
+          // First, check if this image is already in a carousel
+          const carouselItem = document.querySelector(`.masked-image-carousel-item img[src="${maskedImageSrc}"]`);
+          if (carouselItem) {
+            const carousel = carouselItem.closest('.masked-image-carousel');
+            if (carousel) {
+              // Find the original image in this carousel (first item)
+              const firstItem = carousel.querySelector('.masked-image-carousel-item:first-child img');
+              if (firstItem) {
+                originalImageSrc = firstItem.src;
+                originalContainer = carousel;
+                imageData = maskedImageData.get(originalImageSrc);
+              }
+            }
+          }
+          
+          // If not in carousel, check if it's a regular container
+          if (!imageData) {
+            const allContainers = document.querySelectorAll('.ai-image-container');
+            for (const container of allContainers) {
+              const img = container.querySelector('.ai-generated-image');
+              if (img && img.src === maskedImageSrc) {
+                originalImageSrc = maskedImageSrc; // This is the original
+                originalContainer = container;
+                break;
+              }
+            }
+          }
+          
+          // Get or create masked image data
+          if (!imageData) {
+            imageData = maskedImageData.get(originalImageSrc);
+            if (!imageData) {
+              imageData = {
+                container: originalContainer,
+                originalSrc: originalImageSrc,
+                maskedVersions: []
+              };
+              maskedImageData.set(originalImageSrc, imageData);
+            }
+          }
+          
+          // Update container reference if it changed
+          if (originalContainer && imageData.container !== originalContainer) {
+            imageData.container = originalContainer;
+          }
+          
+          // Add the new masked version
+          if (!data.editedImage) {
+            console.error('No edited image in response:', data);
+            throw new Error('No edited image received from server');
+          }
+          console.log('Adding masked version. Original:', imageData.originalSrc.substring(0, 50) + '...', 'Edited:', data.editedImage.substring(0, 50) + '...');
+          imageData.maskedVersions.push(data.editedImage);
+          console.log('Total masked versions:', imageData.maskedVersions.length, 'Versions:', imageData.maskedVersions.map(v => v.substring(0, 30) + '...'));
+          
+          // Create or update the carousel
+          const carousel = createOrUpdateMaskedImageCarousel(imageData.originalSrc, imageData.maskedVersions, imageData.container);
+          
+          // If this is the first masked version, replace the original container with the carousel
+          if (imageData.maskedVersions.length === 1 && imageData.container && imageData.container.parentElement && !imageData.container.classList.contains('masked-image-carousel')) {
+            const parent = imageData.container.parentElement;
+            parent.replaceChild(carousel, imageData.container);
+            imageData.container = carousel;
+          } else if (imageData.container && imageData.container.classList.contains('masked-image-carousel')) {
+            // Carousel already exists and was updated in place, no need to replace
+            // The createOrUpdateMaskedImageCarousel function already appended the new item
+            imageData.container = carousel;
+          } else {
+            // Add carousel to chat if no original container found
+            const lastMessage = document.querySelector('.message.assistant:last-child .message-content');
+            if (lastMessage) {
+              const editedImageDiv = document.createElement('div');
+              editedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+              editedImageDiv.appendChild(carousel);
+              lastMessage.appendChild(editedImageDiv);
+            } else {
+              addMessage('assistant', '');
+              const newLastMessage = document.querySelector('.message.assistant:last-child .message-content');
+              if (newLastMessage) {
+                const editedImageDiv = document.createElement('div');
+                editedImageDiv.style.cssText = 'margin-top: 12px; text-align: left;';
+                editedImageDiv.appendChild(carousel);
+                newLastMessage.appendChild(editedImageDiv);
+              }
+            }
+            imageData.container = carousel;
+          }
+          
+          // Update conversation history (just the image, no text)
+          conversationHistory.push({
+            role: 'assistant',
+            content: [
+              { type: 'image_url', image_url: { url: data.editedImage } }
+            ]
+          });
+          
+          closeMaskEditor();
+        } catch (error) {
+          console.error('Error submitting mask edit:', error);
+          alert('Failed to process masked edit. Please try again.');
+        } finally {
+          // Remove blur effect and re-enable interaction
+          const canvasContainer = document.querySelector('.mask-editor-canvas-container');
+          if (canvasContainer) {
+            canvasContainer.classList.remove('processing');
+            // Re-enable mask canvas interaction
+            const maskCanvas = document.getElementById('mask-editor-mask-canvas');
+            if (maskCanvas) {
+              maskCanvas.style.pointerEvents = 'auto';
+              maskCanvas.style.cursor = 'crosshair';
+            }
+          }
+          
+          submitBtn.disabled = false;
+          const applyEditText = window.LanguageSystem && window.LanguageSystem.isLoaded() 
+            ? window.LanguageSystem.getText('pdf.maskEditor.applyEdit') 
+            : 'Apply Edit';
+          submitBtn.innerHTML = '<span>' + applyEditText + '</span> <img src="media-webp/Mask.webp" alt="Mask">';
+          updateApplyButtonState(); // Re-check state after restoring button
+        }
+      }
+    </script>
+    
+    <!-- Image Modal/Lightbox -->
+    <div id="image-modal" class="image-modal">
+      <span id="image-modal-close" class="image-modal-close">&times;</span>
+      <img id="image-modal-img" class="image-modal-content" src="" alt="Enlarged image">
+    </div>
+    
+    <script>
+      // Model selector dropdown functionality
+      (function initModelSelector() {
+        const modelSelector = document.querySelector('.model-selector');
+        const modelSelectorBtn = document.getElementById('model-selector-btn');
+        const modelDropdown = document.getElementById('model-dropdown');
+        const modelOptions = document.querySelectorAll('.model-option');
+        
+        // Get saved model key from localStorage or default to "fast"
+        function getSelectedModelKey() {
+          return localStorage.getItem('selectedModel') || 'fast';
+        }
+        
+        // Save model key to localStorage
+        function setSelectedModelKey(modelKey) {
+          localStorage.setItem('selectedModel', modelKey);
+        }
+        
+        // Map model key to API model name
+        function getModelApiName(modelKey) {
+          const modelMap = {
+            'fast': 'gpt-4o-mini',
+            'pro': 'gpt-5-mini'
+          };
+          return modelMap[modelKey] || 'gpt-4o-mini';
+        }
+        
+        // Get translated text for model
+        function getModelText(modelKey) {
+          if (window.LanguageSystem && window.LanguageSystem.isLoaded()) {
+            const translationKey = modelKey === 'fast' ? 'pdf.modelSelector.fast' : 'pdf.modelSelector.pro';
+            return window.LanguageSystem.getText(translationKey) || (modelKey === 'fast' ? 'Fast' : 'Pro');
+          }
+          return modelKey === 'fast' ? 'Fast' : 'Pro';
+        }
+        
+        // Update the displayed model text
+        function updateModelDisplay() {
+          const savedModelKey = getSelectedModelKey();
+          const modelText = modelSelectorBtn?.querySelector('.model-selector-text');
+          if (modelText) {
+            modelText.textContent = getModelText(savedModelKey);
+          }
+        }
+        
+        // Initialize display from localStorage
+        // Wait for language system to be ready
+        function waitForLanguageSystem() {
+          if (window.LanguageSystem && window.LanguageSystem.isLoaded()) {
+            updateModelDisplay();
+          } else {
+            // Try again after a short delay
+            setTimeout(waitForLanguageSystem, 100);
+          }
+        }
+        waitForLanguageSystem();
+        
+        // Update display when language changes
+        // Method 1: Hook into applyLanguageToElements
+        if (window.LanguageSystem) {
+          const originalApplyLanguage = window.LanguageSystem.applyLanguageToElements;
+          if (originalApplyLanguage) {
+            window.LanguageSystem.applyLanguageToElements = function() {
+              originalApplyLanguage.call(this);
+              // Small delay to ensure translations are applied first
+              setTimeout(updateModelDisplay, 50);
+              // Update mask editor translations when language changes
+              setTimeout(updateMaskEditorTranslations, 50);
+            };
+          }
+        }
+        
+        // Method 2: Listen to language selector change event
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+          languageSelect.addEventListener('change', () => {
+            // Wait for language system to update translations
+            setTimeout(updateModelDisplay, 200);
+            setTimeout(updateMaskEditorTranslations, 200);
+          });
+        }
+        
+        // Method 3: Watch for language-loaded class on body
+        const bodyObserver = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              if (document.body.classList.contains('language-loaded')) {
+                updateModelDisplay();
+                updateMaskEditorTranslations();
+              }
+            }
+          });
+        });
+        bodyObserver.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
+        
+        // Method 4: Poll for language changes (fallback)
+        let lastLanguage = localStorage.getItem('selectedLanguage') || 'english';
+        setInterval(() => {
+          const currentLanguage = localStorage.getItem('selectedLanguage') || 'english';
+          if (currentLanguage !== lastLanguage) {
+            lastLanguage = currentLanguage;
+            setTimeout(updateModelDisplay, 200);
+          }
+        }, 500);
+        
+        // Expose getModelApiName for use in fetch calls
+        window.getSelectedModelApiName = function() {
+          return getModelApiName(getSelectedModelKey());
+        };
+        
+        if (modelSelectorBtn && modelDropdown) {
+          // Toggle dropdown on button click
+          modelSelectorBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modelSelector.classList.toggle('open');
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!modelSelector.contains(e.target)) {
+              modelSelector.classList.remove('open');
+            }
+          });
+          
+          // Handle model option selection
+          modelOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const modelKey = option.getAttribute('data-model');
+              if (modelKey) {
+                setSelectedModelKey(modelKey);
+                updateModelDisplay();
+                modelSelector.classList.remove('open');
+              }
+            });
+          });
+        }
+      })();
+      
+      // Initialize message tag selector
+      (function initMessageTagSelector() {
+        const messageTagSelector = document.querySelector('.message-tag-selector');
+        const messageTagBtn = document.getElementById('message-tag-btn');
+        const messageTagDropdown = document.getElementById('message-tag-dropdown');
+        const messageTagOptions = document.querySelectorAll('.message-tag-option');
+        
+        // Get translated text for tag
+        function getTagText(tagValue) {
+          if (window.LanguageSystem && window.LanguageSystem.isLoaded()) {
+            const translationKey = `pdf.messageTag.${tagValue === 'cad-stage' ? 'cadStage' : tagValue}`;
+            return window.LanguageSystem.getText(translationKey) || getTagTextFallback(tagValue);
+          }
+          return getTagTextFallback(tagValue);
+        }
+        
+        // Fallback text if language system not available
+        function getTagTextFallback(tagValue) {
+          const fallbackMap = {
+            'auto': 'Auto',
+            'generate': 'Generate',
+            'stage': 'Stage/Modify',
+            'cad-stage': 'Stage (Floor Plan)',
+            'describe': 'Describe/Recall'
+          };
+          return fallbackMap[tagValue] || 'Auto';
+        }
+        
+        // Update the displayed tag text
+        function updateTagDisplay(tagValue) {
+          const tagText = messageTagBtn?.querySelector('.message-tag-text');
+          if (tagText) {
+            tagText.textContent = getTagText(tagValue);
+            messageTagBtn.setAttribute('data-tag', tagValue);
+          }
+        }
+        
+        // Initialize with 'auto'
+        updateTagDisplay('auto');
+        
+        // Update display when language changes
+        if (window.LanguageSystem) {
+          const originalApplyLanguage = window.LanguageSystem.applyLanguageToElements;
+          if (originalApplyLanguage) {
+            window.LanguageSystem.applyLanguageToElements = function() {
+              originalApplyLanguage.call(this);
+              // Update tag display after language is applied
+              const currentTag = messageTagBtn?.getAttribute('data-tag') || 'auto';
+              setTimeout(() => updateTagDisplay(currentTag), 50);
+            };
+          }
+        }
+        
+        // Listen to language selector change
+        const languageSelect = document.getElementById('language-select');
+        if (languageSelect) {
+          languageSelect.addEventListener('change', () => {
+            setTimeout(() => {
+              const currentTag = messageTagBtn?.getAttribute('data-tag') || 'auto';
+              updateTagDisplay(currentTag);
+            }, 200);
+          });
+        }
+        
+        if (messageTagBtn && messageTagDropdown) {
+          // Toggle dropdown on button click
+          messageTagBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            messageTagSelector.classList.toggle('open');
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!messageTagSelector.contains(e.target)) {
+              messageTagSelector.classList.remove('open');
+            }
+          });
+          
+          // Handle tag option selection
+          messageTagOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const tagValue = option.getAttribute('data-tag');
+              if (tagValue) {
+                updateTagDisplay(tagValue);
+                messageTagSelector.classList.remove('open');
+              }
+            });
+          });
+        }
+      })();
+      
+      // Initialize bug report popup
+      (function initBugReport() {
+        const bugReportBtn = document.getElementById('bug-report-btn');
+        const bugReportPopup = document.getElementById('bug-report-popup');
+        const bugReportClose = document.getElementById('bug-report-popup-close');
+        const bugReportCancel = document.getElementById('bug-report-cancel');
+        const bugReportForm = document.getElementById('bug-report-form');
+        const bugReportSubmit = document.getElementById('bug-report-submit');
+        
+        function openBugReport() {
+          bugReportPopup.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+        
+        function closeBugReport() {
+          bugReportPopup.classList.remove('active');
+          document.body.style.overflow = '';
+          bugReportForm.reset();
+        }
+        
+        if (bugReportBtn) {
+          bugReportBtn.addEventListener('click', openBugReport);
+        }
+        
+        if (bugReportClose) {
+          bugReportClose.addEventListener('click', closeBugReport);
+        }
+        
+        if (bugReportCancel) {
+          bugReportCancel.addEventListener('click', closeBugReport);
+        }
+        
+        // Close when clicking outside
+        if (bugReportPopup) {
+          bugReportPopup.addEventListener('click', function(e) {
+            if (e.target === bugReportPopup) {
+              closeBugReport();
+            }
+          });
+        }
+        
+        // Handle form submission
+        if (bugReportForm) {
+          bugReportForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const description = document.getElementById('bug-report-description').value.trim();
+            const steps = document.getElementById('bug-report-steps').value.trim();
+            const email = document.getElementById('bug-report-email').value.trim();
+            
+            if (!description) {
+              alert('Please provide a bug description.');
+              return;
+            }
+            
+            // Disable submit button
+            bugReportSubmit.disabled = true;
+            bugReportSubmit.textContent = 'Submitting...';
+            
+            try {
+              const response = await fetch('/api/bug-report', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  description,
+                  steps,
+                  email,
+                  userId: localStorage.getItem('userId') || 'unknown',
+                  userAgent: navigator.userAgent,
+                  url: window.location.href,
+                  timestamp: new Date().toISOString(),
+                  conversationHistory: conversationHistory
+                })
+              });
+              
+              const data = await response.json();
+              
+              if (response.ok) {
+                alert('Thank you for reporting this bug! We\'ll look into it.');
+                closeBugReport();
+              } else {
+                throw new Error(data.error || 'Failed to submit bug report');
+              }
+            } catch (error) {
+              console.error('Error submitting bug report:', error);
+              alert('Failed to submit bug report. Please try again later.');
+            } finally {
+              bugReportSubmit.disabled = false;
+              bugReportSubmit.textContent = 'Submit';
+            }
+          });
+        }
+        
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && bugReportPopup.classList.contains('active')) {
+            closeBugReport();
+          }
+        });
+      })();
+      
+      // Initialize modal event listeners (run immediately since script is at end of body)
+      (function initImageModal() {
+        const modal = document.getElementById('image-modal');
+        const closeBtn = document.getElementById('image-modal-close');
+        
+        if (modal) {
+          // Close modal when clicking outside the image
+          modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+              closeImageModal();
+            }
+          });
+          
+          // Close modal with Escape key
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+              closeImageModal();
+            }
+          });
+        }
+        
+        if (closeBtn) {
+          closeBtn.addEventListener('click', closeImageModal);
+        }
+      })();
+    </script>
+  </body>
+</html>
+

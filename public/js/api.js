@@ -3,16 +3,31 @@
 const API_BASE = '';
 
 // GPT Chat API
-async function sendChatMessage(message, context = [], responseLength = 'medium') {
+async function sendChatMessage(message, context = [], responseLength = 'medium', images = []) {
   try {
     const userId = getUserId();
+    
+    // Convert image files to base64 data URLs
+    const imageDataUrls = await Promise.all(images.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+          data: reader.result,
+          type: file.type,
+          name: file.name
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }));
+    
     const response = await fetch(`${API_BASE}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'user-id': userId
       },
-      body: JSON.stringify({ message, context, responseLength })
+      body: JSON.stringify({ message, context, responseLength, images: imageDataUrls })
     });
     
     if (!response.ok) {

@@ -214,7 +214,7 @@ async function sendEmail(to, subject, html, text = null) {
 // API endpoint for GPT requests
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, context, responseLength = 'medium' } = req.body;
+    const { message, context, responseLength = 'medium', images = [] } = req.body;
     const userId = req.headers['user-id'] || 'anonymous';
     const timestamp = new Date().toISOString();
     
@@ -249,6 +249,23 @@ app.post('/api/chat', async (req, res) => {
     };
     const maxTokens = maxTokensMap[responseLength] || maxTokensMap['medium'];
 
+    // Build user message content - include images if present
+    let userContent = message;
+    if (images && images.length > 0) {
+      // For vision API, use content array format
+      userContent = [
+        { type: 'text', text: message || 'Please analyze these images.' }
+      ];
+      images.forEach(img => {
+        userContent.push({
+          type: 'image_url',
+          image_url: {
+            url: img.data // base64 data URL
+          }
+        });
+      });
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -256,7 +273,7 @@ app.post('/api/chat', async (req, res) => {
         'Authorization': `Bearer ${GPT_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: images && images.length > 0 ? 'gpt-4o' : 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -265,7 +282,7 @@ app.post('/api/chat', async (req, res) => {
           ...(context || []),
           {
             role: 'user',
-            content: message
+            content: userContent
           }
         ],
         temperature: 0.7,

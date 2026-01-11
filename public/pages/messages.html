@@ -6,6 +6,7 @@
   <meta name="description" content="AI Counselor - Path Pal">
   <title>AI Counselor - Path Pal</title>
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/media/logo/logo128x128.png">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
   <script>
@@ -24,15 +25,11 @@
               desktopMessage.classList.remove('show');
             }
           };
-          // Hide immediately
           hideDesktopMessage();
-          // Also hide after DOM loads (in case app.js adds .show class)
           if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', hideDesktopMessage);
           }
-          // And hide after a short delay to catch late additions
           setTimeout(hideDesktopMessage, 100);
-          // Show header nav and hide sidebar nav
           const showHeaderNav = () => {
             const headerNav = document.querySelector('.header-nav');
             if (headerNav) {
@@ -51,50 +48,136 @@
     })();
   </script>
   <style>
+    /* Prevent horizontal scrolling */
     html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
       height: 100%;
-      overflow: hidden;
       margin: 0;
       padding: 0;
     }
-    .pc-mode-enabled html,
-    .pc-mode-enabled body {
-      height: auto;
-      overflow: auto;
-    }
+    
     body {
-      display: flex;
-      flex-direction: column;
-      margin: 0;
-      padding: 0;
+      background: var(--light-mint);
+      min-height: 100vh;
     }
-    main {
-      flex: 1;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
+    
+    .pc-mode-enabled body {
+      background: var(--light-mint);
+      height: auto;
+      min-height: 100vh;
     }
-    .pc-mode-enabled main {
-      overflow: auto;
-    }
-    /* Make nav overlay flushly over entire page, but below header */
-    nav {
-      height: calc(100vh - 70px) !important;
-      top: 70px !important;
-      z-index: 10000 !important;
-    }
-    /* Ensure header is above main content */
+    
+    /* Ensure header is above main content - use standard header styles */
     header {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 9999;
+      max-height: 70px;
+      overflow: hidden;
     }
-    .chat-messages {
-      scroll-behavior: smooth;
+    
+    .pc-mode-enabled header {
+      max-height: 70px;
+      overflow: visible;
     }
-    .message {
+    
+    .pc-mode-enabled .header-content {
+      max-height: 70px;
+      overflow: visible;
+    }
+    
+    /* Make nav overlay flushly over entire page, but below header */
+    nav {
+      top: 70px !important;
+      z-index: 10000 !important;
+    }
+    
+    main {
+      position: fixed;
+      top: 70px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+      background: var(--light-mint);
+      overflow: hidden;
+    }
+    
+    .pc-mode-enabled main {
+      background: transparent;
+      overflow: auto;
+    }
+    
+    /* Hide PC UI on mobile, show on PC */
+    .pc-mode-enabled .chat-container {
+      display: flex;
+    }
+    
+    /* Drag and drop popup */
+    .pc-mode-enabled .chat-container::before {
+      content: 'Drop images here to upload';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(13, 140, 121, 0.9);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'Arvo', serif;
+      z-index: 10000;
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: opacity 0.2s ease-in;
+    }
+    
+    .pc-mode-enabled .chat-container.drag-over::before {
+      opacity: 1;
+    }
+    
+    /* Show mobile UI by default, hide on PC */
+    .mobile-chat-ui {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .pc-mode-enabled .mobile-chat-ui {
+      display: none;
+    }
+    
+    /* Mobile Chat UI Styles */
+    .mobile-chat-header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--white);
+      border-bottom: 1px solid var(--border-color);
+      margin: 0;
+      gap: 0.75rem;
+    }
+    
+    .mobile-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background: var(--light-mint);
+      margin: 0;
+      min-height: 0;
+    }
+    
+    .mobile-message {
       margin-bottom: 1rem;
       padding: 1rem;
       border-radius: 12px;
@@ -102,37 +185,568 @@
       width: fit-content;
       word-wrap: break-word;
     }
-    .chat-messages .message:last-child {
-      margin-bottom: 0;
-    }
-    .message.user {
-      background: var(--primary-green);
-      color: var(--white);
+    
+    .mobile-message.user {
+      background: var(--light-mint);
+      color: var(--text-dark);
       margin-left: auto;
       text-align: right;
     }
-    .message.ai {
-      background: var(--white);
+    
+    .mobile-message.ai {
+      background: transparent;
       color: var(--text-dark);
-      border: 1px solid var(--border-color);
+      border: none;
     }
-    /* Smooth transitions for quick questions popup */
+    
+    .mobile-chat-input-container {
+      flex-shrink: 0;
+      padding: 1rem;
+      background: var(--white);
+      border-top: 1px solid var(--border-color);
+      margin: 0;
+    }
+    
+    .mobile-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+    }
+    
+    .mobile-input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 25px;
+      font-size: 1rem;
+      font-family: 'Arvo', serif;
+      margin: 0;
+    }
+    
+    .mobile-send-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--primary-green);
+      color: var(--white);
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-family: 'Arvo', serif;
+      font-weight: bold;
+      white-space: nowrap;
+      margin: 0;
+    }
+    
     #quick-questions-popup {
+      position: fixed;
+      bottom: 80px;
+      left: 0.5rem;
+      right: 0.5rem;
+      background: var(--white);
+      border: 2px solid var(--primary-green);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      max-height: 400px;
+      overflow-y: auto;
+      pointer-events: none;
+      margin: 0;
       transition: opacity 0.3s ease, transform 0.3s ease;
       transform: translateY(10px);
       opacity: 0;
     }
+    
     #quick-questions-popup.show {
       opacity: 1;
       transform: translateY(0);
     }
+    
+    .response-length-btn {
+      padding: 0.4rem 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: 'Arvo', serif;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: var(--primary-green);
+      white-space: nowrap;
+      flex: 1;
+    }
+    
+    .response-length-btn.active {
+      background: var(--primary-green);
+      color: var(--white);
+    }
+    
+    /* PC Chat UI Styles */
+    .chat-container {
+      width: 100%;
+      max-width: 1400px;
+      min-width: min(100%, 1400px);
+      margin: 0 auto;
+      height: 100%;
+      max-height: 100%;
+      display: none;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+     .pc-mode-enabled .chat-container {
+      display: flex;
+    }
+    
+    .chat-container.drag-over {
+      background: rgba(13, 140, 121, 0.05);
+    }
+    
+    .chat-input-container {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    
+    .chat-messages {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px 20px 20px 12px;
+      background: var(--white);
+      border-radius: 12px;
+      backdrop-filter: none;
+      border: none;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      width: 100%;
+      min-height: 0;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    
+    .message {
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.3s ease-in;
+      min-width: 0;
+      width: 100%;
+      justify-content: flex-start;
+      align-items: flex-start;
+      border: none;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      flex-direction: row-reverse;
+      justify-content: flex-start;
+      background: transparent !important;
+      border: none !important;
+    }
+    
+    .message.ai,
+    .message.assistant {
+      border: none !important;
+      background: transparent !important;
+      justify-content: flex-start !important;
+      align-items: flex-start;
+    }
+    
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .message.user .message-avatar {
+      width: 36px;
+      height: 36px;
+      align-self: flex-start;
+      margin-top: 0;
+      background: transparent;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    .message.user .message-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    
+    .message.ai .message-avatar,
+    .message.assistant .message-avatar {
+      background: transparent;
+      color: white;
+      padding: 0;
+      overflow: hidden;
+      align-self: flex-start;
+    }
+    
+    .message.ai .message-avatar img,
+    .message.assistant .message-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 0;
+      padding: 2px;
+    }
+    
+    .message-content {
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: min(70%, 600px);
+      width: fit-content;
+      flex: 0 1 auto;
+      align-self: flex-start;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+    }
+    
+    .message-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .message.ai .message-content strong,
+    .message.assistant .message-content strong {
+      font-weight: 600;
+      color: var(--primary-green);
+    }
+    
+    .message.ai .message-content ul,
+    .message.ai .message-content ol,
+    .message.assistant .message-content ul,
+    .message.assistant .message-content ol {
+      margin: 8px 0;
+      padding-left: 24px;
+    }
+    
+    .message.ai .message-content li,
+    .message.assistant .message-content li {
+      margin: 4px 0;
+    }
+    
+    .message.user .message-content {
+      background: var(--light-mint) !important;
+      color: var(--text-dark) !important;
+      border: none !important;
+      border-bottom-right-radius: 4px;
+      width: fit-content;
+      max-width: min(70%, 600px);
+      margin-left: auto;
+    }
+    
+    .message.ai .message-content,
+    .message.assistant .message-content {
+      background: var(--light-mint) !important;
+      color: var(--text-dark);
+      border: none !important;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+      max-width: min(70%, 600px);
+    }
+    
+    .chat-input-container {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 24px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(13, 140, 121, 0.2);
+      padding: 8px 16px 12px 16px;
+      min-width: 0;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(13, 140, 121, 0.1);
+    }
+    
+    .file-preview-container {
+      display: none;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(13, 140, 121, 0.2);
+      margin-bottom: 8px;
+    }
+    
+    .file-preview-container.has-files {
+      display: block;
+    }
+    
+    .file-preview-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .file-preview-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(13, 140, 121, 0.1);
+      border-radius: 6px;
+      font-size: 14px;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    
+    .file-preview-item img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    
+    .file-preview-item .file-name {
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-dark);
+      font-size: 0.85rem;
+    }
+    
+    .file-preview-item .file-remove {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 18px;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .file-preview-item .file-remove:hover {
+      opacity: 1;
+    }
+    
+    .chat-input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+      position: relative;
+    }
+    
+    .input-bottom-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: absolute;
+      bottom: 0;
+      left: 2px;
+      padding-bottom: 4px;
+      z-index: 10;
+      pointer-events: auto;
+    }
+    
+    .file-upload-btn {
+      padding: 8px;
+      background: transparent;
+      color: var(--primary-green);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      height: 36px;
+      width: 36px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 11;
+      pointer-events: auto;
+    }
+    
+    .file-upload-btn img {
+      width: 20px !important;
+      height: 20px !important;
+      object-fit: contain;
+      transition: filter 0.2s;
+    }
+    
+    .file-upload-btn:hover {
+      background: rgba(13, 140, 121, 0.1);
+    }
+    
+    .file-upload-btn input {
+      display: none;
+    }
+    
+    .reload-btn {
+      padding: 8px;
+      background: transparent;
+      color: var(--primary-green);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      height: 36px;
+      width: 36px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 11;
+      pointer-events: auto;
+    }
+    
+    .reload-btn img {
+      width: 20px !important;
+      height: 20px !important;
+      object-fit: contain;
+      transition: filter 0.2s;
+    }
+    
+    .reload-btn:hover {
+      background: rgba(13, 140, 121, 0.1);
+    }
+    
+    .chat-input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-left: 0;
+      margin-bottom: 40px;
+      margin-top: -5px;
+    }
+    
+    .chat-input {
+      width: 100%;
+      padding: 12px 16px 12px 8px;
+      border: none;
+      border-radius: 0;
+      font-size: 16px;
+      font-family: 'Arvo', serif;
+      resize: none;
+      min-height: 48px;
+      max-height: 200px;
+      background: transparent;
+      color: var(--text-dark);
+      line-height: 1.5;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    
+    .chat-input::placeholder {
+      color: var(--text-light);
+    }
+    
+    .chat-input:focus {
+      outline: none;
+    }
+    
+    .chat-input.multi-line {
+      overflow-y: auto;
+    }
+    
+    .send-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    
+    .send-btn {
+      padding: 8px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      height: 48px;
+      width: 48px;
+      flex-shrink: 0;
+      position: absolute;
+      bottom: 32px;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .send-btn img {
+      width: 30px !important;
+      height: 30px !important;
+      object-fit: contain;
+      transition: filter 0.2s;
+    }
+    
+    .send-btn:not(:disabled) img {
+      filter: brightness(0) saturate(100%) invert(32%) sepia(78%) saturate(1100%) hue-rotate(128deg) brightness(94%) contrast(91%);
+    }
+    
+    .send-btn:hover:not(:disabled) {
+      background: rgba(13, 140, 121, 0.1);
+    }
+    
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .send-btn:disabled img {
+      filter: brightness(0) invert(0.4);
+    }
+    
+    /* Chat Header */
+    .chat-header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: transparent;
+      backdrop-filter: none;
+      margin: 0;
+      gap: 0.75rem;
+    }
+    
+    .chat-header h2 {
+      color: var(--primary-green);
+      margin: 0;
+      flex: 1;
+      font-size: 1.25rem;
+    }
+    
     /* Chat history dropdown */
     #chat-history-dropdown {
       transition: opacity 0.2s ease, transform 0.2s ease;
     }
+    
     .chat-history-item {
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border-color);
       cursor: pointer;
       transition: background 0.2s;
       display: flex;
@@ -140,13 +754,16 @@
       align-items: center;
       gap: 0.5rem;
     }
+    
     .chat-history-item:hover {
       background: var(--light-mint);
     }
+    
     .chat-history-item.active {
       background: var(--light-mint);
       border-left: 3px solid var(--primary-green);
     }
+    
     .chat-history-item-title {
       flex: 1;
       overflow: hidden;
@@ -155,11 +772,13 @@
       font-size: 0.85rem;
       color: var(--text-dark);
     }
+    
     .chat-history-item-date {
       font-size: 0.7rem;
       color: var(--text-light);
       flex-shrink: 0;
     }
+    
     .chat-history-item-delete {
       background: none;
       border: none;
@@ -171,9 +790,48 @@
       opacity: 0.6;
       transition: opacity 0.2s;
     }
+    
     .chat-history-item-delete:hover {
       opacity: 1;
       color: #e74c3c;
+    }
+    
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: rgba(13, 140, 121, 0.3);
+      border-radius: 10px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(13, 140, 121, 0.5);
+    }
+    
+    @media (max-width: 768px) {
+      .chat-container {
+        padding: 10px;
+        height: calc(100vh - 70px);
+      }
+      
+      .chat-messages {
+        padding: 12px;
+      }
+      
+      .message-content {
+        max-width: 85%;
+      }
+      
+      .chat-input-container {
+        padding: 8px 12px 10px 12px;
+      }
     }
   </style>
 </head>
@@ -237,89 +895,152 @@
     </div>
   </nav>
 
-  <main style="position: fixed; top: 70px; bottom: 0; left: 0; right: 0; background: var(--light-mint); display: flex; flex-direction: column; margin: 0; padding: 0;">
-    <!-- Chat Header with Reload Button and Chat History -->
-    <div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--white); border-bottom: 1px solid var(--border-color); margin: 0; gap: 0.75rem;">
-      <h2 style="color: var(--primary-green); margin: 0; flex: 1; font-size: 1.25rem;">AI College Counselor</h2>
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <!-- Chat History Dropdown -->
-        <div style="position: relative;">
-          <button onclick="toggleChatHistory()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 8px; min-width: 120px; font-size: 0.85rem; font-family: 'Arvo', serif; color: var(--primary-green); font-weight: bold; transition: all 0.2s;" title="Chat History" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <span id="current-chat-title">New Chat</span>
-            <span style="margin-left: 0.5rem;">▼</span>
-          </button>
-          <div id="chat-history-dropdown" style="display: none; position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; max-width: 300px; max-height: 400px; overflow-y: auto;">
-            <div style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
-              <button onclick="createNewChat()" style="width: 100%; padding: 0.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; font-size: 0.9rem;">+ New Chat</button>
-            </div>
-            <div id="chat-history-list" style="display: flex; flex-direction: column;">
-              <!-- Chat history items will be inserted here -->
+  <main>
+    <!-- Mobile Chat UI -->
+    <div class="mobile-chat-ui">
+      <!-- Chat Header -->
+      <div class="mobile-chat-header">
+        <h2 style="color: var(--primary-green); margin: 0; flex: 1; font-size: 1.25rem;">AI College Counselor</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="position: relative;">
+            <button onclick="toggleChatHistory()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 8px; min-width: 120px; font-size: 0.85rem; font-family: 'Arvo', serif; color: var(--primary-green); font-weight: bold; transition: all 0.2s;" title="Chat History" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+              <span id="current-chat-title-mobile">New Chat</span>
+              <span style="margin-left: 0.5rem;">▼</span>
+            </button>
+            <div id="chat-history-dropdown-mobile" style="display: none; position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; max-width: 300px; max-height: 400px; overflow-y: auto;">
+              <div style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                <button onclick="createNewChat()" style="width: 100%; padding: 0.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; font-size: 0.9rem;">+ New Chat</button>
+              </div>
+              <div id="chat-history-list-mobile" style="display: flex; flex-direction: column;">
+                <!-- Chat history items will be inserted here -->
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Chat Messages Area - Takes remaining space -->
-    <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 1rem; background: var(--light-mint); margin: 0; min-height: 0;">
-          <div class="message ai">
-        <strong>Path Pal:</strong> Hello! I'm your 24/7 personal counselor. Ask me anything about college admissions, course planning, career advice, or anything else related to your college path. How can I help you today?
+      <!-- Chat Messages Area -->
+      <div class="mobile-chat-messages" id="mobile-chat-messages">
+        <!-- Initial greeting message will be added via JavaScript -->
       </div>
-    </div>
 
-    <!-- Quick Questions Popup -->
-    <div id="quick-questions-popup" style="position: fixed; bottom: 80px; left: 0.5rem; right: 0.5rem; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; padding: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; max-height: 400px; overflow-y: auto; pointer-events: none; margin: 0;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-        <h3 style="margin: 0; color: var(--primary-green);">Quick Questions</h3>
-        <button onclick="toggleQuickQuestions()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); margin: 0; padding: 0;">×</button>
+      <!-- Quick Questions Popup -->
+      <div id="quick-questions-popup">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="margin: 0; color: var(--primary-green);">Quick Questions</h3>
+          <button onclick="toggleQuickQuestions()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); margin: 0; padding: 0;">×</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0;">
+          <button class="btn btn-secondary" onclick="askQuickQuestion('What courses should I take next semester?')" style="text-align: left; justify-content: flex-start; margin: 0;">
+            <img src="/media/icons/Book256x256.png" alt="Book" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Course Recommendations
+          </button>
+          <button class="btn btn-secondary" onclick="askQuickQuestion('How can I improve my admission odds?')" style="text-align: left; justify-content: flex-start; margin: 0;">
+            <img src="/media/icons/Chart256x256.png" alt="Chart" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Improve Admission Odds
+          </button>
+          <button class="btn btn-secondary" onclick="askQuickQuestion('What activities should I focus on?')" style="text-align: left; justify-content: flex-start; margin: 0;">
+            <img src="/media/icons/Activity256x256.png" alt="Activity" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Activity Suggestions
+          </button>
+          <button class="btn btn-secondary" onclick="askQuickQuestion('How should I prepare for college applications?')" style="text-align: left; justify-content: flex-start; margin: 0;">
+            <img src="/media/icons/Check256x256.png" alt="Check" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Application Prep
+          </button>
+        </div>
+        
+        <!-- Response Length Selector -->
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <label style="font-size: 1rem; color: var(--primary-green); font-family: 'Arvo', serif; font-weight: bold; margin: 0 0 0.5rem 0; display: block;">Response Length</label>
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--light-mint); padding: 0.25rem; border-radius: 12px; border: 2px solid var(--primary-green);">
+            <button type="button" class="response-length-btn" data-length="short" onclick="setResponseLength('short')">Short</button>
+            <button type="button" class="response-length-btn active" data-length="medium" onclick="setResponseLength('medium')">Medium</button>
+            <button type="button" class="response-length-btn" data-length="long" onclick="setResponseLength('long')">Long</button>
+          </div>
+        </div>
       </div>
-      
-      <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 0;">
-        <button class="btn btn-secondary" onclick="askQuickQuestion('What courses should I take next semester?')" style="text-align: left; justify-content: flex-start; margin: 0;">
-          <img src="/media/icons/Book256x256.png" alt="Book" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Course Recommendations
-        </button>
-        <button class="btn btn-secondary" onclick="askQuickQuestion('How can I improve my admission odds?')" style="text-align: left; justify-content: flex-start; margin: 0;">
-          <img src="/media/icons/Chart256x256.png" alt="Chart" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Improve Admission Odds
-        </button>
-        <button class="btn btn-secondary" onclick="askQuickQuestion('What activities should I focus on?')" style="text-align: left; justify-content: flex-start; margin: 0;">
-          <img src="/media/icons/Activity256x256.png" alt="Activity" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Activity Suggestions
-        </button>
-        <button class="btn btn-secondary" onclick="askQuickQuestion('How should I prepare for college applications?')" style="text-align: left; justify-content: flex-start; margin: 0;">
-          <img src="/media/icons/Check256x256.png" alt="Check" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;"> Application Prep
-        </button>
-      </div>
-      
-      <!-- Response Length Selector -->
-      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-        <label style="font-size: 1rem; color: var(--primary-green); font-family: 'Arvo', serif; font-weight: bold; margin: 0 0 0.5rem 0; display: block;">Response Length</label>
-        <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--light-mint); padding: 0.25rem; border-radius: 12px; border: 2px solid var(--primary-green);">
-          <button type="button" class="response-length-btn" data-length="short" onclick="setResponseLength('short')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap; flex: 1;">Short</button>
-          <button type="button" class="response-length-btn active" data-length="medium" onclick="setResponseLength('medium')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: var(--primary-green); color: var(--white); white-space: nowrap; flex: 1;">Medium</button>
-          <button type="button" class="response-length-btn" data-length="long" onclick="setResponseLength('long')" style="padding: 0.4rem 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--primary-green); white-space: nowrap; flex: 1;">Long</button>
+
+      <!-- Chat Input Container -->
+      <div class="mobile-chat-input-container">
+        <div class="mobile-input-row">
+          <button onclick="toggleQuickQuestions()" style="background: var(--light-mint); border: 2px solid var(--primary-green); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; margin: 0;" title="Quick Questions">
+            <img src="/media/icons/Question256x256.png" alt="Quick Questions" style="width: 24px; height: 24px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+            <span style="display: none; font-size: 1.2rem; color: var(--primary-green); font-weight: bold;">?</span>
+          </button>
+          <form id="mobile-chat-form" onsubmit="sendMessageMobile(event)" style="flex: 1; display: flex; gap: 0.5rem; margin: 0;">
+            <input 
+              type="text" 
+              id="mobile-message-input" 
+              placeholder="Ask me anything..." 
+              required
+              autocomplete="off"
+              maxlength="2000"
+              class="mobile-input"
+            />
+            <button type="submit" id="mobile-send-button" class="mobile-send-btn">Send</button>
+          </form>
         </div>
       </div>
     </div>
 
-    <!-- Chat Input Container - Fixed at bottom -->
-    <div style="flex-shrink: 0; padding: 1rem; background: var(--white); border-top: 1px solid var(--border-color); margin: 0;">
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-        <button onclick="toggleQuickQuestions()" style="background: var(--light-mint); border: 2px solid var(--primary-green); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; margin: 0;" title="Quick Questions">
-          <img src="/media/icons/Question256x256.png" alt="Quick Questions" style="width: 24px; height: 24px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-          <span style="display: none; font-size: 1.2rem; color: var(--primary-green); font-weight: bold;">?</span>
-        </button>
-        <form id="chat-form" onsubmit="sendMessage(event)" style="flex: 1; display: flex; gap: 0.5rem; margin: 0;">
-            <input 
-              type="text" 
-              id="message-input" 
-              placeholder="Ask me anything..." 
-              required
-              autocomplete="off"
-            maxlength="2000"
-            onkeydown="if(event.key === 'Enter' && isProcessingMessage) event.preventDefault();"
-            style="flex: 1; padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: 25px; font-size: 1rem; font-family: 'Arvo', serif; margin: 0;"
-            />
-          <button type="submit" id="send-button" style="padding: 0.75rem 1.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 25px; cursor: pointer; font-family: 'Arvo', serif; font-weight: bold; white-space: nowrap; margin: 0;">Send</button>
-          </form>
+    <!-- PC Chat UI -->
+    <div class="chat-container">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <h2>AI College Counselor</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="position: relative;">
+            <button onclick="toggleChatHistory()" style="background: var(--light-mint); border: 2px solid var(--primary-green); cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 8px; min-width: 120px; font-size: 0.85rem; font-family: 'Arvo', serif; color: var(--primary-green); font-weight: bold; transition: all 0.2s;" title="Chat History" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+              <span id="current-chat-title">New Chat</span>
+              <span style="margin-left: 0.5rem;">▼</span>
+            </button>
+            <div id="chat-history-dropdown" style="display: none; position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--white); border: 2px solid var(--primary-green); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; max-width: 300px; max-height: 400px; overflow-y: auto;">
+              <div style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                <button onclick="createNewChat()" style="width: 100%; padding: 0.5rem; background: var(--primary-green); color: var(--white); border: none; border-radius: 8px; font-family: 'Arvo', serif; font-weight: bold; cursor: pointer; font-size: 0.9rem;">+ New Chat</button>
+              </div>
+              <div id="chat-history-list" style="display: flex; flex-direction: column;">
+                <!-- Chat history items will be inserted here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages Area -->
+      <div class="chat-messages" id="chat-messages">
+        <!-- Initial greeting message will be added via JavaScript -->
+      </div>
+      
+      <!-- Chat Input Container -->
+      <div class="chat-input-container">
+        <div class="file-preview-container" id="file-preview-container">
+          <div class="file-preview-list" id="file-preview-list"></div>
+        </div>
+        <div class="chat-input-row">
+          <div class="input-bottom-controls">
+            <label class="file-upload-btn" title="Upload image">
+              <img src="/media/ai-counselor/file.png" alt="Upload image">
+              <input type="file" id="file-input" multiple accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            </label>
+            
+            <button class="reload-btn" id="reload-btn" title="Reload chat" onclick="reloadChat()">
+              <img src="/media/icons/Reload256x256.png" alt="Reload chat">
+            </button>
+          </div>
+          
+          <div class="chat-input-wrapper">
+            <textarea 
+              id="chat-input" 
+              class="chat-input" 
+              placeholder="Type your message..."
+              rows="1"
+              maxlength="2000"
+            ></textarea>
+          </div>
+          
+          <div class="send-controls">
+            <button id="send-btn" class="send-btn" title="Send message" type="button">
+              <img src="/media/ai-counselor/Send.png" alt="Send">
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -335,19 +1056,194 @@
   <script>
     let chatHistory = [];
     let currentChatId = null;
-    let allChats = []; // Array of { id, title, messages, createdAt, updatedAt }
-    let isProcessingMessage = false; // Flag to prevent multiple simultaneous messages
+    let allChats = [];
+    let isProcessingMessage = false;
+
+    // Get UI elements based on which UI is active
+    function getChatMessages() {
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        return document.getElementById('chat-messages');
+      } else {
+        return document.getElementById('mobile-chat-messages');
+      }
+    }
+    
+    function getChatInput() {
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        return document.getElementById('chat-input');
+      } else {
+        return document.getElementById('mobile-message-input');
+      }
+    }
+    
+    function getSendButton() {
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        return document.getElementById('send-btn');
+      } else {
+        return document.getElementById('mobile-send-button');
+      }
+    }
+    
+    function getChatForm() {
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        return null; // PC uses button click, not form
+      } else {
+        return document.getElementById('mobile-chat-form');
+      }
+    }
+
+    const fileInput = document.getElementById('file-input');
+    
+    // Store selected files temporarily (PC mode only)
+    let selectedFiles = [];
+    
+    // File upload handling (PC mode only) - add to preview
+    function handleFileUpload(files) {
+      if (!document.documentElement.classList.contains('pc-mode-enabled')) {
+        return;
+      }
+      
+      // Only accept PNG, JPEG, and WebP images
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+      const imageFiles = Array.from(files).filter(file => allowedTypes.includes(file.type));
+      if (imageFiles.length === 0) {
+        alert('Please upload only PNG, JPG, or WebP image files.');
+        return;
+      }
+      
+      // Also check for files that passed the accept attribute but have wrong type
+      const invalidFiles = Array.from(files).filter(file => !allowedTypes.includes(file.type));
+      if (invalidFiles.length > 0) {
+        alert(`Some files were rejected. Please upload only PNG, JPG, or WebP image files.`);
+      }
+      
+      // Check current file count and limit
+      const remainingSlots = 3 - selectedFiles.length;
+      if (remainingSlots <= 0) {
+        alert('Maximum of 3 images allowed. Please remove some images before adding more.');
+        return;
+      }
+      
+      // Limit to remaining slots
+      const filesToAdd = imageFiles.slice(0, remainingSlots);
+      selectedFiles.push(...filesToAdd);
+      updateFilePreview();
+      
+      if (imageFiles.length > remainingSlots) {
+        alert(`Maximum of 3 images allowed. Only ${remainingSlots} image(s) added. ${imageFiles.length - remainingSlots} image(s) were not added.`);
+      }
+    }
+    
+    // Update file preview display
+    function updateFilePreview() {
+      const container = document.getElementById('file-preview-container');
+      const list = document.getElementById('file-preview-list');
+      
+      if (!container || !list) return;
+      
+      if (selectedFiles.length === 0) {
+        container.classList.remove('has-files');
+        list.innerHTML = '';
+        return;
+      }
+      
+      container.classList.add('has-files');
+      list.innerHTML = '';
+      
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'file-preview-item';
+        
+        // Create image preview
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        item.appendChild(img);
+        
+        // Create file name
+        const fileName = document.createElement('div');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        item.appendChild(fileName);
+        
+        // Create remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'file-remove';
+        removeBtn.innerHTML = '×';
+        removeBtn.title = 'Remove';
+        removeBtn.onclick = () => {
+          selectedFiles.splice(index, 1);
+          updateFilePreview();
+        };
+        item.appendChild(removeBtn);
+        
+        list.appendChild(item);
+      });
+    }
+    
+    // Get user profile picture
+    async function getUserProfilePicture() {
+      try {
+        // Try localStorage first (faster)
+        let profilePicture = localStorage.getItem('profile-picture');
+        if (profilePicture) {
+          return profilePicture;
+        }
+        
+        // Try fetching from server
+        const userId = getUserId();
+        const response = await fetch(`/api/profile/picture?user_id=${encodeURIComponent(userId)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.profile_picture) {
+            localStorage.setItem('profile-picture', data.profile_picture);
+            return data.profile_picture;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile picture:', error);
+      }
+      return null;
+    }
+    
+    // Generate avatar HTML for user messages
+    async function getUserAvatarHTML() {
+      const profilePicture = await getUserProfilePicture();
+      if (profilePicture) {
+        return `<div class="message-avatar"><img src="${escapeHtml(profilePicture)}" alt="Profile"></div>`;
+      } else {
+        // Fallback to green circle with initials or icon
+        return '<div class="message-avatar" style="background: transparent; color: var(--text-dark); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem;"><img src="/media/icons/Profile256x256.png" alt="Profile" style="width: 24px; height: 24px;"></div>';
+      }
+    }
+    
+    async function addImageToChat(imageUrl, fileName) {
+      const chatMessagesEl = getChatMessages();
+      const messageDiv = document.createElement('div');
+      const messageId = 'img-' + Date.now() + '-' + Math.random();
+      messageDiv.id = messageId;
+      messageDiv.className = 'message user';
+      
+      const avatar = await getUserAvatarHTML();
+      const content = `
+        <div class="message-content" style="padding: 8px;">
+          <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(fileName)}" style="max-width: 400px; max-height: 300px; border-radius: 8px; display: block;">
+        </div>
+      `;
+      
+      messageDiv.innerHTML = avatar + content;
+      chatMessagesEl.appendChild(messageDiv);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
 
     // Chat management functions
     function getAllChats() {
       allChats = Storage.get('allChats', []);
-      // Sort by updatedAt (most recent first)
       allChats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
       return allChats;
     }
 
     function saveAllChats() {
-      // Keep only the 10 most recent chats
       if (allChats.length > 10) {
         allChats = allChats.slice(0, 10);
       }
@@ -366,7 +1262,7 @@
         updatedAt: new Date().toISOString()
       };
       
-      allChats.unshift(newChat); // Add to beginning
+      allChats.unshift(newChat);
       saveAllChats();
       
       loadChatHistory();
@@ -374,8 +1270,8 @@
       updateCurrentChatTitle('New Chat');
       closeChatHistory();
       
-      // Focus input
-      document.getElementById('message-input').focus();
+      const chatInputEl = getChatInput();
+      if (chatInputEl) chatInputEl.focus();
     }
 
     function switchToChat(chatId) {
@@ -391,13 +1287,12 @@
     }
 
     function deleteChat(chatId, event) {
-      event.stopPropagation(); // Prevent switching to chat when deleting
+      event.stopPropagation();
       
       if (confirm('Are you sure you want to delete this chat?')) {
         allChats = allChats.filter(c => c.id !== chatId);
         saveAllChats();
         
-        // If deleted chat was current, create new chat
         if (currentChatId === chatId) {
           createNewChat();
         } else {
@@ -408,19 +1303,27 @@
 
     function updateCurrentChatTitle(title) {
       const titleEl = document.getElementById('current-chat-title');
+      const titleElMobile = document.getElementById('current-chat-title-mobile');
+      const titleText = title.length > 20 ? title.substring(0, 20) + '...' : title;
       if (titleEl) {
-        titleEl.textContent = title.length > 20 ? title.substring(0, 20) + '...' : title;
+        titleEl.textContent = titleText;
+      }
+      if (titleElMobile) {
+        titleElMobile.textContent = titleText;
       }
     }
 
     function updateChatHistoryDropdown() {
       const listEl = document.getElementById('chat-history-list');
-      if (!listEl) return;
+      const listElMobile = document.getElementById('chat-history-list-mobile');
       
       getAllChats();
       
+      const emptyHtml = '<div style="padding: 1rem; text-align: center; color: var(--text-light); font-size: 0.85rem;">No chat history</div>';
+      
       if (allChats.length === 0) {
-        listEl.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-light); font-size: 0.85rem;">No chat history</div>';
+        if (listEl) listEl.innerHTML = emptyHtml;
+        if (listElMobile) listElMobile.innerHTML = emptyHtml;
         return;
       }
       
@@ -438,25 +1341,37 @@
         `;
       });
       
-      listEl.innerHTML = html;
+      if (listEl) listEl.innerHTML = html;
+      if (listElMobile) listElMobile.innerHTML = html;
     }
 
     function toggleChatHistory() {
       const dropdown = document.getElementById('chat-history-dropdown');
-      if (!dropdown) return;
+      const dropdownMobile = document.getElementById('chat-history-dropdown-mobile');
+      const dropdownToUse = dropdown || dropdownMobile;
       
-      if (dropdown.style.display === 'none' || !dropdown.style.display) {
+      if (!dropdownToUse) return;
+      
+      if (dropdownToUse.style.display === 'none' || !dropdownToUse.style.display) {
         updateChatHistoryDropdown();
-        dropdown.style.display = 'block';
+        dropdownToUse.style.display = 'block';
+        if (dropdown) dropdown.style.display = 'block';
+        if (dropdownMobile) dropdownMobile.style.display = 'block';
       } else {
-        dropdown.style.display = 'none';
+        dropdownToUse.style.display = 'none';
+        if (dropdown) dropdown.style.display = 'none';
+        if (dropdownMobile) dropdownMobile.style.display = 'none';
       }
     }
 
     function closeChatHistory() {
       const dropdown = document.getElementById('chat-history-dropdown');
+      const dropdownMobile = document.getElementById('chat-history-dropdown-mobile');
       if (dropdown) {
         dropdown.style.display = 'none';
+      }
+      if (dropdownMobile) {
+        dropdownMobile.style.display = 'none';
       }
     }
 
@@ -466,7 +1381,6 @@
       return div.innerHTML;
     }
 
-    // Generate chat title from first message using GPT
     async function generateChatTitle(firstMessage) {
       try {
         const userId = getUserId();
@@ -489,11 +1403,8 @@
         if (response.ok) {
           const data = await response.json();
           let title = data.message.trim();
-          // Remove quotes if present
           title = title.replace(/^["']|["']$/g, '');
-          // Remove any leading/trailing punctuation
           title = title.replace(/^[^\w]+|[^\w]+$/g, '');
-          // Limit to 30 characters
           if (title.length > 30) {
             title = title.substring(0, 27) + '...';
           }
@@ -505,140 +1416,106 @@
       return 'New Chat';
     }
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       const dropdown = document.getElementById('chat-history-dropdown');
+      const dropdownMobile = document.getElementById('chat-history-dropdown-mobile');
       const dropdownBtn = e.target.closest('button[onclick="toggleChatHistory()"]');
       if (dropdown && dropdown.style.display !== 'none' && !dropdown.contains(e.target) && !dropdownBtn) {
         closeChatHistory();
       }
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Load all chats
-      getAllChats();
-      
-      // Load or create current chat
-      if (allChats.length > 0) {
-        // Load most recent chat
-        const mostRecent = allChats[0];
-        currentChatId = mostRecent.id;
-        chatHistory = mostRecent.messages || [];
-        updateCurrentChatTitle(mostRecent.title);
-      } else {
-        // Create new chat if none exist
-        createNewChat();
-      }
-      
-      loadChatHistory();
-      updateChatHistoryDropdown();
-      
-      // Load response length preference and set active button
-      const savedLength = Storage.get('responseLength', 'medium');
-      setResponseLength(savedLength);
-      
-      // Check for question parameter in URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const question = urlParams.get('question');
-      if (question) {
-        // Decode and set the question in the input
-        const decodedQuestion = decodeURIComponent(question);
-        const input = document.getElementById('message-input');
-        input.value = decodedQuestion;
-        
-        // Auto-submit after a short delay to ensure page is loaded
-        setTimeout(() => {
-          document.getElementById('chat-form').dispatchEvent(new Event('submit'));
-        }, 500);
-      } else {
-        // Focus input if no question
-        document.getElementById('message-input').focus();
+      if (dropdownMobile && dropdownMobile.style.display !== 'none' && !dropdownMobile.contains(e.target) && !dropdownBtn) {
+        closeChatHistory();
       }
     });
 
-    function setResponseLength(length) {
-      Storage.set('responseLength', length);
-      
-      // Update button states
-      const buttons = document.querySelectorAll('.response-length-btn');
-      buttons.forEach(btn => {
-        if (btn.dataset.length === length) {
-          btn.classList.add('active');
-          btn.style.background = 'var(--primary-green)';
-          btn.style.color = 'var(--white)';
-        } else {
-          btn.classList.remove('active');
-          btn.style.background = 'transparent';
-          btn.style.color = 'var(--primary-green)';
-        }
-      });
-    }
-
-    function getResponseLength() {
-      return Storage.get('responseLength', 'medium');
-    }
-
-    function loadChatHistory() {
-      const container = document.getElementById('chat-messages');
-      
-      // Clear except welcome message
-      container.innerHTML = '<div class="message ai"><strong>Path Pal:</strong> Hello! I\'m your 24/7 personal counselor. Ask me anything about college admissions, course planning, career advice, or anything else related to your college path. How can I help you today?</div>';
-      
-      // Load saved messages
-      chatHistory.forEach(msg => {
-        addMessageToChat(msg.text, msg.sender, false);
-      });
-      
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
-    }
-
-    async function sendMessage(event) {
-      event.preventDefault();
-      
-      // Prevent sending if already processing
-      if (isProcessingMessage) return;
-      
-      const input = document.getElementById('message-input');
-      const sendButton = document.getElementById('send-button');
-      const message = input.value.trim();
-      
-      if (!message) return;
-      
-      // Check message limit (60 messages max - this will add 2 more: user + AI)
-      const MAX_MESSAGES = 60;
-      if (chatHistory.length >= MAX_MESSAGES - 1) {
-        showNotification('This chat has reached the maximum of 60 messages. Please start a new chat to continue.', 'error');
+    async function loadChatHistory() {
+      const chatMessagesEl = getChatMessages();
+      if (!chatMessagesEl) {
+        console.error('Chat messages element not found');
         return;
       }
       
-      // Set processing flag and disable send button (but allow typing)
-      isProcessingMessage = true;
-      if (sendButton) sendButton.disabled = true;
-      if (sendButton) sendButton.style.opacity = '0.6';
-      if (sendButton) sendButton.style.cursor = 'not-allowed';
+      const isPC = document.documentElement.classList.contains('pc-mode-enabled');
       
-      // Create new chat if this is the first message in an empty chat
+      if (isPC) {
+        chatMessagesEl.innerHTML = '';
+        
+        // Add greeting message using the same function as other messages
+        await addMessageToChat("Hello! I'm your 24/7 personal counselor. Ask me anything about college admissions, course planning, career advice, or anything else related to your college path. How can I help you today?", 'ai', false);
+        
+        for (const msg of chatHistory) {
+          await addMessageToChat(msg.text, msg.sender, false);
+        }
+      } else {
+        chatMessagesEl.innerHTML = '';
+        
+        // Add greeting message for mobile
+        addMessageToChatMobile("Hello! I'm your 24/7 personal counselor. Ask me anything about college admissions, course planning, career advice, or anything else related to your college path. How can I help you today?", 'ai', false);
+        
+        chatHistory.forEach(msg => {
+          addMessageToChatMobile(msg.text, msg.sender, false);
+        });
+      }
+      
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    async function sendMessage(event) {
+      if (event) event.preventDefault();
+      
+      if (isProcessingMessage) return;
+      
+      const chatInputEl = getChatInput();
+      const sendBtnEl = getSendButton();
+      const message = chatInputEl.value.trim();
+      const hasImages = document.documentElement.classList.contains('pc-mode-enabled') && selectedFiles.length > 0;
+      
+      if (!message && !hasImages) return;
+      
+      const MAX_MESSAGES = 60;
+      if (chatHistory.length >= MAX_MESSAGES - 1) {
+        alert('This chat has reached the maximum of 60 messages. Please start a new chat to continue.');
+        return;
+      }
+      
+      isProcessingMessage = true;
+      sendBtnEl.disabled = true;
+      
       const isNewChat = chatHistory.length === 0 && (!currentChatId || !allChats.find(c => c.id === currentChatId));
       if (isNewChat) {
         currentChatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       }
       
-      // Clear input
-      input.value = '';
+      // Store files to send before clearing
+      const filesToSend = document.documentElement.classList.contains('pc-mode-enabled') ? [...selectedFiles] : [];
       
-      // Add user message
-      addMessageToChat(message, 'user', true);
+      // Clear input and files
+      chatInputEl.value = '';
+      if (chatInputEl.tagName === 'TEXTAREA') {
+        chatInputEl.style.height = 'auto';
+      }
       
-      // Show loading with animated ellipsis
+      // Clear selected files and update preview
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        selectedFiles = [];
+        updateFilePreview();
+      }
+      
+      const isPC = document.documentElement.classList.contains('pc-mode-enabled');
+      
+      // Combine text and images in same message
+      if (isPC) {
+        await addMessageToChat(message, 'user', true, filesToSend);
+      } else {
+        addMessageToChatMobile(message, 'user', true);
+      }
+      
       const loadingId = addLoadingMessage();
       
       try {
-        // Get user profile for context
         const profile = await UserProfile.get();
-        const responseLength = getResponseLength();
+        const responseLength = Storage.get('responseLength', 'medium');
         
-        // Adjust system prompt based on response length
         let lengthInstruction = '';
         if (responseLength === 'short') {
           lengthInstruction = 'Keep responses very brief (1-2 sentences maximum).';
@@ -648,10 +1525,25 @@
           lengthInstruction = 'Provide detailed, comprehensive responses (4+ sentences when appropriate).';
         }
         
+        // Format activities for display
+        let activitiesText = 'not specified';
+        if (profile.activities) {
+          if (Array.isArray(profile.activities) && profile.activities.length > 0) {
+            // Format array of activity objects (if they have description property)
+            if (profile.activities[0] && typeof profile.activities[0] === 'object' && profile.activities[0].description) {
+              activitiesText = profile.activities.map(act => act.description || '').filter(Boolean).join(', ');
+            } else {
+              activitiesText = profile.activities.join(', ');
+            }
+          } else if (typeof profile.activities === 'string' && profile.activities.trim()) {
+            activitiesText = profile.activities;
+          }
+        }
+        
         const context = [
           {
             role: 'system',
-            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. ${lengthInstruction} The student's profile: Grade: ${profile.grade || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
+            content: `You are a helpful college admissions counselor and academic advisor. IMPORTANT: You ONLY answer questions related to college admissions, academic planning, course selection, standardized tests (SAT/ACT), college applications, financial aid, scholarships, career planning related to education, and academic advice. If asked about topics unrelated to college or education, politely decline and redirect to college-related topics. ${lengthInstruction} The student's profile: Name: ${profile.name || 'not set'}, Grade: ${profile.grade || 'not set'}, Zip Code: ${profile.zipcode || 'not set'}, GPA: ${profile.gpa || 'not set'}, SAT: ${profile.sat || 'not set'}, ACT: ${profile.act || 'not set'}, Majors: ${(profile.majors || []).join(', ') || 'not specified'}, Activities: ${activitiesText}, Career Goals: ${profile.careerGoals || 'not specified'}. Provide personalized, actionable advice.`
           },
           ...chatHistory.slice(-4).map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -659,37 +1551,33 @@
           }))
         ];
         
-        const response = await sendChatMessage(message, context, responseLength);
+        const response = await sendChatMessage(message, context, responseLength, filesToSend);
         
-        // Remove loading message
         removeMessage(loadingId);
         
-        // Add AI response
-        addMessageToChat(response.message, 'ai', true);
+        if (isPC) {
+          await addMessageToChat(response.message, 'ai', true);
+        } else {
+          addMessageToChatMobile(response.message, 'ai', true);
+        }
         
-        // Save to history
         chatHistory.push({ text: message, sender: 'user' });
         chatHistory.push({ text: response.message, sender: 'ai' });
         
-        // Enforce message limit (60 messages max) - trim oldest if exceeded
-        const MAX_MESSAGES = 60;
         if (chatHistory.length > MAX_MESSAGES) {
           chatHistory = chatHistory.slice(-MAX_MESSAGES);
         }
         
-        // Generate title if this is the first message in a new chat
         let chatTitle = 'New Chat';
         if (isNewChat || (chatHistory.length === 2 && allChats.find(c => c.id === currentChatId)?.title === 'New Chat')) {
           chatTitle = await generateChatTitle(message);
         } else {
-          // Get existing title
           const existingChat = allChats.find(c => c.id === currentChatId);
           if (existingChat) {
             chatTitle = existingChat.title;
           }
         }
         
-        // Save chat to allChats
         const chatIndex = allChats.findIndex(c => c.id === currentChatId);
         const chatData = {
           id: currentChatId,
@@ -710,69 +1598,135 @@
         updateCurrentChatTitle(chatTitle);
       } catch (error) {
         removeMessage(loadingId);
+        const isPC = document.documentElement.classList.contains('pc-mode-enabled');
         if (error.isRateLimit) {
           const resetTime = error.rateLimit?.resetIn || 30;
-          addMessageToChat(`You're sending messages too quickly. Please wait ${resetTime} seconds before trying again.`, 'ai', true);
+          if (isPC) {
+            addMessageToChat(`You're sending messages too quickly. Please wait ${resetTime} seconds before trying again.`, 'ai', true);
+          } else {
+            addMessageToChatMobile(`You're sending messages too quickly. Please wait ${resetTime} seconds before trying again.`, 'ai', true);
+          }
         } else {
-          addMessageToChat('Sorry, I encountered an error. Please try again later.', 'ai', true);
+          if (isPC) {
+            addMessageToChat('Sorry, I encountered an error. Please try again later.', 'ai', true);
+          } else {
+            addMessageToChatMobile('Sorry, I encountered an error. Please try again later.', 'ai', true);
+          }
         }
         console.error('Chat error:', error);
       } finally {
-        // Re-enable send button (input was never disabled so user can keep typing)
         isProcessingMessage = false;
-        if (sendButton) sendButton.disabled = false;
-        if (sendButton) sendButton.style.opacity = '1';
-        if (sendButton) sendButton.style.cursor = 'pointer';
-        input.focus();
+        sendBtnEl.disabled = false;
+        chatInputEl.focus();
       }
+    }
+    
+    // Mobile send message function
+    async function sendMessageMobile(event) {
+      await sendMessage(event);
     }
 
     function addLoadingMessage() {
-      const container = document.getElementById('chat-messages');
+      const chatMessagesEl = getChatMessages();
+      const isPC = document.documentElement.classList.contains('pc-mode-enabled');
       const messageDiv = document.createElement('div');
       const messageId = 'msg-' + Date.now() + '-' + Math.random();
       messageDiv.id = messageId;
-      messageDiv.className = 'message ai';
       
-      const textSpan = document.createElement('span');
-      textSpan.id = messageId + '-text';
-      textSpan.textContent = 'Thinking'; // Set initial text immediately
-      messageDiv.innerHTML = '<strong>Path Pal:</strong> ';
-      messageDiv.appendChild(textSpan);
+      if (isPC) {
+        messageDiv.className = 'message assistant';
+        messageDiv.innerHTML = `
+          <div class="message-avatar">
+            <img src="/media/logo/logo64x64.png" alt="Path Pal">
+          </div>
+          <div class="message-content" style="padding-right: 60px;">
+            <strong>Path Pal:</strong> <span id="${messageId}-text">Thinking</span>
+          </div>
+        `;
+      } else {
+        messageDiv.className = 'mobile-message ai';
+        messageDiv.innerHTML = `<strong>Path Pal:</strong> <span id="${messageId}-text">Thinking</span>`;
+      }
       
-      container.appendChild(messageDiv);
-      container.scrollTop = container.scrollHeight;
+      chatMessagesEl.appendChild(messageDiv);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       
-      // Animate ellipsis
       let dots = 1;
       const loadingInterval = setInterval(() => {
         dots = (dots % 3) + 1;
-        textSpan.textContent = 'Thinking' + '.'.repeat(dots);
+        const textSpan = document.getElementById(messageId + '-text');
+        if (textSpan) {
+          textSpan.textContent = 'Thinking' + '.'.repeat(dots);
+        }
       }, 500);
       
-      // Store interval ID so we can clear it later
       messageDiv.dataset.intervalId = loadingInterval;
       
       return messageId;
     }
 
-    function addMessageToChat(text, sender, scroll = false) {
-      const container = document.getElementById('chat-messages');
+    async function addMessageToChat(text, sender, scroll = false, files = []) {
+      const chatMessagesEl = getChatMessages();
       const messageDiv = document.createElement('div');
       const messageId = 'msg-' + Date.now() + '-' + Math.random();
       messageDiv.id = messageId;
       messageDiv.className = `message ${sender}`;
       
+      const avatar = sender === 'user' 
+        ? await getUserAvatarHTML()
+        : '<div class="message-avatar"><img src="/media/logo/logo64x64.png" alt="Path Pal"></div>';
+      
+      let content = '';
       if (sender === 'user') {
-        messageDiv.innerHTML = `<strong>You:</strong> ${text}`;
+        content = text ? escapeHtml(text) : '';
+        // Add images if any
+        if (files.length > 0) {
+          const imagesHtml = await Promise.all(files.map(file => {
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                resolve(`<img src="${escapeHtml(e.target.result)}" alt="${escapeHtml(file.name)}" style="max-width: 100%; max-height: 300px; border-radius: 8px; display: block; margin-top: ${content ? '8px' : '0'}; width: auto; height: auto;">`);
+              };
+              reader.readAsDataURL(file);
+            });
+          }));
+          content += imagesHtml.join('');
+        }
       } else {
-        messageDiv.innerHTML = `<strong>Path Pal:</strong> ${text}`;
+        content = `<strong>Path Pal:</strong> ${escapeHtml(text)}`;
       }
       
-      container.appendChild(messageDiv);
+      messageDiv.innerHTML = `
+        ${avatar}
+        <div class="message-content">${content}</div>
+      `;
+      
+      chatMessagesEl.appendChild(messageDiv);
       
       if (scroll) {
-        container.scrollTop = container.scrollHeight;
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      }
+      
+      return messageId;
+    }
+    
+    function addMessageToChatMobile(text, sender, scroll = false) {
+      const chatMessagesEl = getChatMessages();
+      const messageDiv = document.createElement('div');
+      const messageId = 'msg-' + Date.now() + '-' + Math.random();
+      messageDiv.id = messageId;
+      messageDiv.className = `mobile-message ${sender}`;
+      
+      const content = sender === 'user'
+        ? `<strong>You:</strong> ${escapeHtml(text)}`
+        : `<strong>Path Pal:</strong> ${escapeHtml(text)}`;
+      
+      messageDiv.innerHTML = content;
+      
+      chatMessagesEl.appendChild(messageDiv);
+      
+      if (scroll) {
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       }
       
       return messageId;
@@ -781,7 +1735,6 @@
     function removeMessage(messageId) {
       const message = document.getElementById(messageId);
       if (message) {
-        // Clear any animation interval if it exists
         if (message.dataset.intervalId) {
           clearInterval(parseInt(message.dataset.intervalId));
         }
@@ -789,29 +1742,59 @@
       }
     }
 
-    function askQuickQuestion(question) {
-      document.getElementById('message-input').value = question;
-      toggleQuickQuestions(); // Hide the popup
-      document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    function reloadChat() {
+      // Clear selected files
+      selectedFiles = [];
+      updateFilePreview();
+      createNewChat();
     }
-
+    
     function toggleQuickQuestions() {
       const popup = document.getElementById('quick-questions-popup');
-      if (popup.classList.contains('show')) {
-        // Hide with smooth transition
-        popup.classList.remove('show');
-        setTimeout(() => {
-          popup.style.pointerEvents = 'none';
-        }, 300);
-      } else {
-        // Show with smooth transition
-        popup.style.pointerEvents = 'auto';
-        setTimeout(() => {
-          popup.classList.add('show');
-        }, 10);
+      if (popup) {
+        if (popup.classList.contains('show')) {
+          popup.classList.remove('show');
+          setTimeout(() => {
+            popup.style.pointerEvents = 'none';
+          }, 300);
+        } else {
+          popup.style.pointerEvents = 'auto';
+          setTimeout(() => {
+            popup.classList.add('show');
+          }, 10);
+        }
       }
     }
+    
+    function askQuickQuestion(question) {
+      const chatInputEl = getChatInput();
+      chatInputEl.value = question;
+      toggleQuickQuestions();
+      if (document.documentElement.classList.contains('pc-mode-enabled')) {
+        sendMessage();
+      } else {
+        document.getElementById('mobile-chat-form').dispatchEvent(new Event('submit'));
+      }
+    }
+    
+    function setResponseLength(length) {
+      Storage.set('responseLength', length);
+      
+      const buttons = document.querySelectorAll('.response-length-btn');
+      buttons.forEach(btn => {
+        if (btn.dataset.length === length) {
+          btn.classList.add('active');
+          btn.style.background = 'var(--primary-green)';
+          btn.style.color = 'var(--white)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--primary-green)';
+        }
+      });
+    }
 
+    
     // Close quick questions when clicking outside
     document.addEventListener('click', (e) => {
       const popup = document.getElementById('quick-questions-popup');
@@ -824,10 +1807,128 @@
       }
     });
 
-    function reloadChat() {
-      // Create a new chat instead of clearing
-      createNewChat();
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set up PC input auto-resize
+      const pcChatInputEl = document.getElementById('chat-input');
+      if (pcChatInputEl) {
+        pcChatInputEl.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+          if (this.scrollHeight > 48) {
+            this.classList.add('multi-line');
+          } else {
+            this.classList.remove('multi-line');
+          }
+        });
+        
+        // Enter key to send (Shift+Enter for new line) - PC
+        pcChatInputEl.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!isProcessingMessage) {
+              sendMessage();
+            }
+          }
+        });
+      }
+      
+      // Set up PC send button
+      const pcSendBtn = document.getElementById('send-btn');
+      if (pcSendBtn) {
+        pcSendBtn.addEventListener('click', sendMessage);
+      }
+      
+      // Set up file input (PC mode only)
+      const fileInputEl = document.getElementById('file-input');
+      if (fileInputEl) {
+        fileInputEl.addEventListener('change', function(e) {
+          if (document.documentElement.classList.contains('pc-mode-enabled') && e.target.files) {
+            handleFileUpload(e.target.files);
+            e.target.value = ''; // Reset input
+          }
+        });
+      }
+      
+      // Set up drag and drop (PC mode only)
+      const chatContainer = document.querySelector('.chat-container');
+      let dragCounter = 0;
+      if (chatContainer) {
+        chatContainer.addEventListener('dragenter', function(e) {
+          if (document.documentElement.classList.contains('pc-mode-enabled') && e.dataTransfer.types.includes('Files')) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter++;
+            chatContainer.classList.add('drag-over');
+          }
+        });
+        
+        chatContainer.addEventListener('dragover', function(e) {
+          if (document.documentElement.classList.contains('pc-mode-enabled') && e.dataTransfer.types.includes('Files')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+          }
+        });
+        
+        chatContainer.addEventListener('dragleave', function(e) {
+          if (document.documentElement.classList.contains('pc-mode-enabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter--;
+            if (dragCounter === 0) {
+              chatContainer.classList.remove('drag-over');
+            }
+          }
+        });
+        
+        chatContainer.addEventListener('drop', function(e) {
+          if (document.documentElement.classList.contains('pc-mode-enabled')) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter = 0;
+            chatContainer.classList.remove('drag-over');
+            
+            if (e.dataTransfer.files) {
+              handleFileUpload(e.dataTransfer.files);
+            }
+          }
+        });
+      }
+      
+      getAllChats();
+      
+      // Wait a bit to ensure DOM and PC mode are fully initialized
+      setTimeout(() => {
+        if (allChats.length > 0) {
+          const mostRecent = allChats[0];
+          currentChatId = mostRecent.id;
+          chatHistory = mostRecent.messages || [];
+          updateCurrentChatTitle(mostRecent.title);
+          loadChatHistory();
+        } else {
+          createNewChat();
+        }
+        
+        updateChatHistoryDropdown();
+      }, 100);
+      
+      // Load response length preference
+      const savedLength = Storage.get('responseLength', 'medium');
+      setResponseLength(savedLength);
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const question = urlParams.get('question');
+      const chatInputEl = getChatInput();
+      if (question) {
+        const decodedQuestion = decodeURIComponent(question);
+        chatInputEl.value = decodedQuestion;
+        setTimeout(() => {
+          sendMessage();
+        }, 500);
+      } else {
+        if (chatInputEl) chatInputEl.focus();
+      }
+    });
   </script>
   <script src="/js/auth.js"></script>
   <script>
@@ -838,4 +1939,3 @@
   </script>
 </body>
 </html>
-
