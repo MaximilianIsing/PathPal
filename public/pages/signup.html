@@ -259,9 +259,16 @@
 
     /* Logo header - PC mode only */
     .auth-logo-header {
-      display: none;
+      display: none !important;
       text-align: center;
       margin-bottom: 2rem;
+    }
+
+    /* Hide on mobile screens */
+    @media (max-width: 767px) {
+      .auth-logo-header {
+        display: none !important;
+      }
     }
 
     .pc-mode-enabled .auth-logo-header {
@@ -269,6 +276,13 @@
       align-items: center;
       justify-content: center;
       gap: 1rem;
+    }
+
+    /* Ensure hidden on mobile even with PC mode class */
+    @media (max-width: 767px) {
+      .pc-mode-enabled .auth-logo-header {
+        display: none !important;
+      }
     }
 
     .auth-logo-header .logo-image {
