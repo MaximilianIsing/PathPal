@@ -112,33 +112,24 @@
   </nav>
 
   <main>
-    <div class="container">
+    <div class="container" style="overflow: visible;">
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Career & Salary Paths</h2>
 
-      <!-- Major Selector -->
-      <div class="card">
-        <h3>Select Your Intended Major</h3>
-        <div class="form-group">
-          <select id="career-major" onchange="loadCareerData()">
-            <option value="">Select a major</option>
-            <option value="Computer Science">Computer Science</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Business">Business</option>
-            <option value="Medicine/Pre-Med">Medicine/Pre-Med</option>
-            <option value="Law/Pre-Law">Law/Pre-Law</option>
-            <option value="Education">Education</option>
-            <option value="Psychology">Psychology</option>
-            <option value="Biology">Biology</option>
-            <option value="Chemistry">Chemistry</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Physics">Physics</option>
-            <option value="Economics">Economics</option>
-            <option value="Social Sciences">Social Sciences</option>
-            <option value="Political Science">Political Science</option>
-            <option value="Journalism">Journalism</option>
-            <option value="Art">Art</option>
-            <option value="Music">Music</option>
-          </select>
+      <!-- Job Search -->
+      <div style="position: relative; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--primary-green); margin-bottom: 1rem;">Search for a Career</h3>
+        <div class="form-group" style="position: relative;">
+          <input 
+            type="text" 
+            id="job-search-input" 
+            placeholder="Type to search for a job (e.g., Software Engineer, Accountant...)" 
+            autocomplete="off"
+            style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-color); border-radius: 8px; font-family: 'Arvo', serif; font-size: 1rem; box-sizing: border-box;"
+          />
+                    <div id="job-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 0.25rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--white); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 1000;"></div>
+        </div>
+        <div id="selected-job-info" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--light-mint); border-radius: 8px;">
+          <strong id="selected-job-name"></strong>
         </div>
       </div>
 
@@ -180,6 +171,213 @@
   <script src="/js/api.js"></script>
   <script src="/js/app.js"></script>
   <script>
+    let searchTimeout = null;
+    let selectedJob = null;
+    let searchResults = [];
+
+    async function searchJobs(query) {
+      const jobSearchResults = document.getElementById('job-search-results');
+      if (!jobSearchResults) return;
+      
+      if (!query || query.trim().length < 2) {
+        jobSearchResults.style.display = 'none';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/search-jobs?q=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+          throw new Error('Search failed');
+        }
+        searchResults = await response.json();
+        displaySearchResults(searchResults);
+      } catch (error) {
+        console.error('Error searching jobs:', error);
+        jobSearchResults.innerHTML = '<div style="padding: 0.5rem; color: var(--text-light);">Error searching jobs. Please try again.</div>';
+        jobSearchResults.style.display = 'block';
+      }
+    }
+
+    function displaySearchResults(results) {
+      const jobSearchResults = document.getElementById('job-search-results');
+      if (!jobSearchResults) return;
+      
+      if (results.length === 0) {
+        jobSearchResults.innerHTML = '<div style="padding: 0.5rem; color: var(--text-light);">No jobs found.</div>';
+        jobSearchResults.style.display = 'block';
+        return;
+      }
+
+      jobSearchResults.innerHTML = results.map(job => `
+        <div 
+          class="job-search-result-item" 
+          style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s;"
+          onmouseover="this.style.background='var(--light-mint)'"
+          onmouseout="this.style.background='var(--white)'"
+          onclick="selectJob('${job.code}', '${job.occupation.replace(/'/g, "\\'")}')"
+        >
+          <div style="font-weight: bold; color: var(--primary-green); margin-bottom: 0.25rem;">${escapeHtml(job.occupation)}</div>
+          <div style="font-size: 0.85rem; color: var(--text-light);">Code: ${escapeHtml(job.code)}</div>
+        </div>
+      `).join('');
+      jobSearchResults.style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function selectJob(code, occupation) {
+      selectedJob = { code, occupation };
+      const jobSearchInput = document.getElementById('job-search-input');
+      const jobSearchResults = document.getElementById('job-search-results');
+      const selectedJobInfo = document.getElementById('selected-job-info');
+      const selectedJobName = document.getElementById('selected-job-name');
+      
+      if (jobSearchInput) jobSearchInput.value = occupation;
+      if (jobSearchResults) jobSearchResults.style.display = 'none';
+      if (selectedJobInfo) selectedJobInfo.style.display = 'block';
+      if (selectedJobName) selectedJobName.textContent = occupation;
+      loadCareerLMI(code);
+    }
+
+    async function loadCareerLMI(onetCode) {
+      const container = document.getElementById('career-outcomes');
+      container.style.display = 'block';
+      
+      // Show loading state
+      document.getElementById('salary-chart').innerHTML = '<div style="padding: 1rem; text-align: center;">Loading career information...</div>';
+      document.getElementById('placement-rate').innerHTML = '';
+      document.getElementById('career-paths').innerHTML = '';
+
+      try {
+        // Get user's zipcode from profile for location-specific data
+        const profile = await UserProfile.get();
+        const location = profile.zipcode || 'US';
+        
+        const response = await fetch(`/api/career-lmi?onet_code=${encodeURIComponent(onetCode)}&location=${encodeURIComponent(location)}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch career information');
+        }
+        
+        const lmiData = await response.json();
+        displayCareerLMI(lmiData);
+      } catch (error) {
+        console.error('Error loading career LMI:', error);
+        document.getElementById('salary-chart').innerHTML = '<div style="padding: 1rem; color: var(--danger);">Error loading career information. Please try again.</div>';
+      }
+    }
+
+    function displayCareerLMI(data) {
+      const lmi = data.LMI || {};
+      const socInfo = data.SocInfo || {};
+      const socWageInfo = data.SocWageInfo || {};
+      const location = data.Location || '';
+
+      // Display salary information
+      const salaryContainer = document.getElementById('salary-chart');
+      let salaryHtml = '<div style="background: var(--light-mint); padding: 1rem; border-radius: 8px;">';
+      
+      if (lmi.AveragePayNational) {
+        const payValue = lmi.AveragePayNational.startsWith('$') ? lmi.AveragePayNational : `$${lmi.AveragePayNational}`;
+        salaryHtml += `<div style="margin-bottom: 0.5rem;"><strong>National Average:</strong> <span style="color: var(--primary-green); font-weight: bold;">${escapeHtml(payValue)}</span></div>`;
+      }
+      if (lmi.AveragePayState) {
+        const payValue = lmi.AveragePayState.startsWith('$') ? lmi.AveragePayState : `$${lmi.AveragePayState}`;
+        salaryHtml += `<div style="margin-bottom: 0.5rem;"><strong>State Average:</strong> <span style="color: var(--primary-green); font-weight: bold;">${escapeHtml(payValue)}</span></div>`;
+      }
+      if (lmi.AveragePayZip) {
+        const payValue = lmi.AveragePayZip.startsWith('$') ? lmi.AveragePayZip : `$${lmi.AveragePayZip}`;
+        salaryHtml += `<div style="margin-bottom: 0.5rem;"><strong>Local (Zip) Average:</strong> <span style="color: var(--primary-green); font-weight: bold;">${escapeHtml(payValue)}</span></div>`;
+      }
+      if (lmi.AveragePayCityState) {
+        const payValue = lmi.AveragePayCityState.startsWith('$') ? lmi.AveragePayCityState : `$${lmi.AveragePayCityState}`;
+        salaryHtml += `<div><strong>City Average:</strong> <span style="color: var(--primary-green); font-weight: bold;">${escapeHtml(payValue)}</span></div>`;
+      }
+      salaryHtml += '</div>';
+      salaryContainer.innerHTML = salaryHtml;
+
+      // Display career outlook
+      if (lmi.CareerOutLook) {
+        document.getElementById('placement-rate').innerHTML = `
+          <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <strong>Career Outlook:</strong>
+              <span style="color: var(--text-dark);">${escapeHtml(lmi.CareerOutLook)}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Display typical training
+      let careerPathsHtml = '';
+      if (lmi.TypicalTraining) {
+        careerPathsHtml = `
+          <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary-green);">
+            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">Typical Training & Education</h4>
+            <div style="color: var(--text-dark);">${escapeHtml(lmi.TypicalTraining)}</div>
+          </div>
+        `;
+      }
+
+      // Display SOC description if available
+      if (socInfo.SocDescription) {
+        const socCodeDisplay = socInfo.SocCode ? `<div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>` : '';
+        careerPathsHtml += `
+          <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid var(--primary-green);">
+            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${escapeHtml(socInfo.SocTitle || 'Job Description')}</h4>
+            ${socCodeDisplay}
+            <div style="color: var(--text-dark); line-height: 1.6;">${escapeHtml(socInfo.SocDescription)}</div>
+          </div>
+        `;
+      } else if (socInfo.SocTitle && !lmi.TypicalTraining) {
+        // If we have a title but no description and no training, still show the title
+        const socCodeDisplay = socInfo.SocCode ? `<div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">SOC Code: ${escapeHtml(socInfo.SocCode)}</div>` : '';
+        careerPathsHtml = `
+          <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary-green);">
+            <h4 style="color: var(--primary-green); margin-bottom: 0.5rem;">${escapeHtml(socInfo.SocTitle)}</h4>
+            ${socCodeDisplay}
+          </div>
+        `;
+      }
+      
+      document.getElementById('career-paths').innerHTML = careerPathsHtml;
+    }
+
+    // Set up job search input event listener
+    document.addEventListener('DOMContentLoaded', () => {
+      const jobSearchInput = document.getElementById('job-search-input');
+      const jobSearchResults = document.getElementById('job-search-results');
+      const selectedJobInfo = document.getElementById('selected-job-info');
+      const selectedJobName = document.getElementById('selected-job-name');
+      
+      if (jobSearchInput) {
+        jobSearchInput.addEventListener('input', (e) => {
+          const query = e.target.value.trim();
+          
+          clearTimeout(searchTimeout);
+          
+          if (query.length >= 2) {
+            searchTimeout = setTimeout(() => {
+              searchJobs(query);
+            }, 200); // Debounce 200ms for faster response
+          } else {
+            jobSearchResults.style.display = 'none';
+          }
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!jobSearchInput.contains(e.target) && !jobSearchResults.contains(e.target)) {
+            jobSearchResults.style.display = 'none';
+          }
+        });
+      }
+    });
+
+    // Legacy career data (keeping for backward compatibility if needed)
     const careerData = {
       'Computer Science': {
         medianSalary: 105000,
@@ -412,20 +610,12 @@
         </div>
       `).join('');
 
-      // Top industries
-      document.getElementById('top-industries').innerHTML = `
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-          ${data.industries.map(industry => `
-            <span class="badge badge-target" style="background: var(--light-mint); color: var(--primary-green);">
-              ${industry}
-            </span>
-          `).join('')}
-        </div>
-      `;
+      // Top industries and strong colleges sections removed
 
       // Strong colleges
       const collegesContainer = document.getElementById('strong-colleges');
-      collegesContainer.innerHTML = `
+      if (collegesContainer) {
+        collegesContainer.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
           ${data.strongColleges.map((college, index) => `
             <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--light-mint); border-radius: 8px;">

@@ -524,6 +524,63 @@ let allYouthPrograms = []; // All programs (for fallback or matching nearby zips
 let youthProgramsCacheTime = null;
 
 const OPPORTUNITIES_CSV_PATH = path.join(__dirname, 'opprotunities.csv');
+const ONETS_CSV_PATH = path.join(__dirname, 'ONETs.csv');
+
+// Read ONETs from CSV file
+function readONETsFromCSV() {
+  try {
+    if (!fs.existsSync(ONETS_CSV_PATH)) {
+      return [];
+    }
+
+    const csvText = fs.readFileSync(ONETS_CSV_PATH, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length <= 1) return []; // Only header or empty
+    
+    const jobs = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      // Parse CSV line (handling quoted values)
+      for (let j = 0; j < lines[i].length; j++) {
+        const char = lines[i][j];
+        
+        if (char === '"') {
+          if (inQuotes && lines[i][j + 1] === '"') {
+            current += '"';
+            j++; // Skip next quote
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim()); // Add last value
+      
+      if (values.length >= 3) {
+        jobs.push({
+          jobZone: values[0] || '',
+          code: values[1] || '',
+          occupation: values[2] || '',
+          dataLevel: values[3] || ''
+        });
+      }
+    }
+    
+    return jobs;
+  } catch (error) {
+    console.error('Error reading ONETs CSV:', error);
+    return [];
+  }
+}
 
 // Read opportunities from CSV file
 function readOpportunitiesFromCSV() {
@@ -769,6 +826,67 @@ function getYouthProgramsByZipcode(zipcode) {
   
   return Array.from(programMap.values());
 }
+
+// Search ONETs by occupation name
+app.get('/api/search-jobs', (req, res) => {
+  try {
+    const query = (req.query.q || '').toLowerCase().trim();
+    
+    if (!query) {
+      return res.json([]);
+    }
+    
+    const jobs = readONETsFromCSV();
+    const matches = jobs.filter(job => 
+      job.occupation.toLowerCase().includes(query) ||
+      job.code.toLowerCase().includes(query)
+    ).slice(0, 20); // Limit to 20 results
+    
+    res.json(matches);
+  } catch (error) {
+    console.error('Error searching jobs:', error);
+    res.status(500).json({ error: 'Failed to search jobs' });
+  }
+});
+
+// Get LMI (Labor Market Information) by ONET code
+app.get('/api/career-lmi', async (req, res) => {
+  try {
+    const onetCode = req.query.onet_code;
+    const location = req.query.location || 'US'; // Default to US if not provided
+    
+    if (!onetCode) {
+      return res.status(400).json({ error: 'onet_code parameter is required' });
+    }
+    
+    if (!CAREERONESTOP_USER_ID || !CAREERONESTOP_TOKEN) {
+      return res.status(500).json({ error: 'CareerOneStop API credentials not configured' });
+    }
+    
+    const url = `https://api.careeronestop.org/v1/lmi/${CAREERONESTOP_USER_ID}/${onetCode}/${encodeURIComponent(location)}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${CAREERONESTOP_TOKEN}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('CareerOneStop LMI API error:', response.status, errorText);
+      return res.status(response.status).json({ error: `API error: ${errorText}` });
+    }
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching career LMI:', error);
+    res.status(500).json({ error: 'Failed to fetch career information' });
+  }
+});
 
 // Get youth programs from CareerOneStop API (serves from cache)
 // Zipcode lookup endpoint
