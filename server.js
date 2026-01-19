@@ -1445,6 +1445,8 @@ const LOGINS_CSV_PATH = path.join(__dirname, 'storage', 'logins.csv');
 const PROFILE_PICTURES_CSV_PATH = path.join(__dirname, 'storage', 'profile_pictures.csv');
 // Password resets CSV file path
 const PASSWORD_RESETS_CSV_PATH = path.join(__dirname, 'storage', 'password_resets.csv');
+// Account deletion verification codes CSV file path
+const ACCOUNT_DELETION_CODES_CSV_PATH = path.join(__dirname, 'storage', 'account_deletion_codes.csv');
 // Counselor messages CSV file path
 const COUNSELOR_CSV_PATH = path.join(__dirname, 'storage', 'counselor.csv');
 // Transcript uploads CSV file path
@@ -1478,6 +1480,12 @@ if (!fs.existsSync(PROFILE_PICTURES_CSV_PATH)) {
 if (!fs.existsSync(PASSWORD_RESETS_CSV_PATH)) {
   const header = 'email,reset_code,expires_at,created_at\n';
   fs.writeFileSync(PASSWORD_RESETS_CSV_PATH, header, 'utf8');
+}
+
+// Initialize account deletion codes CSV if it doesn't exist
+if (!fs.existsSync(ACCOUNT_DELETION_CODES_CSV_PATH)) {
+  const header = 'email,user_id,deletion_code,expires_at,created_at\n';
+  fs.writeFileSync(ACCOUNT_DELETION_CODES_CSV_PATH, header, 'utf8');
 }
 
 // Initialize counselor messages CSV if it doesn't exist
@@ -2020,7 +2028,7 @@ function writeLogins(logins) {
 }
 
 // Sign up endpoint
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, password_hash } = req.body;
     
@@ -2074,6 +2082,69 @@ app.post('/api/auth/signup', (req, res) => {
         updated_at: now
       });
       writeAccounts(accounts);
+      
+      // Send welcome email
+      const userEmail = email.toLowerCase().trim();
+      const emailSubject = 'Welcome to Path Pal!';
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #0d8c79; margin: 0; font-size: 32px;">Welcome to Path Pal!</h1>
+            </div>
+            
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              Thank you for creating your Path Pal account! We're excited to help you navigate your college journey.
+            </p>
+            
+            <div style="background-color: #f0f8f6; border-left: 4px solid #0d8c79; padding: 15px; margin: 25px 0; border-radius: 4px;">
+              <h3 style="color: #0d8c79; margin-top: 0; font-size: 18px;">Get Started:</h3>
+              <ul style="color: #333; line-height: 1.8; margin: 10px 0;">
+                <li><strong>Complete your profile</strong> to receive personalized college recommendations</li>
+                <li><strong>Explore colleges</strong> with our AI-powered search and filtering</li>
+                <li><strong>Calculate your odds</strong> of admission to your dream schools</li>
+                <li><strong>Chat with our AI counselor</strong> for personalized guidance</li>
+                <li><strong>Plan your future</strong> with our 4-year planner and deadline tracker</li>
+              </ul>
+            </div>
+            
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              Path Pal offers everything you need for college planning:
+            </p>
+            
+            <ul style="color: #333; font-size: 15px; line-height: 1.8;">
+              <li>🎓 <strong>College Explorer</strong> - Search and save colleges</li>
+              <li>📊 <strong>Admission Odds Calculator</strong> - See your chances</li>
+              <li>💬 <strong>AI Chat Advisor</strong> - Get personalized advice</li>
+              <li>📝 <strong>Essay Assistant</strong> - AI-powered essay writing help</li>
+              <li>💰 <strong>Scholarships Finder</strong> - Find financial aid opportunities</li>
+              <li>📅 <strong>4-Year Planner</strong> - Track deadlines and tasks</li>
+              <li>💼 <strong>Career & Salary Paths</strong> - Explore your future</li>
+              <li>🏆 <strong>Activity Recommendations</strong> - Build your profile</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://pathpal.us" style="display: inline-block; background-color: #0d8c79; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; font-size: 16px;">Start Exploring</a>
+            </div>
+            
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              If you have any questions or need assistance, feel free to reach out to us at <a href="mailto:Team@pathpal.us" style="color: #0d8c79;">Team@pathpal.us</a>.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+            
+            <p style="color: #777; font-size: 14px; margin: 0; text-align: center;">
+              Path Pal Team<br>
+              <a href="https://pathpal.us" style="color: #0d8c79; text-decoration: none;">pathpal.us</a>
+            </p>
+          </div>
+        </div>
+      `;
+      
+      // Send email (don't wait for it to complete)
+      sendEmail(userEmail, emailSubject, emailHtml).catch(err => {
+        console.error('Failed to send welcome email:', err);
+      });
       
       res.json({ success: true, userId: userId });
     } else {
@@ -2171,6 +2242,66 @@ function writePasswordResets(resets) {
 function generateResetCode() {
   // Generate a 6-digit code
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Account deletion verification functions
+function readAccountDeletionCodes() {
+  try {
+    if (!fs.existsSync(ACCOUNT_DELETION_CODES_CSV_PATH)) {
+      return [];
+    }
+
+    const csvText = fs.readFileSync(ACCOUNT_DELETION_CODES_CSV_PATH, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return [];
+    }
+
+    const headers = parseCSVLine(lines[0]);
+    const codes = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length === headers.length) {
+        const code = {};
+        headers.forEach((header, index) => {
+          code[header] = values[index] || '';
+        });
+        codes.push(code);
+      }
+    }
+    
+    return codes;
+  } catch (error) {
+    console.error('Error reading account deletion codes CSV:', error);
+    return [];
+  }
+}
+
+function writeAccountDeletionCodes(codes) {
+  try {
+    const headers = ['email', 'user_id', 'deletion_code', 'expires_at', 'created_at'];
+    let csv = headers.join(',') + '\n';
+    
+    codes.forEach(code => {
+      const row = headers.map(header => {
+        let value = code[header] || '';
+        // Escape quotes and wrap in quotes if contains comma or newline
+        if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+          value = '"' + value.replace(/"/g, '""') + '"';
+        }
+        return value;
+      });
+      csv += row.join(',') + '\n';
+    });
+    
+    fs.writeFileSync(ACCOUNT_DELETION_CODES_CSV_PATH, csv, 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Error writing account deletion codes CSV:', error);
+    return false;
+  }
 }
 
 // Forgot password endpoint
@@ -2315,29 +2446,145 @@ app.get('/api/user/email', (req, res) => {
   }
 });
 
-// Delete account endpoint
-app.post('/api/account/delete', (req, res) => {
+// Send account deletion verification code
+app.post('/api/account/delete/send-code', async (req, res) => {
   try {
-    const { user_id, password_hash } = req.body;
+    const { user_id } = req.body;
     
-    if (!user_id || !password_hash) {
-      return res.status(400).json({ success: false, error: 'User ID and password are required' });
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'User ID is required' });
     }
 
-    // Verify password
-    const logins = readLogins();
-    const login = logins.find(l => l.user_id === user_id && l.password_hash === password_hash);
+    // Get user account
+    const accounts = readAccounts();
+    const userAccount = accounts.find(a => a.user_id === user_id);
     
-    if (!login) {
-      return res.status(401).json({ success: false, error: 'Invalid password' });
+    if (!userAccount) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
     }
+
+    // Get user email
+    const logins = readLogins();
+    const login = logins.find(l => l.user_id === user_id);
+    
+    if (!login || !login.email) {
+      return res.status(404).json({ success: false, error: 'Email not found' });
+    }
+
+    const userEmail = login.email;
+    const userName = userAccount.name || 'User';
+
+    // Generate deletion code
+    const deletionCode = generateResetCode();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+
+    // Store deletion code
+    const codes = readAccountDeletionCodes();
+    
+    // Remove any existing codes for this user
+    const filteredCodes = codes.filter(c => c.user_id !== user_id);
+    
+    // Add new deletion code
+    filteredCodes.push({
+      email: userEmail,
+      user_id: user_id,
+      deletion_code: deletionCode,
+      expires_at: expiresAt.toISOString(),
+      created_at: now.toISOString()
+    });
+    
+    writeAccountDeletionCodes(filteredCodes);
+
+    // Send email with deletion code
+    if (emailTransporter) {
+      const emailSubject = 'Path Pal Account Deletion Verification';
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #e74c3c; margin-top: 0;">⚠️ Account Deletion Request</h2>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              Hi ${userName},
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              You requested to permanently delete your Path Pal account. To confirm this action, please use the verification code below:
+            </p>
+            <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
+              <p style="color: #856404; margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">VERIFICATION CODE</p>
+              <p style="font-size: 32px; font-weight: bold; color: #e74c3c; margin: 0; letter-spacing: 4px;">${deletionCode}</p>
+            </div>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              <strong>This code will expire in 15 minutes.</strong>
+            </p>
+            <div style="background-color: #ffe6e6; border-left: 4px solid #e74c3c; padding: 15px; margin: 25px 0; border-radius: 4px;">
+              <p style="color: #c0392b; margin: 0; font-size: 14px; line-height: 1.6;">
+                <strong>Warning:</strong> Once deleted, your account cannot be recovered. All your data, including profile information, saved colleges, and messages will be permanently removed.
+              </p>
+            </div>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              If you did not request this deletion, please ignore this email and change your password immediately.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+            <p style="color: #777; font-size: 14px; margin: 0;">
+              Path Pal Team<br>
+              <a href="https://pathpal.us" style="color: #0d8c79; text-decoration: none;">pathpal.us</a>
+            </p>
+          </div>
+        </div>
+      `;
+
+      await sendEmail(userEmail, emailSubject, emailHtml);
+    } else {
+      console.error('Email transporter not configured - cannot send deletion code');
+      return res.status(500).json({ success: false, error: 'Email service is not configured. Please contact support.' });
+    }
+
+    res.json({ success: true, message: 'Verification code sent to your email' });
+  } catch (error) {
+    console.error('Send deletion code error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Verify code and delete account
+app.post('/api/account/delete/verify', async (req, res) => {
+  try {
+    const { user_id, code } = req.body;
+    
+    if (!user_id || !code) {
+      return res.status(400).json({ success: false, error: 'User ID and verification code are required' });
+    }
+
+    // Verify deletion code
+    const codes = readAccountDeletionCodes();
+    const deletionCode = codes.find(c => 
+      c.user_id === user_id && 
+      c.deletion_code === code.trim()
+    );
+
+    if (!deletionCode) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired verification code' });
+    }
+
+    // Check if code is expired
+    const now = new Date();
+    const expiresAt = new Date(deletionCode.expires_at);
+    if (now > expiresAt) {
+      return res.status(400).json({ success: false, error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    // Get user info before deletion for confirmation email
+    const accounts = readAccounts();
+    const userAccount = accounts.find(a => a.user_id === user_id);
+    const userEmail = deletionCode.email;
+    const userName = userAccount ? userAccount.name : 'User';
 
     // Remove from logins
+    const logins = readLogins();
     const filteredLogins = logins.filter(l => l.user_id !== user_id);
     writeLogins(filteredLogins);
 
     // Remove from accounts
-    const accounts = readAccounts();
     const filteredAccounts = accounts.filter(a => a.user_id !== user_id);
     writeAccounts(filteredAccounts);
 
@@ -2345,6 +2592,44 @@ app.post('/api/account/delete', (req, res) => {
     const pictures = readProfilePictures();
     const filteredPictures = pictures.filter(p => p.user_id !== user_id);
     writeProfilePictures(filteredPictures);
+
+    // Remove the used deletion code
+    const filteredCodes = codes.filter(c => c.user_id !== user_id);
+    writeAccountDeletionCodes(filteredCodes);
+
+    // Send confirmation email
+    if (userEmail) {
+      const emailSubject = 'Path Pal Account Deletion Confirmation';
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #0d8c79; margin-top: 0;">Account Deleted Successfully</h2>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              Hi ${userName},
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              This email confirms that your Path Pal account has been permanently deleted.
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              All your personal data, profile information, and saved content have been removed from our system.
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">
+              If you did not request this deletion, please contact our  team immediately at <a href="mailto:Team@pathpal.us" style="color: #0d8c79;">Team@pathpal.us</a>.
+            </p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+              Thank you for using Path Pal. We hope to see you again in the future!
+            </p>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+            <p style="color: #777; font-size: 14px; margin: 0;">
+              Path Pal Team<br>
+              <a href="https://pathpal.us" style="color: #0d8c79; text-decoration: none;">pathpal.us</a>
+            </p>
+          </div>
+        </div>
+      `;
+      
+      await sendEmail(userEmail, emailSubject, emailHtml);
+    }
 
     res.json({ success: true, message: 'Account deleted successfully' });
   } catch (error) {
@@ -2611,6 +2896,22 @@ app.listen(PORT, '0.0.0.0', async () => {
     }
   } else {
     console.log('✓ Password resets storage initialized (empty)');
+  }
+  
+  // Initialize account deletion codes storage
+  if (fs.existsSync(ACCOUNT_DELETION_CODES_CSV_PATH)) {
+    const codes = readAccountDeletionCodes();
+    // Clean up expired codes on startup
+    const now = new Date();
+    const activeCodes = codes.filter(c => new Date(c.expires_at) > now);
+    if (activeCodes.length < codes.length) {
+      writeAccountDeletionCodes(activeCodes);
+      console.log(`✓ Account deletion codes storage initialized with ${activeCodes.length} active code(s) (cleaned up ${codes.length - activeCodes.length} expired)`);
+    } else {
+      console.log(`✓ Account deletion codes storage initialized with ${codes.length} active code(s)`);
+    }
+  } else {
+    console.log('✓ Account deletion codes storage initialized (empty)');
   }
 });
 

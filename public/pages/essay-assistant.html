@@ -207,6 +207,18 @@
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Essay Assistant</h2>
       <p style="color: var(--text-light); margin-bottom: 1.5rem;">Generate a new essay or refine an existing one using AI powered by your profile information.</p>
 
+      <!-- Profile Incomplete Warning -->
+      <div id="profile-warning" style="display: none; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <img src="/media/icons/Warning256x256.png" alt="Warning" style="width: 24px; height: 24px;">
+          <strong style="color: #856404;">Incomplete Profile</strong>
+        </div>
+        <p style="color: #856404; margin: 0; font-size: 0.9rem;">
+          Your profile is missing some information. Essays may not be fully personalized. 
+          <a href="/profile.html" style="color: #856404; text-decoration: underline; font-weight: bold;">Complete your profile</a> for better results.
+        </p>
+      </div>
+
       <!-- Mode Selector -->
       <div class="mode-selector">
         <button class="mode-button active" id="generate-mode" onclick="switchMode('generate')">Generate Essay</button>
@@ -451,9 +463,6 @@
         
         essayPrompt += `Use the following student profile information to personalize the essay:\n`;
         essayPrompt += `- Name: ${profile.name || 'Not provided'}\n`;
-        essayPrompt += `- Grade: ${profile.grade || 'Not provided'}\n`;
-        if (profile.gpa) essayPrompt += `- GPA: ${profile.gpa}\n`;
-        if (profile.sat) essayPrompt += `- SAT Score: ${profile.sat}\n`;
         if (profile.act) essayPrompt += `- ACT Score: ${profile.act}\n`;
         if (profile.majors && profile.majors.length > 0) {
           essayPrompt += `- Intended Majors: ${profile.majors.join(', ')}\n`;
@@ -619,6 +628,9 @@
         if (profile.careerGoals) {
           refinePrompt += `- Career Goals: ${profile.careerGoals}\n`;
         }
+        if (profile.activities && profile.activities.length > 0) {
+          refinePrompt += `- Activities/Extracurriculars: ${profile.activities.join(', ')}\n`;
+        }
         
         refinePrompt += `\n\nIMPORTANT: Provide your response in the following format:\n\n`;
         refinePrompt += `---REFINED ESSAY---\n[The complete refined essay here]\n---END ESSAY---\n\n`;
@@ -769,6 +781,30 @@
   </script>
   <script src="/js/auth.js"></script>
   <script>
+    // Check profile completeness on page load
+    async function checkProfileCompleteness() {
+      try {
+        const profile = await UserProfile.get();
+        const profileWarning = document.getElementById('profile-warning');
+        
+        if (profile && profileWarning) {
+          // Check if key profile fields are missing
+          const isMissingKey = !profile.majors || profile.majors.length === 0 || 
+                              !profile.careerGoals || 
+                              !profile.activities || profile.activities.length === 0;
+          
+          if (isMissingKey) {
+            profileWarning.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.log('Could not check profile completeness:', err);
+      }
+    }
+    
+    // Call on page load
+    checkProfileCompleteness();
+    
     function handleSignOut() {
       signOut();
       window.location.href = '/pages/login.html';

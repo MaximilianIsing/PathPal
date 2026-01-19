@@ -162,12 +162,24 @@
         <h3 style="color: #e74c3c;">Delete Account</h3>
         <p style="color: var(--text-light); margin-bottom: 1rem;">Permanently delete your account and all associated data. This action cannot be undone.</p>
         
-        <div class="form-group">
-          <label>Enter your password to confirm</label>
-          <input type="password" id="delete-password" placeholder="Enter your password">
+        <!-- Step 1: Send Verification Code -->
+        <div id="delete-step-1" style="display: block;">
+          <p style="color: var(--text-dark); margin-bottom: 1rem; font-size: 0.9rem;">We'll send a verification code to your email to confirm this action.</p>
+          <button class="btn-primary" onclick="sendDeletionCode()" id="send-deletion-code-btn" style="width: 100%; background: #e74c3c; border-color: #e74c3c;">Send Verification Code</button>
         </div>
         
-        <button class="btn-primary" onclick="handleDeleteAccount()" style="width: 100%; margin-top: 1rem; background: #e74c3c; border-color: #e74c3c;">Delete Account</button>
+        <!-- Step 2: Enter Code and Confirm -->
+        <div id="delete-step-2" style="display: none;">
+          <p style="color: var(--text-dark); margin-bottom: 1rem; font-size: 0.9rem; background: #fff3cd; padding: 0.75rem; border-radius: 6px; border: 1px solid #ffc107;">
+            ⚠️ A verification code has been sent to your email. Enter it below to confirm deletion.
+          </p>
+          <div class="form-group">
+            <label>Verification Code</label>
+            <input type="text" id="deletion-code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; font-size: 1.2rem; letter-spacing: 4px; font-weight: bold;">
+          </div>
+          <button class="btn-primary" onclick="verifyAndDelete()" id="verify-delete-btn" style="width: 100%; margin-top: 1rem; background: #e74c3c; border-color: #e74c3c;">Confirm Deletion</button>
+          <button class="btn-primary" onclick="cancelDeletion()" style="width: 100%; margin-top: 0.5rem; background: #95a5a6; border-color: #95a5a6;">Cancel</button>
+        </div>
       </div>
     </div>
   </main>
@@ -325,67 +337,112 @@
       }
     }
 
-    async function handleDeleteAccount() {
-      const password = document.getElementById('delete-password').value;
-      
-      if (!password) {
-        showNotification('Please enter your password to confirm', 'error');
-        return;
-      }
-
-      // Confirm deletion
-      const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.');
+    async function sendDeletionCode() {
+      // Confirm user wants to proceed
+      const confirmed = confirm('⚠️ Are you sure you want to delete your account?\n\nThis action cannot be undone and all your data will be permanently deleted.\n\nClick OK to receive a verification code via email.');
       if (!confirmed) {
         return;
       }
 
-      // Get user email
-      const email = await getUserEmail();
-      if (!email) {
-        showNotification('Unable to retrieve your email. Please contact support.', 'error');
+      const userId = getCurrentUserId();
+      if (!userId) {
+        showNotification('You must be logged in to delete your account', 'error');
         return;
       }
 
-      // Verify password by attempting to sign in
-      const signInResult = await signIn(email, password);
-      if (!signInResult.success) {
-        showNotification('Password is incorrect', 'error');
-        return;
-      }
+      const btn = document.getElementById('send-deletion-code-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
 
-      // Delete account
       try {
-        const userId = getCurrentUserId();
-        if (!userId) {
-          showNotification('You must be logged in to delete your account', 'error');
-          return;
+        const response = await fetch('/api/account/delete/send-code', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ user_id: userId })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification('Verification code sent to your email', 'success');
+          // Switch to step 2
+          document.getElementById('delete-step-1').style.display = 'none';
+          document.getElementById('delete-step-2').style.display = 'block';
+          document.getElementById('deletion-code').focus();
+        } else {
+          showNotification(result.error || 'Failed to send verification code', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Send Verification Code';
         }
-        const response = await fetch('/api/account/delete', {
+      } catch (error) {
+        console.error('Error sending deletion code:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Send Verification Code';
+      }
+    }
+
+    async function verifyAndDelete() {
+      const code = document.getElementById('deletion-code').value;
+      
+      if (!code || code.trim().length !== 6) {
+        showNotification('Please enter the 6-digit verification code', 'error');
+        return;
+      }
+
+      const userId = getCurrentUserId();
+      if (!userId) {
+        showNotification('You must be logged in to delete your account', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('verify-delete-btn');
+      btn.disabled = true;
+      btn.textContent = 'Deleting...';
+
+      try {
+        const response = await fetch('/api/account/delete/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             user_id: userId,
-            password_hash: await hashPassword(password)
+            code: code.trim()
           })
         });
 
         const result = await response.json();
         if (result.success) {
-          showNotification('Account deleted successfully', 'success');
+          showNotification('Account deleted successfully. Goodbye!', 'success');
           // Sign out and redirect to login
           signOut();
           setTimeout(() => {
             window.location.href = '/pages/login.html';
-          }, 1000);
+          }, 1500);
         } else {
           showNotification(result.error || 'Failed to delete account', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Confirm Deletion';
         }
       } catch (error) {
         console.error('Error deleting account:', error);
         showNotification('An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Confirm Deletion';
       }
+    }
+
+    function cancelDeletion() {
+      // Reset UI back to step 1
+      document.getElementById('deletion-code').value = '';
+      document.getElementById('delete-step-2').style.display = 'none';
+      document.getElementById('delete-step-1').style.display = 'block';
+      const btn = document.getElementById('send-deletion-code-btn');
+      btn.disabled = false;
+      btn.textContent = 'Send Verification Code';
+      showNotification('Account deletion cancelled', 'info');
     }
 
     function handleSignOut() {
