@@ -69,7 +69,6 @@
       <div class="header-nav" style="display: none;">
         <nav class="header-nav-menu">
           <ul>
-            <li><a href="/index.html"><img src="/media/icons/Home256x256.png" alt="Home" class="header-nav-icon"></a></li>
             <li><a href="/profile.html"><img src="/media/icons/Profile256x256.png" alt="My Profile" class="header-nav-icon"></a></li>
             <li><a href="/odds.html"><img src="/media/icons/Odds256x256.png" alt="Admissions Odds" class="header-nav-icon"></a></li>
             <li><a href="/simulator.html"><img src="/media/icons/WhatIf256x256.png" alt="What If Simulator" class="header-nav-icon"></a></li>
@@ -130,7 +129,7 @@
       </div>
 
       <!-- Reset Password Section -->
-      <div class="card" style="margin-bottom: 1.5rem;">
+      <div id="reset-password-section" class="card" style="margin-bottom: 1.5rem;">
         <h3>Reset Password</h3>
         <p style="color: var(--text-light); margin-bottom: 1rem;">Change your account password using an email verification code</p>
         
@@ -159,7 +158,7 @@
       </div>
 
       <!-- Delete Account Section -->
-      <div class="card" style="margin-bottom: 1.5rem; border: 2px solid #e74c3c;">
+      <div id="delete-account-section" class="card" style="margin-bottom: 1.5rem; border: 2px solid #e74c3c;">
         <h3 style="color: #e74c3c;">Delete Account</h3>
         <p style="color: var(--text-light); margin-bottom: 1rem;">Permanently delete your account and all associated data. This action cannot be undone.</p>
         
@@ -186,10 +185,15 @@
     // Load and display user email on page load
     document.addEventListener('DOMContentLoaded', async () => {
       const emailDisplay = document.getElementById('user-email-display');
+      const resetPasswordSection = document.getElementById('reset-password-section');
+      const deleteAccountSection = document.getElementById('delete-account-section');
       
       // Check if user is a guest
       if (isGuest()) {
         emailDisplay.textContent = 'Guest User';
+        // Hide reset password and delete account sections for guests
+        if (resetPasswordSection) resetPasswordSection.style.display = 'none';
+        if (deleteAccountSection) deleteAccountSection.style.display = 'none';
         return;
       }
       
@@ -199,6 +203,9 @@
         emailDisplay.textContent = email;
       } else {
         emailDisplay.textContent = 'Unable to load email';
+        // Hide reset password and delete account sections if email fails to load
+        if (resetPasswordSection) resetPasswordSection.style.display = 'none';
+        if (deleteAccountSection) deleteAccountSection.style.display = 'none';
       }
     });
 

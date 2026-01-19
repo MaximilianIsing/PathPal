@@ -436,6 +436,15 @@ header {
   min-height: auto;
 }
 
+.logo a {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.logo a:hover {
+  transform: translateY(-2px);
+}
+
 .logo img {
   width: 32px;
   height: 32px;
@@ -1186,6 +1195,6 @@ footer p {
 }
 
 .pc-mode-enabled header .container {
-  max-width: 805px;
+  max-width: 750px;
 }
 
