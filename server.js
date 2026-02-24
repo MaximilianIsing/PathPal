@@ -1451,6 +1451,8 @@ const ACCOUNT_DELETION_CODES_CSV_PATH = path.join(__dirname, 'storage', 'account
 const COUNSELOR_CSV_PATH = path.join(__dirname, 'storage', 'counselor.csv');
 // Transcript uploads CSV file path
 const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(__dirname, 'storage', 'transcript_uploads.csv');
+// Apple App Store subscription events log (when users subscribe/cancel)
+const APPLE_SUBSCRIPTION_EVENTS_PATH = path.join(__dirname, 'storage', 'apple_subscription_events.csv');
 
 // Ensure storage directory exists
 const storageDir = path.join(__dirname, 'storage');
@@ -2471,6 +2473,87 @@ app.get('/api/user/subscription', (req, res) => {
   } catch (error) {
     console.error('Get user subscription error:', error);
     res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Apple App Store Server Notifications V2 webhook — use this URL in App Store Connect as your production server URL
+// e.g. https://pathpal.us/api/apple/subscription-notification
+// Receives signedPayload (JWS), logs subscription events, and updates account subscription when appAccountToken = user_id
+function decodeJwsPayload(jwsString) {
+  if (!jwsString || typeof jwsString !== 'string') return null;
+  const parts = jwsString.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
+    return JSON.parse(payloadJson);
+  } catch (e) {
+    return null;
+  }
+}
+
+const APPLE_NOTIFICATION_TYPES_ACTIVE = new Set(['SUBSCRIBED', 'DID_RENEW', 'DID_CHANGE_RENEWAL_PREFERENCE', 'OFFER_REDEEMED', 'GRACE_PERIOD_EXPIRED']);
+const APPLE_NOTIFICATION_TYPES_INACTIVE = new Set(['EXPIRED', 'REVOKE', 'REFUND']);
+
+app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
+  // Always respond 200 quickly so Apple doesn't retry
+  res.status(200).send();
+  const signedPayload = req.body && req.body.signedPayload;
+  if (!signedPayload) {
+    console.warn('Apple subscription webhook: missing signedPayload');
+    return;
+  }
+  try {
+    const payload = decodeJwsPayload(signedPayload);
+    if (!payload) {
+      console.warn('Apple subscription webhook: could not decode signedPayload');
+      return;
+    }
+    const notificationType = payload.notificationType || '';
+    const subtype = payload.subtype || '';
+    const notificationUUID = payload.notificationUUID || '';
+    const data = payload.data || {};
+    let appAccountToken = null;
+    let originalTransactionId = null;
+    if (data.signedTransactionInfo) {
+      const txPayload = decodeJwsPayload(data.signedTransactionInfo);
+      if (txPayload) {
+        appAccountToken = txPayload.appAccountToken || null;
+        originalTransactionId = txPayload.originalTransactionId || null;
+      }
+    }
+    const now = new Date().toISOString();
+    // Log event to CSV so you can see when users subscribe
+    const eventsHeader = 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n';
+    const eventRow = [
+      now,
+      notificationUUID,
+      notificationType,
+      subtype,
+      appAccountToken || '',
+      originalTransactionId || ''
+    ].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+    if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+      fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
+    }
+    fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+    console.log(`Apple subscription event: ${notificationType} ${subtype} appAccountToken=${appAccountToken || 'none'}`);
+    // Update account subscription if we have a user id (appAccountToken)
+    if (appAccountToken && typeof appAccountToken === 'string') {
+      const userId = appAccountToken.trim();
+      const account = getAccount(userId);
+      if (account) {
+        if (APPLE_NOTIFICATION_TYPES_ACTIVE.has(notificationType)) {
+          saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+          console.log(`Subscription activated for user ${userId}`);
+        } else if (APPLE_NOTIFICATION_TYPES_INACTIVE.has(notificationType)) {
+          saveAccount({ user_id: userId, subscription: false, subscribed_at: account.subscribed_at || '' });
+          console.log(`Subscription deactivated for user ${userId}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Apple subscription webhook error:', error);
   }
 });
 
