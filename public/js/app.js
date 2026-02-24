@@ -16,6 +16,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// On mobile, switch app icon to Pro icon when user has an active subscription
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!isMobileDevice()) return;
+  if (typeof getCurrentUserId !== 'function') return;
+  const userId = getCurrentUserId();
+  if (!userId || (typeof isGuest === 'function' && isGuest())) return;
+  try {
+    const res = await fetch('/api/user/subscription?user_id=' + encodeURIComponent(userId));
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.subscription) return;
+    const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+    if (appleIcon) appleIcon.href = '/media/AppIconPro.png';
+    const icon = document.querySelector('link[rel="icon"]');
+    if (icon) icon.href = '/media/AppIconPro.png';
+  } catch (e) {
+    // ignore
+  }
+});
+
 // Detect if running as PWA (standalone mode)
 function isStandaloneMode() {
   // Check for standalone mode

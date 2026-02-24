@@ -8,6 +8,11 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/style.css">
   <meta name="theme-color" content="#0d8c79">
+  <style>
+    .pro-signup-section .pro-subscribe-btn:hover {
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 215, 0, 0.5);
+    }
+  </style>
   <script>
     // Check PC mode and hide desktop message if enabled
     (async function() {
@@ -107,12 +112,40 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.21
+      v1.22
     </div>
   </nav>
 
   <main>
     <div class="container">
+      <!-- Message for guests: must create account or log in to get Pro -->
+      <section class="pro-guest-message" style="display: none; background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #8b6914 100%); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; color: #1a1a1a; box-shadow: 0 4px 12px rgba(184, 134, 11, 0.35);">
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <img src="/media/pro/Pro256x256.png" alt="" style="width: 28px; height: 28px;" aria-hidden="true">
+          Path Pal Scholar Pro
+        </h3>
+        <p style="margin: 0; opacity: 0.95; font-size: 0.95rem; line-height: 1.4;">
+          Create an account or log in to subscribe to Path Pal Scholar Pro and unlock the full experience.
+        </p>
+      </section>
+
+      <!-- Path Pal Scholar Pro Signup (hidden for guests and existing subscribers; shown only after JS confirms) -->
+      <section class="pro-signup-section" style="display: none; background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #8b6914 100%); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; color: #1a1a1a; box-shadow: 0 4px 12px rgba(184, 134, 11, 0.35);">
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <img src="/media/pro/Pro256x256.png" alt="" style="width: 28px; height: 28px;" aria-hidden="true">
+          Path Pal Scholar Pro
+        </h3>
+        <p style="margin: 0 0 0.75rem 0; opacity: 0.95; font-size: 0.95rem; line-height: 1.4;">
+          Unlock the full experience: unlimited AI counselor messages, advanced admissions insights, priority support, and more tools to help you get into your dream school.
+        </p>
+        <p style="margin: 0 0 1rem 0; font-weight: 600; font-size: 1.1rem;">
+          $4.99/month
+        </p>
+        <button type="button" class="btn btn-primary pro-subscribe-btn" id="pro-subscribe-btn" style="background: #fff; color: #8b6914; font-weight: 600; padding: 0.6rem 1.25rem; border: none; border-radius: 8px; cursor: pointer;">
+          Subscribe
+        </button>
+      </section>
+
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Account Settings</h2>
 
       <!-- User Email Display -->
@@ -194,18 +227,21 @@
   <script src="/js/app.js"></script>
   <script src="/js/auth.js"></script>
   <script>
-    // Load and display user email on page load
+    // Load and display user email on page load; hide Pro signup if already subscribed
     document.addEventListener('DOMContentLoaded', async () => {
       const emailDisplay = document.getElementById('user-email-display');
       const resetPasswordSection = document.getElementById('reset-password-section');
       const deleteAccountSection = document.getElementById('delete-account-section');
+      const proSignupSection = document.querySelector('.pro-signup-section');
+      const proGuestMessage = document.querySelector('.pro-guest-message');
       
-      // Check if user is a guest
+      // Check if user is a guest — show message that they must create account or log in to get Pro
       if (isGuest()) {
         emailDisplay.textContent = 'Guest User';
-        // Hide reset password and delete account sections for guests
         if (resetPasswordSection) resetPasswordSection.style.display = 'none';
         if (deleteAccountSection) deleteAccountSection.style.display = 'none';
+        if (proGuestMessage) proGuestMessage.style.display = 'block';
+        // pro-signup-section stays hidden
         return;
       }
       
@@ -215,9 +251,24 @@
         emailDisplay.textContent = email;
       } else {
         emailDisplay.textContent = 'Unable to load email';
-        // Hide reset password and delete account sections if email fails to load
         if (resetPasswordSection) resetPasswordSection.style.display = 'none';
         if (deleteAccountSection) deleteAccountSection.style.display = 'none';
+      }
+      
+      // Show subscription section only for logged-in users who are not already subscribers
+      try {
+        const userId = getCurrentUserId();
+        if (userId && proSignupSection) {
+          const res = await fetch(`/api/user/subscription?user_id=${encodeURIComponent(userId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (!data.subscription) {
+              proSignupSection.style.display = 'block';
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching subscription status:', e);
       }
     });
 

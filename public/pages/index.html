@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="v1.21">
+  <meta name="description" content="v1.22">
   <title>Path Pal - Home</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/media/logo/logo128x128.png">
@@ -79,7 +79,7 @@
     </div>
     <div class="desktop-footer-bar">
       <span class="desktop-footer-left">© Path Pal 2025</span>
-      <span class="desktop-footer-right">v1.21</span>
+      <span class="desktop-footer-right">v1.22</span>
     </div>
   </div>
 
@@ -153,7 +153,7 @@
       <li><a href="https://forms.gle/ULMYUSDifpanJ9KMA" target="_blank"><img src="/media/icons/Feedback256x256.png" alt="Feedback" class="nav-icon"> Feedback</a></li>
     </ul>
     <div style="padding: 1rem 0.75rem; border-top: 1px solid var(--border-color); margin-top: auto; text-align: center; color: var(--text-light); font-size: 0.75rem;">
-      v1.21
+      v1.22
     </div>
   </nav>
 
@@ -291,6 +291,23 @@
           <h3>Feedback</h3>
           <p>Share your thoughts</p>
         </a>
+      </section>
+
+      <!-- Divider -->
+      <div style="border-top: 1px solid var(--border-color); margin: 1.5rem 0;"></div>
+
+      <!-- Scholar Pro promo row (shown only when user has not subscribed) -->
+      <section id="scholar-pro-home-row" style="display: none; background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #8b6914 100%); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 0; color: #1a1a1a; box-shadow: 0 4px 12px rgba(184, 134, 11, 0.35);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 180px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+              <img src="/media/pro/Pro256x256.png" alt="" style="width: 24px; height: 24px;" aria-hidden="true">
+              <strong style="font-size: 1.05rem;">Path Pal Scholar Pro</strong>
+            </div>
+            <p style="margin: 0; font-size: 0.9rem; opacity: 0.95; line-height: 1.35;">Unlock unlimited AI counselor messages, advanced insights, and more for only $4.99/month.</p>
+          </div>
+          <button type="button" onclick="window.location.href='/account.html'" style="flex-shrink: 0; background: #fff; color: #8b6914; font-weight: 600; padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem;">Show Me</button>
+        </div>
       </section>
 
       <!-- Divider -->
@@ -1135,6 +1152,28 @@
       signOut();
       window.location.href = '/pages/login.html';
     }
+
+    // Show Scholar Pro row only when user has not subscribed (guests or logged-in non-subscribers)
+    document.addEventListener('DOMContentLoaded', async () => {
+      const row = document.getElementById('scholar-pro-home-row');
+      if (!row) return;
+      if (typeof isGuest !== 'function' || typeof getCurrentUserId !== 'function') return;
+      if (isGuest()) {
+        row.style.display = 'block';
+        return;
+      }
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      try {
+        const res = await fetch('/api/user/subscription?user_id=' + encodeURIComponent(userId));
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.subscription) row.style.display = 'block';
+        }
+      } catch (e) {
+        console.error('Error checking subscription:', e);
+      }
+    });
   </script>
 </body>
 </html>

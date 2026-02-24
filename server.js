@@ -1460,7 +1460,7 @@ if (!fs.existsSync(storageDir)) {
 
 // Initialize accounts CSV if it doesn't exist
 if (!fs.existsSync(ACCOUNTS_CSV_PATH)) {
-  const header = 'user_id,name,grade,academic_type,gpa,weighted,academic_courses,test_optional,sat,act,psat,majors,ap_courses,activities,interests,career_goals,rating,created_at,updated_at\n';
+  const header = 'user_id,name,grade,zipcode,academic_type,gpa,weighted,academic_courses,test_optional,sat,act,psat,majors,ap_courses,activities,interests,career_goals,rating,subscription,subscribed_at,created_at,updated_at\n';
   fs.writeFileSync(ACCOUNTS_CSV_PATH, header, 'utf8');
 }
 
@@ -1632,6 +1632,10 @@ function readAccounts() {
           account.rating = null;
         }
         
+        // Parse subscription boolean (default false)
+        account.subscription = account.subscription === true || account.subscription === 'true';
+        if (!account.subscribed_at) account.subscribed_at = '';
+        
         accounts.push(account);
     }
     
@@ -1645,7 +1649,7 @@ function readAccounts() {
 // Write accounts to CSV
 function writeAccounts(accounts) {
   try {
-    const headers = ['user_id', 'name', 'grade', 'zipcode', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'created_at', 'updated_at'];
+    const headers = ['user_id', 'name', 'grade', 'zipcode', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'subscription', 'subscribed_at', 'created_at', 'updated_at'];
     
     let csv = headers.join(',') + '\n';
     
@@ -1678,8 +1682,8 @@ function writeAccounts(accounts) {
         }
         
         // Handle boolean
-        if (header === 'weighted' || header === 'test_optional') {
-          value = value === true ? 'true' : 'false';
+        if (header === 'weighted' || header === 'test_optional' || header === 'subscription') {
+          value = value === true || value === 'true' ? 'true' : 'false';
         }
         
         return escapeCSV(value);
@@ -1737,6 +1741,8 @@ function saveAccount(accountData) {
       interests: accountData.interests || [],
       career_goals: accountData.career_goals || accountData.careerGoals || '',
       rating: accountData.rating || null,
+      subscription: accountData.subscription === true || accountData.subscription === 'true',
+      subscribed_at: accountData.subscribed_at || '',
       created_at: now,
       updated_at: now
     });
@@ -2078,6 +2084,8 @@ app.post('/api/auth/signup', async (req, res) => {
         interests: [],
         career_goals: '',
         rating: null,
+        subscription: false,
+        subscribed_at: '',
         created_at: now,
         updated_at: now
       });
@@ -2442,6 +2450,26 @@ app.get('/api/user/email', (req, res) => {
     }
   } catch (error) {
     console.error('Get user email error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Get subscription status for account page (Apple App Store handling; subscription stored in accounts.csv)
+app.get('/api/user/subscription', (req, res) => {
+  try {
+    const { user_id } = req.query;
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'User ID is required' });
+    }
+    const account = getAccount(user_id);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const subscription = account.subscription === true || account.subscription === 'true';
+    const subscribed_at = account.subscribed_at || null;
+    res.json({ success: true, subscription, subscribed_at });
+  } catch (error) {
+    console.error('Get user subscription error:', error);
     res.status(500).json({ success: false, error: 'An error occurred' });
   }
 });
