@@ -2493,6 +2493,11 @@ function decodeJwsPayload(jwsString) {
 const APPLE_NOTIFICATION_TYPES_ACTIVE = new Set(['SUBSCRIBED', 'DID_RENEW', 'DID_CHANGE_RENEWAL_PREFERENCE', 'OFFER_REDEEMED', 'GRACE_PERIOD_EXPIRED']);
 const APPLE_NOTIFICATION_TYPES_INACTIVE = new Set(['EXPIRED', 'REVOKE', 'REFUND']);
 
+// Apple sends POST only; GET is from crawlers or URL checks - return 405 so it's clear
+app.get('/api/apple/subscription-notification', (req, res) => {
+  res.status(405).set('Allow', 'POST').send('Method Not Allowed: use POST with signedPayload (App Store Server Notifications V2).');
+});
+
 app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
   // Always respond 200 quickly so Apple doesn't retry
   res.status(200).send();
