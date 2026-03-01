@@ -2509,8 +2509,27 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
     signedPayload = req.body;
   }
   if (!signedPayload) {
-    const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
-    console.warn('Apple subscription webhook: missing signedPayload. Body type:', typeof req.body, 'Keys:', keys.length ? keys.join(', ') : '(none)');
+    // Alternative: app sends transactionID, originalTransactionID, productID (e.g. after StoreKit purchase) with user_id/userID/appAccountToken
+    const b = req.body || {};
+    const userId = (b.user_id || b.userID || b.appAccountToken || '').toString().trim();
+    const hasTx = b.transactionID || b.originalTransactionID || b.productID;
+    if (hasTx && userId) {
+      const account = getAccount(userId);
+      if (account) {
+        const now = new Date().toISOString();
+        saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+        const eventsHeader = 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n';
+        const eventRow = [now, '', 'APP_REPORTED', '', userId, (b.originalTransactionID || b.transactionID || '') + ''].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+        if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+          fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
+        }
+        fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+        console.log('Apple subscription webhook: granted Pro from app-reported purchase for user', userId);
+      }
+    } else {
+      const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
+      console.warn('Apple subscription webhook: missing signedPayload. Body type:', typeof req.body, 'Keys:', keys.length ? keys.join(', ') : '(none)');
+    }
     return;
   }
   try {
