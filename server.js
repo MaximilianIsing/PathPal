@@ -1438,25 +1438,22 @@ app.get('/api/colleges', async (req, res) => {
   }
 });
 
-// Accounts CSV file path
-const ACCOUNTS_CSV_PATH = path.join(__dirname, 'storage', 'accounts.csv');
-// Logins CSV file path
-const LOGINS_CSV_PATH = path.join(__dirname, 'storage', 'logins.csv');
-// Profile pictures CSV file path
-const PROFILE_PICTURES_CSV_PATH = path.join(__dirname, 'storage', 'profile_pictures.csv');
-// Password resets CSV file path
-const PASSWORD_RESETS_CSV_PATH = path.join(__dirname, 'storage', 'password_resets.csv');
-// Account deletion verification codes CSV file path
-const ACCOUNT_DELETION_CODES_CSV_PATH = path.join(__dirname, 'storage', 'account_deletion_codes.csv');
-// Counselor messages CSV file path
-const COUNSELOR_CSV_PATH = path.join(__dirname, 'storage', 'counselor.csv');
-// Transcript uploads CSV file path
-const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(__dirname, 'storage', 'transcript_uploads.csv');
-// Apple App Store subscription events log (when users subscribe/cancel)
-const APPLE_SUBSCRIPTION_EVENTS_PATH = path.join(__dirname, 'storage', 'apple_subscription_events.csv');
+// Storage directory: use STORAGE_PATH env var for persistent disk on Render (e.g. mount path /data or /storage)
+const storageDir = process.env.STORAGE_PATH
+  ? path.resolve(process.env.STORAGE_PATH)
+  : path.join(__dirname, 'storage');
+
+// All CSV/file paths under storage
+const ACCOUNTS_CSV_PATH = path.join(storageDir, 'accounts.csv');
+const LOGINS_CSV_PATH = path.join(storageDir, 'logins.csv');
+const PROFILE_PICTURES_CSV_PATH = path.join(storageDir, 'profile_pictures.csv');
+const PASSWORD_RESETS_CSV_PATH = path.join(storageDir, 'password_resets.csv');
+const ACCOUNT_DELETION_CODES_CSV_PATH = path.join(storageDir, 'account_deletion_codes.csv');
+const COUNSELOR_CSV_PATH = path.join(storageDir, 'counselor.csv');
+const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(storageDir, 'transcript_uploads.csv');
+const APPLE_SUBSCRIPTION_EVENTS_PATH = path.join(storageDir, 'apple_subscription_events.csv');
 
 // Ensure storage directory exists
-const storageDir = path.join(__dirname, 'storage');
 if (!fs.existsSync(storageDir)) {
   fs.mkdirSync(storageDir, { recursive: true });
 }
