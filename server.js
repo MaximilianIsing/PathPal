@@ -2496,17 +2496,32 @@ const APPLE_NOTIFICATION_TYPES_INACTIVE = new Set(['EXPIRED', 'REVOKE', 'REFUND'
 app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
   // Always respond 200 quickly so Apple doesn't retry
   res.status(200).send();
-  const signedPayload = req.body && req.body.signedPayload;
+  // Apple sends JSON with key "signedPayload" (V2); accept raw JWS string or alternate keys
+  let signedPayload = null;
+  if (req.body && typeof req.body === 'object') {
+    signedPayload = req.body.signedPayload || req.body.signed_payload || req.body.payload || null;
+  } else if (typeof req.body === 'string' && req.body.includes('.')) {
+    signedPayload = req.body;
+  }
   if (!signedPayload) {
-    console.warn('Apple subscription webhook: missing signedPayload');
+    const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
+    console.warn('Apple subscription webhook: missing signedPayload. Body type:', typeof req.body, 'Keys:', keys.length ? keys.join(', ') : '(none)');
     return;
   }
   try {
+    // Log raw payload (truncated) and length for debugging
+    const payloadPreview = typeof signedPayload === 'string'
+      ? signedPayload.slice(0, 120) + (signedPayload.length > 120 ? '...' : '')
+      : String(signedPayload).slice(0, 120);
+    console.log('Apple subscription webhook: raw signedPayload length=', typeof signedPayload === 'string' ? signedPayload.length : 0, 'preview=', payloadPreview);
+
     const payload = decodeJwsPayload(signedPayload);
     if (!payload) {
       console.warn('Apple subscription webhook: could not decode signedPayload');
       return;
     }
+    console.log('Apple subscription webhook: decoded payload', JSON.stringify(payload, null, 2));
+
     const notificationType = payload.notificationType || '';
     const subtype = payload.subtype || '';
     const notificationUUID = payload.notificationUUID || '';
