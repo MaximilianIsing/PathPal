@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -2554,6 +2555,34 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
     }
   } catch (error) {
     console.error('Apple subscription webhook error:', error);
+  }
+});
+
+// Grant Pro subscription for a user (e.g. after StoreKit purchase or for support).
+// Call this when Apple's webhook hasn't updated yet, or from your app after a successful purchase.
+// Requires SUBSCRIPTION_GRANT_SECRET in env; pass it in the request body so only your app/server can call this.
+app.post('/api/apple/grant-pro', (req, res) => {
+  try {
+    const { user_id, secret } = req.body || {};
+    const expectedSecret = process.env.SUBSCRIPTION_GRANT_SECRET;
+    if (!expectedSecret || secret !== expectedSecret) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    if (!user_id || typeof user_id !== 'string') {
+      return res.status(400).json({ success: false, error: 'user_id is required' });
+    }
+    const userId = user_id.trim();
+    const account = getAccount(userId);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const now = new Date().toISOString();
+    saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+    console.log(`Pro granted for user ${userId} via grant-pro`);
+    res.json({ success: true, subscription: true, subscribed_at: now });
+  } catch (error) {
+    console.error('Grant Pro error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
   }
 });
 
