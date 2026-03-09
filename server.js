@@ -2493,6 +2493,10 @@ function decodeJwsPayload(jwsString) {
 const APPLE_NOTIFICATION_TYPES_ACTIVE = new Set(['SUBSCRIBED', 'DID_RENEW', 'DID_CHANGE_RENEWAL_PREFERENCE', 'OFFER_REDEEMED', 'GRACE_PERIOD_EXPIRED']);
 const APPLE_NOTIFICATION_TYPES_INACTIVE = new Set(['EXPIRED', 'REVOKE', 'REFUND']);
 
+// Pending app-reported grants: if no JWS confirmation within 10 min, revoke. Key = userId|originalTransactionID
+const PENDING_APP_GRANT_MS = 10 * 60 * 1000;
+const pendingAppGrants = new Map(); // key -> { userId, originalTransactionID, grantedAt, timeoutId }
+
 // Apple sends POST only; GET is from crawlers or URL checks - return 405 so it's clear
 app.get('/api/apple/subscription-notification', (req, res) => {
   res.status(405).set('Allow', 'POST').send('Method Not Allowed: use POST with signedPayload (App Store Server Notifications V2).');
@@ -2501,6 +2505,18 @@ app.get('/api/apple/subscription-notification', (req, res) => {
 app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
   // Always respond 200 quickly so Apple doesn't retry
   res.status(200).send();
+
+  // ---- Maximum debugging: log full request ----
+  try {
+    console.log('[Apple webhook] FULL REQ.BODY:', JSON.stringify(req.body, null, 2));
+    console.log('[Apple webhook] Body type:', typeof req.body, 'Keys:', req.body && typeof req.body === 'object' ? Object.keys(req.body) : []);
+    const ua = req.get('user-agent') || req.get('User-Agent');
+    const ct = req.get('content-type') || req.get('Content-Type');
+    console.log('[Apple webhook] Headers: user-agent=', ua, 'content-type=', ct);
+  } catch (e) {
+    console.error('[Apple webhook] Debug log error:', e);
+  }
+
   // Apple sends JSON with key "signedPayload" (V2); accept raw JWS string or alternate keys
   let signedPayload = null;
   if (req.body && typeof req.body === 'object') {
@@ -2509,42 +2525,55 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
     signedPayload = req.body;
   }
   if (!signedPayload) {
-    // Alternative: app sends transactionID, originalTransactionID, productID (e.g. after StoreKit purchase) with user_id/userID/appAccountToken
+    // Alternative: app sends transactionID, originalTransactionID, productID with user_id/userID/appAccountToken → grant immediately; revoke in 10 min if no JWS
     const b = req.body || {};
     const userId = (b.user_id || b.userID || b.appAccountToken || '').toString().trim();
     const hasTx = b.transactionID || b.originalTransactionID || b.productID;
+    const origTxId = String(b.originalTransactionID || b.transactionID || '');
     if (hasTx && userId) {
       const account = getAccount(userId);
       if (account) {
         const now = new Date().toISOString();
         saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
         const eventsHeader = 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n';
-        const eventRow = [now, '', 'APP_REPORTED', '', userId, (b.originalTransactionID || b.transactionID || '') + ''].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+        const eventRow = [now, '', 'APP_REPORTED', '', userId, origTxId].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
         if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
           fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
         }
         fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
-        console.log('Apple subscription webhook: granted Pro from app-reported purchase for user', userId);
+        console.log('[Apple webhook] Granted Pro immediately (app-reported) for user', userId, 'originalTransactionID', origTxId);
+
+        const key = `${userId}|${origTxId}`;
+        const existing = pendingAppGrants.get(key);
+        if (existing && existing.timeoutId) clearTimeout(existing.timeoutId);
+        const timeoutId = setTimeout(() => {
+          if (!pendingAppGrants.has(key)) return;
+          pendingAppGrants.delete(key);
+          const acc = getAccount(userId);
+          if (acc) {
+            saveAccount({ user_id: userId, subscription: false, subscribed_at: acc.subscribed_at || '' });
+            console.log('[Apple webhook] Revoked Pro for user', userId, '(no JWS confirmation within 10 min)');
+          }
+        }, PENDING_APP_GRANT_MS);
+        pendingAppGrants.set(key, { userId, originalTransactionID: origTxId, grantedAt: now, timeoutId });
       }
     } else {
       const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
-      console.warn('Apple subscription webhook: missing signedPayload. Body type:', typeof req.body, 'Keys:', keys.length ? keys.join(', ') : '(none)');
+      console.warn('[Apple webhook] Missing signedPayload and no valid app-reported payload. Body type:', typeof req.body, 'Keys:', keys.length ? keys.join(', ') : '(none)');
     }
     return;
   }
   try {
-    // Log raw payload (truncated) and length for debugging
-    const payloadPreview = typeof signedPayload === 'string'
-      ? signedPayload.slice(0, 120) + (signedPayload.length > 120 ? '...' : '')
-      : String(signedPayload).slice(0, 120);
-    console.log('Apple subscription webhook: raw signedPayload length=', typeof signedPayload === 'string' ? signedPayload.length : 0, 'preview=', payloadPreview);
+    // ---- Maximum debugging: raw and decoded JWS ----
+    console.log('[Apple webhook] signedPayload (raw) length:', typeof signedPayload === 'string' ? signedPayload.length : 0);
+    console.log('[Apple webhook] signedPayload (raw) full:', typeof signedPayload === 'string' ? signedPayload : JSON.stringify(signedPayload));
 
     const payload = decodeJwsPayload(signedPayload);
     if (!payload) {
-      console.warn('Apple subscription webhook: could not decode signedPayload');
+      console.warn('[Apple webhook] Could not decode signedPayload');
       return;
     }
-    console.log('Apple subscription webhook: decoded payload', JSON.stringify(payload, null, 2));
+    console.log('[Apple webhook] decoded payload FULL:', JSON.stringify(payload, null, 2));
 
     const notificationType = payload.notificationType || '';
     const subtype = payload.subtype || '';
@@ -2555,12 +2584,31 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
     if (data.signedTransactionInfo) {
       const txPayload = decodeJwsPayload(data.signedTransactionInfo);
       if (txPayload) {
+        console.log('[Apple webhook] decoded signedTransactionInfo FULL:', JSON.stringify(txPayload, null, 2));
         appAccountToken = txPayload.appAccountToken || null;
-        originalTransactionId = txPayload.originalTransactionId || null;
+        originalTransactionId = txPayload.originalTransactionId != null ? String(txPayload.originalTransactionId) : null;
       }
     }
+    if (data.signedRenewalInfo) {
+      const renewalPayload = decodeJwsPayload(data.signedRenewalInfo);
+      if (renewalPayload) {
+        console.log('[Apple webhook] decoded signedRenewalInfo FULL:', JSON.stringify(renewalPayload, null, 2));
+      }
+    }
+
+    // Confirm pending app-reported grant so we don't revoke in 10 min
+    if (appAccountToken && originalTransactionId) {
+      const userId = String(appAccountToken).trim();
+      const key = `${userId}|${originalTransactionId}`;
+      const pending = pendingAppGrants.get(key);
+      if (pending && pending.timeoutId) {
+        clearTimeout(pending.timeoutId);
+        pendingAppGrants.delete(key);
+        console.log('[Apple webhook] JWS confirmation received for user', userId, 'originalTransactionId', originalTransactionId, '- pending revoke cleared');
+      }
+    }
+
     const now = new Date().toISOString();
-    // Log event to CSV so you can see when users subscribe
     const eventsHeader = 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n';
     const eventRow = [
       now,
@@ -2574,23 +2622,23 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
       fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
     }
     fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
-    console.log(`Apple subscription event: ${notificationType} ${subtype} appAccountToken=${appAccountToken || 'none'}`);
-    // Update account subscription if we have a user id (appAccountToken)
+    console.log('[Apple webhook] JWS event:', notificationType, subtype, 'appAccountToken=', appAccountToken || 'none', 'originalTransactionId=', originalTransactionId || 'none');
+
     if (appAccountToken && typeof appAccountToken === 'string') {
       const userId = appAccountToken.trim();
       const account = getAccount(userId);
       if (account) {
         if (APPLE_NOTIFICATION_TYPES_ACTIVE.has(notificationType)) {
           saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
-          console.log(`Subscription activated for user ${userId}`);
+          console.log('[Apple webhook] Subscription activated for user', userId);
         } else if (APPLE_NOTIFICATION_TYPES_INACTIVE.has(notificationType)) {
           saveAccount({ user_id: userId, subscription: false, subscribed_at: account.subscribed_at || '' });
-          console.log(`Subscription deactivated for user ${userId}`);
+          console.log('[Apple webhook] Subscription deactivated for user', userId);
         }
       }
     }
   } catch (error) {
-    console.error('Apple subscription webhook error:', error);
+    console.error('[Apple webhook] Error:', error);
   }
 });
 

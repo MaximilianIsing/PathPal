@@ -458,6 +458,11 @@ header {
   margin: 0;
 }
 
+/* Pro: golden "Path Pal" text in header */
+.logo.pro h1 {
+  color: #d4af37;
+}
+
 .menu-toggle {
   background: none;
   border: none;

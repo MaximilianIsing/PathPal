@@ -16,9 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// On mobile, switch app icon to Pro icon when user has an active subscription
+// When user is Pro: switch app icon (mobile), header logo to Pro version, and golden "Path Pal" text
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!isMobileDevice()) return;
   if (typeof getCurrentUserId !== 'function') return;
   const userId = getCurrentUserId();
   if (!userId || (typeof isGuest === 'function' && isGuest())) return;
@@ -27,10 +26,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!res.ok) return;
     const data = await res.json();
     if (!data.subscription) return;
-    const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-    if (appleIcon) appleIcon.href = '/media/AppIconPro.png';
-    const icon = document.querySelector('link[rel="icon"]');
-    if (icon) icon.href = '/media/AppIconPro.png';
+    // App icon (mobile)
+    if (isMobileDevice()) {
+      const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      if (appleIcon) appleIcon.href = '/media/AppIconPro.png';
+      const icon = document.querySelector('link[rel="icon"]');
+      if (icon) icon.href = '/media/AppIconPro.png';
+    }
+    // Header logo: Pro image + golden "Path Pal" text
+    const headerLogo = document.querySelector('header .logo');
+    if (headerLogo) {
+      const img = headerLogo.querySelector('img');
+      if (img) img.src = '/media/pro/Pro256x256.png';
+      headerLogo.classList.add('pro');
+    }
   } catch (e) {
     // ignore
   }
