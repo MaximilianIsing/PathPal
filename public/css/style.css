@@ -458,9 +458,23 @@ header {
   margin: 0;
 }
 
-/* Pro: golden "Path Pal" text in header */
+/* Pro: golden "Path Pal" text in header + green rounded background for readability */
 .logo.pro h1 {
   color: #d4af37;
+}
+.logo.pro a {
+  background: var(--primary-green);
+  color: inherit;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  margin: -0.35rem 0;
+}
+.logo.pro a:hover {
+  background: var(--primary-green);
+  opacity: 0.95;
+}
+.logo.pro img {
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.2));
 }
 
 .menu-toggle {

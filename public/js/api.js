@@ -33,10 +33,14 @@ async function sendChatMessage(message, context = [], responseLength = 'medium',
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (response.status === 429) {
-        // Rate limit error
         const error = new Error(errorData.error || 'Rate limit exceeded. Please wait a moment before trying again.');
         error.rateLimit = errorData.rateLimit;
         error.isRateLimit = true;
+        throw error;
+      }
+      if (response.status === 403 && errorData.code === 'AI_CHAT_LIMIT') {
+        const error = new Error(errorData.error || 'You\'ve used your 5 free AI chats for today. Subscribe to Path Pal Scholar Pro for unlimited messages.');
+        error.isChatLimit = true;
         throw error;
       }
       throw new Error(errorData.error || 'Failed to send message');

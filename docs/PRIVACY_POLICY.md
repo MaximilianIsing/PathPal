@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated: January 11, 2026 (v1.23)**
+**Last Updated: February 23, 2026 (v1.23)**
 
 ## Introduction
 
@@ -14,7 +14,7 @@ By using Path Pal, you agree to the collection and use of information in accorda
 
 When you create an account and use Path Pal, we may collect the following information:
 
-- **Account Information**: Email address, password (hashed), and user ID
+- **Account Information**: Email address, password (hashed), and user ID. You can change your email from Account Settings; we send a verification code to the new address and update the account after you confirm.
 - **Profile Information**: 
   - Name and grade level
   - Zip code (used to find local activities and opportunities)
@@ -33,6 +33,7 @@ When you create an account and use Path Pal, we may collect the following inform
   - Essay prompts and essay content (when using the Essay Assistant feature)
   - Transcript upload history (date and timestamp only, not the transcript content itself)
   - Preferences and settings
+- **Subscription Information**: If you subscribe to Path Pal Scholar Pro (our paid subscription), we store your subscription status and the date you subscribed. We do not store payment card details; purchases are processed by Apple. We may receive and process subscription-related data from Apple (such as signed transaction or notification payloads) to verify your subscription and grant Pro access.
 
 ### Automatically Collected Information
 
@@ -53,6 +54,7 @@ We use the collected information for the following purposes:
    - Generate and refine college application essays using AI
    - Display relevant college news and updates
    - Process and extract course information from uploaded transcripts using AI vision technology
+  - Verify and manage your Path Pal Scholar Pro subscription (including processing subscription notifications or signed transaction data from Apple to confirm your purchase)
 
 2. **To Improve the Service**:
    - Analyze usage patterns to enhance user experience
@@ -74,7 +76,7 @@ We use the collected information for the following purposes:
 
 ### Storage Methods
 
-- **Server-Side Storage**: Your account information, profile data, and preferences are stored securely on our servers using CSV files and secure databases. Transcript upload metadata (user ID, date, and timestamp) is stored to track usage and enforce rate limits. The actual transcript images/PDFs are not stored after processing. Rate limiting data (request counts and timestamps) is stored temporarily in memory to enforce usage limits.
+- **Server-Side Storage**: Your account information, profile data, preferences, and subscription status are stored securely on our servers using CSV files and secure databases. Transcript upload metadata (user ID, date, and timestamp) is stored to track usage and enforce rate limits. The actual transcript images/PDFs are not stored after processing. We may store subscription-related event logs (e.g., activation or cancellation) for support and verification. Rate limiting data (request counts and timestamps) is stored temporarily in memory to enforce usage limits.
 - **Client-Side Storage**: Some data is stored locally on your device using browser localStorage for offline functionality, including:
   - Chat history for the AI Counselor (up to 10 chats)
   - Saved colleges
@@ -109,9 +111,17 @@ When you use these features, your messages, relevant profile information (includ
 
 **Essay Assistant**: When you use the Essay Assistant feature to generate or refine essays, your essay prompts, essay content, and relevant profile information (such as intended majors, activities, and academic information) are sent to OpenAI's GPT-4 API to create personalized essays. This information is used solely for essay generation and refinement purposes. Essay content is not stored on our servers after processing, though it may be temporarily stored in your browser's localStorage for your convenience.
 
+### Apple (App Store and In-App Purchases)
+
+Path Pal Scholar Pro is a subscription offered through the Apple App Store. When you subscribe or when we verify your subscription:
+
+- **Purchases**: Payment is processed entirely by Apple. We do not receive or store your payment card details.
+- **Verification**: We may receive subscription notifications or signed transaction data from Apple (or from our app after a purchase) so we can verify that your subscription is valid and grant you Pro access. We use Apple’s official verification methods (including Apple’s root certificate) to confirm that this data comes from Apple. We may log subscription events (e.g., activation, renewal, or cancellation) for support and compliance purposes.
+- **Data shared with Apple**: Your use of in-app purchases is subject to [Apple’s Privacy Policy](https://www.apple.com/legal/privacy/) and App Store terms.
+
 ### Email Services
 
-We use third-party email services to send notifications and communications. These services may have access to your email address for the sole purpose of delivering messages.
+We use third-party email services to send notifications and communications (including verification codes for password reset, account deletion, and email change). These services may have access to your email address for the sole purpose of delivering messages.
 
 ### News API
 
@@ -135,7 +145,7 @@ You have the following rights regarding your personal information:
 
 1. **Access**: You can access and review your personal information through your account settings.
 
-2. **Correction**: You can update or correct your information at any time through your profile page.
+2. **Correction**: You can update or correct your information at any time through your profile page. You can change your email address from Account Settings; we will send a verification code to your new email and update the account once you confirm.
 
 3. **Deletion**: You can delete your account and associated data directly through the Account Settings page, or request deletion by contacting us at the email address provided below. This includes deletion of your profile information, transcript upload history, and all associated data.
 

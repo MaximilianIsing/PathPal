@@ -16,6 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Get subscription status (for Pro-gating). Returns { subscription: boolean }. Defaults to non-Pro for null user, guest, or any error.
+async function getSubscriptionStatus() {
+  if (typeof getCurrentUserId !== 'function') return { subscription: false };
+  const userId = getCurrentUserId();
+  if (!userId || (typeof isGuest === 'function' && isGuest())) return { subscription: false };
+  try {
+    const res = await fetch('/api/user/subscription?user_id=' + encodeURIComponent(userId));
+    if (!res.ok) return { subscription: false };
+    const data = await res.json();
+    return { subscription: !!(data && data.subscription) };
+  } catch (e) {
+    return { subscription: false };
+  }
+}
+
 // When user is Pro: switch app icon (mobile), header logo to Pro version, and golden "Path Pal" text
 document.addEventListener('DOMContentLoaded', async () => {
   if (typeof getCurrentUserId !== 'function') return;

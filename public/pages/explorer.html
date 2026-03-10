@@ -504,6 +504,9 @@
     let searchTimeout = null;
     let studentProfile = null;
     let studentRating = null;
+    const ODDS_FREE_VIEW_KEY = 'odds_free_view_college_id';
+    let explorerIsPro = true;
+    let explorerFreeViewId = null;
 
     // Client-side implementation of getAdmissionOdds (from rate-system.js)
     function getAdmissionOdds(studentScore, collegeScore, acceptanceRate, options = {}) {
@@ -731,20 +734,22 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       await initializeUserId();
+      // Pro gating: same one-free-view as Odds and Saved
+      if (typeof getSubscriptionStatus === 'function') {
+        const status = await getSubscriptionStatus();
+        explorerIsPro = !!(status && status.subscription);
+        explorerFreeViewId = explorerIsPro ? null : localStorage.getItem(ODDS_FREE_VIEW_KEY);
+      }
       // Load student profile to get rating
-      // Rating only exists if profile was saved (100% complete)
       try {
         studentProfile = await UserProfile.get();
-        // Only use rating if it exists (profile was saved and rated)
-        studentRating = (studentProfile.rating !== null && studentProfile.rating !== undefined && studentProfile.rating !== '') 
-          ? studentProfile.rating 
+        studentRating = (studentProfile.rating !== null && studentProfile.rating !== undefined && studentProfile.rating !== '')
+          ? studentProfile.rating
           : null;
-        // Populate average score filter based on test type
         populateAvgScoreFilter();
       } catch (error) {
         console.error('Error loading profile:', error);
         studentRating = null;
-        // Still populate filter even if profile load fails (will default to SAT)
         populateAvgScoreFilter();
       }
       await loadColleges();
@@ -1065,7 +1070,7 @@
       const end = start + perPage;
       const pageColleges = filteredColleges.slice(start, end);
 
-      container.innerHTML = `<h3 style="color: var(--primary-green); margin: 1rem 0;">Found ${filteredColleges.length} College${filteredColleges.length !== 1 ? 's' : ''}</h3>`;
+      container.innerHTML = `<h3 style="color: var(--primary-green); margin: 1rem 0;">Found ${filteredColleges.length} College${filteredColleges.length !== 1 ? 's' : ''}</h3>${!explorerIsPro ? '<p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Tap one college\'s odds to see it free. Subscribe to Pro to see all.</p>' : ''}`;
 
       pageColleges.forEach(college => {
         // Calculate admission odds
@@ -1093,6 +1098,9 @@
         }
         const category = odds !== null ? categorizeSchool(odds) : { category: 'unknown', label: 'Unknown' };
         const isSaved = SavedColleges.isSaved(college.id);
+        const collegeIdStr = String(college.id);
+        const isFreeRevealed = explorerFreeViewId === collegeIdStr;
+        const shouldBlurStats = !explorerIsPro && !isFreeRevealed;
         
         const card = document.createElement('div');
         card.className = 'college-card';
@@ -1162,8 +1170,14 @@
             </div>
           </div>
           
-          <div class="stats-box-container">
-            <div class="odds-display ${odds !== null ? category.category : ''}">
+          <div class="stats-box-container explorer-stats-gate ${shouldBlurStats ? 'explorer-stats-blurred' : ''}" data-college-id="${collegeIdStr}" ${shouldBlurStats ? 'style="position: relative; cursor: pointer;"' : ''}>
+            <div class="odds-display ${odds !== null ? category.category : ''}" style="position: relative; ${shouldBlurStats ? 'filter: blur(6px); pointer-events: none; user-select: none;' : ''}">
+              ${shouldBlurStats ? `
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(232, 247, 245, 0.9); border-radius: 8px; z-index: 2; pointer-events: none;">
+                <span style="font-size: 0.8rem; color: var(--text-light);">Your Admission Odds</span>
+                <span style="font-size: 0.9rem; font-weight: bold; color: var(--primary-green);">Tap to reveal (1 free)</span>
+              </div>
+              ` : ''}
               <div class="odds-number-container">
                 <div class="odds-number">${oddsDisplay}</div>
                 ${odds !== null ? `<span class="odds-badge">${category.label}</span>` : ''}
@@ -1348,6 +1362,22 @@
           </div>
         `;
         
+        if (shouldBlurStats) {
+          const gate = card.querySelector('.explorer-stats-gate.explorer-stats-blurred');
+          if (gate) {
+            gate.addEventListener('click', function () {
+              const used = localStorage.getItem(ODDS_FREE_VIEW_KEY);
+              if (used) {
+                alert('You\'ve used your one free view. Subscribe to Path Pal Scholar Pro to see all admission odds and acceptance rates.');
+                window.location.href = '/account.html';
+                return;
+              }
+              localStorage.setItem(ODDS_FREE_VIEW_KEY, collegeIdStr);
+              explorerFreeViewId = collegeIdStr;
+              displayColleges();
+            });
+          }
+        }
         container.appendChild(card);
       });
 

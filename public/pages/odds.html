@@ -240,6 +240,8 @@
       return { category: 'reach', label: 'Reach' };
     }
 
+    const ODDS_FREE_VIEW_KEY = 'odds_free_view_college_id';
+
     async function loadSavedCollegesOdds() {
       const savedColleges = SavedColleges.get();
       const profile = await UserProfile.get();
@@ -254,15 +256,22 @@
         return;
       }
 
-      container.innerHTML = '<h3 style="color: var(--primary-green); margin-bottom: 1rem;">Your Admission Odds</h3>';
+      let isPro = true;
+      if (typeof getSubscriptionStatus === 'function') {
+        const status = await getSubscriptionStatus();
+        isPro = !!(status && status.subscription);
+      }
+      const freeViewId = isPro ? null : localStorage.getItem(ODDS_FREE_VIEW_KEY);
 
-      // Get student rating (only exists if profile is complete)
+      container.innerHTML = '<h3 style="color: var(--primary-green); margin-bottom: 1rem;">Your Admission Odds</h3>' +
+        (!isPro ? '<p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Tap one college to see its odds free. Subscribe to Pro to see all.</p>' : '');
+
       const studentRating = (profile.rating !== null && profile.rating !== undefined && profile.rating !== '') 
         ? profile.rating 
         : null;
 
       savedColleges.forEach(college => {
-        // Calculate admission odds using actual ratings
+        const collegeId = (college.id != null ? college.id : college.name || '').toString();
         let odds;
         let oddsDisplay;
         if (studentRating !== null && studentRating !== undefined && college.rating !== null && college.rating !== undefined) {
@@ -273,28 +282,51 @@
           oddsDisplay = 'N/A';
         }
         const category = categorizeSchool(odds);
-        
-        
+        const isFreeRevealed = freeViewId === collegeId;
+        const shouldBlur = !isPro && !isFreeRevealed;
+
         const card = document.createElement('div');
         card.className = 'card';
         card.style.marginBottom = '1rem';
-        
+        card.dataset.collegeId = collegeId;
+        if (shouldBlur) {
+          card.classList.add('odds-card-blurred');
+          card.style.cursor = 'pointer';
+        }
+
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
             <div>
               <h3 style="color: var(--primary-green); margin-bottom: 0.5rem;">${college.name}</h3>
               <p style="color: var(--text-light); font-size: 0.9rem;">
-                ${college.type || 'Unknown'} • ${college.acceptanceRate !== null ? Math.round(college.acceptanceRate * 1000) / 10 + '%' : 'N/A'} acceptance
+                ${college.type || 'Unknown'}${!shouldBlur && college.acceptanceRate !== null ? ' • ' + Math.round(college.acceptanceRate * 1000) / 10 + '% acceptance' : ''}
               </p>
             </div>
-            ${odds !== null ? `<span class="badge badge-${category.category}">${category.label}</span>` : ''}
+            ${!shouldBlur && odds !== null ? `<span class="badge badge-${category.category}">${category.label}</span>` : ''}
           </div>
-          <div style="background: var(--light-mint); padding: 1rem; border-radius: 8px; text-align: center;">
+          <div class="odds-display-block" style="background: var(--light-mint); padding: 1rem; border-radius: 8px; text-align: center; min-height: 4rem; ${shouldBlur ? 'display: flex; flex-direction: column; align-items: center; justify-content: center;' : ''}">
+            ${shouldBlur ? `
+            <span style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">Acceptance Probability</span>
+            <span style="font-size: 1rem; font-weight: bold; color: var(--primary-green);">Tap to reveal (1 free view)</span>
+            ` : `
             <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-green);">${oddsDisplay}</div>
             <div style="color: var(--text-light); font-size: 0.9rem;">Acceptance Probability</div>
+            `}
           </div>
         `;
-        
+
+        if (shouldBlur) {
+          card.addEventListener('click', function oddsCardClick() {
+            const used = localStorage.getItem(ODDS_FREE_VIEW_KEY);
+            if (used) {
+              alert('You\'ve used your one free odds view. Subscribe to Path Pal Scholar Pro to see all admission odds.');
+              window.location.href = '/account.html';
+              return;
+            }
+            localStorage.setItem(ODDS_FREE_VIEW_KEY, collegeId);
+            loadSavedCollegesOdds();
+          });
+        }
         container.appendChild(card);
       });
     }

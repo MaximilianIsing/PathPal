@@ -386,6 +386,21 @@ app.post('/api/chat', async (req, res) => {
       });
     }
     
+    // Non-Pro: limit to 5 AI chats per day
+    const account = getAccount(userId);
+    const isPro = account && (account.subscription === true || account.subscription === 'true');
+    if (!isPro) {
+      const count = getAiChatCountForUserToday(userId);
+      if (count >= AI_CHAT_DAILY_LIMIT_NON_PRO) {
+        return res.status(403).json({
+          error: 'You\'ve used your 5 free AI chats for today. Subscribe to Path Pal Scholar Pro for unlimited messages.',
+          code: 'AI_CHAT_LIMIT',
+          limit: AI_CHAT_DAILY_LIMIT_NON_PRO,
+          remaining: 0
+        });
+      }
+    }
+    
     // Log incoming message from user
     try {
       const logEntry = `${escapeCSV(timestamp)},${escapeCSV(userId)},received,${escapeCSV(message)}\n`;
@@ -463,6 +478,8 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const aiMessage = data.choices[0].message.content;
+    
+    if (!isPro) incrementAiChatCountForUser(userId);
     
     // Log outgoing message from AI
     try {
@@ -1462,6 +1479,7 @@ const EMAIL_CHANGE_CODES_CSV_PATH = path.join(storageDir, 'email_change_codes.cs
 const COUNSELOR_CSV_PATH = path.join(storageDir, 'counselor.csv');
 const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(storageDir, 'transcript_uploads.csv');
 const APPLE_SUBSCRIPTION_EVENTS_PATH = path.join(storageDir, 'apple_subscription_events.csv');
+const AI_CHAT_COUNTS_CSV_PATH = path.join(storageDir, 'ai_chat_counts.csv');
 
 // Ensure storage directory exists
 if (!fs.existsSync(storageDir)) {
@@ -1553,6 +1571,54 @@ if (SignedDataVerifier && Environment) {
 if (!fs.existsSync(TRANSCRIPT_UPLOADS_CSV_PATH)) {
   const header = 'user_id,date,timestamp\n';
   fs.writeFileSync(TRANSCRIPT_UPLOADS_CSV_PATH, header, 'utf8');
+}
+
+// Initialize AI chat counts CSV (for non-Pro daily limit)
+if (!fs.existsSync(AI_CHAT_COUNTS_CSV_PATH)) {
+  fs.writeFileSync(AI_CHAT_COUNTS_CSV_PATH, 'user_id,date,count\n', 'utf8');
+}
+
+const AI_CHAT_DAILY_LIMIT_NON_PRO = 5;
+
+function getAiChatCountForUserToday(userId) {
+  try {
+    if (!fs.existsSync(AI_CHAT_COUNTS_CSV_PATH)) return 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const csv = fs.readFileSync(AI_CHAT_COUNTS_CSV_PATH, 'utf8');
+    const lines = csv.split('\n').filter(l => l.trim());
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts[0] === userId && parts[1] === today) return parseInt(parts[2], 10) || 0;
+    }
+    return 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function incrementAiChatCountForUser(userId) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    let csv = fs.existsSync(AI_CHAT_COUNTS_CSV_PATH) ? fs.readFileSync(AI_CHAT_COUNTS_CSV_PATH, 'utf8') : 'user_id,date,count\n';
+    const lines = csv.split('\n').filter(l => l.trim());
+    const header = lines[0];
+    let found = false;
+    const newLines = [header];
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts[0] === userId && parts[1] === today) {
+        const count = (parseInt(parts[2], 10) || 0) + 1;
+        newLines.push([userId, today, count].join(','));
+        found = true;
+      } else {
+        newLines.push(lines[i]);
+      }
+    }
+    if (!found) newLines.push([userId, today, 1].join(','));
+    fs.writeFileSync(AI_CHAT_COUNTS_CSV_PATH, newLines.join('\n') + '\n', 'utf8');
+  } catch (e) {
+    console.error('Error incrementing AI chat count:', e);
+  }
 }
 
 // Helper function to escape CSV values
@@ -2639,6 +2705,27 @@ app.get('/api/user/email', (req, res) => {
     }
   } catch (error) {
     console.error('Get user email error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// AI chats remaining today (for non-Pro; Pro returns unlimited)
+app.get('/api/user/ai-chats-remaining', (req, res) => {
+  try {
+    const { user_id } = req.query;
+    if (!user_id) {
+      return res.status(400).json({ success: false, error: 'user_id required' });
+    }
+    const account = getAccount(user_id);
+    const isPro = account && (account.subscription === true || account.subscription === 'true');
+    if (isPro) {
+      return res.json({ success: true, subscription: true, remaining: null, limit: null });
+    }
+    const used = getAiChatCountForUserToday(user_id);
+    const remaining = Math.max(0, AI_CHAT_DAILY_LIMIT_NON_PRO - used);
+    res.json({ success: true, subscription: false, remaining, limit: AI_CHAT_DAILY_LIMIT_NON_PRO });
+  } catch (e) {
+    console.error('ai-chats-remaining error:', e);
     res.status(500).json({ success: false, error: 'An error occurred' });
   }
 });

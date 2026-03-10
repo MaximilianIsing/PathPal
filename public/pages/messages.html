@@ -1622,6 +1622,14 @@
           } else {
             addMessageToChatMobile(`You're sending messages too quickly. Please wait ${resetTime} seconds before trying again.`, 'ai', true);
           }
+        } else if (error.isChatLimit) {
+          const msg = 'You\'ve used your 5 free AI chats for today. Subscribe to Path Pal Scholar Pro for unlimited messages. Redirecting you to subscribe…';
+          if (isPC) {
+            addMessageToChat(msg, 'ai', true);
+          } else {
+            addMessageToChatMobile(msg, 'ai', true);
+          }
+          setTimeout(() => { window.location.href = '/account.html'; }, 2000);
         } else {
           if (isPC) {
             addMessageToChat('Sorry, I encountered an error. Please try again later.', 'ai', true);

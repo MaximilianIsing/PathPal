@@ -207,6 +207,12 @@
       <h2 style="color: var(--primary-green); margin: 1rem 0;">Essay Assistant</h2>
       <p style="color: var(--text-light); margin-bottom: 1.5rem;">Generate a new essay or refine an existing one using AI powered by your profile information.</p>
 
+      <!-- Pro required for Essay Assistant (hidden when user has Pro) -->
+      <div id="essay-pro-gate" style="display: none; background: var(--light-mint); border: 2px solid var(--primary-green); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; text-align: center;">
+        <p style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-weight: bold;">Generate Essay and Refine Essay are Pro features.</p>
+        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">Subscribe to Path Pal Scholar Pro to use the Essay Assistant.</p>
+        <a href="/account.html" class="btn-primary" style="display: inline-block; margin-top: 0.75rem;">Go to Account</a>
+      </div>
       <!-- Profile Incomplete Warning -->
       <div id="profile-warning" style="display: none; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -398,8 +404,34 @@
       }
     }
 
+    let essayProGateChecked = false;
+    let essayHasPro = false;
+    async function checkEssayPro() {
+      if (essayProGateChecked) return essayHasPro;
+      essayProGateChecked = true;
+      if (typeof getSubscriptionStatus !== 'function') {
+        essayHasPro = true;
+        return true;
+      }
+      const status = await getSubscriptionStatus();
+      essayHasPro = !!(status && status.subscription);
+      const gate = document.getElementById('essay-pro-gate');
+      if (gate) gate.style.display = essayHasPro ? 'none' : 'block';
+      const modeSelector = document.querySelector('.mode-selector');
+      const generateSection = document.getElementById('generate-section');
+      const refineSection = document.getElementById('refine-section');
+      if (!essayHasPro && modeSelector) modeSelector.style.opacity = '0.6';
+      if (!essayHasPro && generateSection) generateSection.style.pointerEvents = 'none';
+      if (!essayHasPro && refineSection) refineSection.style.pointerEvents = 'none';
+      return essayHasPro;
+    }
+
     async function generateEssay() {
       if (isProcessing) return;
+      if (!(await checkEssayPro())) {
+        showNotification('Subscribe to Path Pal Scholar Pro to use Generate Essay.', 'error');
+        return;
+      }
       
       const isPersonalStatement = document.getElementById('generate-personal-statement').checked;
       const prompt = isPersonalStatement ? '' : document.getElementById('essay-prompt').value.trim();
@@ -544,6 +576,10 @@
 
     async function refineEssay() {
       if (isProcessing) return;
+      if (!(await checkEssayPro())) {
+        showNotification('Subscribe to Path Pal Scholar Pro to use Refine Essay.', 'error');
+        return;
+      }
       
       const isPersonalStatement = document.getElementById('refine-personal-statement').checked;
       const essayText = document.getElementById('essay-text').value.trim();
@@ -775,7 +811,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       await initializeUserId();
-      // Initialize word count on page load
+      checkEssayPro();
       updateEssayWordCount();
     });
   </script>

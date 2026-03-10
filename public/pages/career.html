@@ -582,7 +582,31 @@
 
       // Set up toggle buttons
       document.getElementById('career-search-toggle').addEventListener('click', showCareerSearch);
-      document.getElementById('career-list-toggle').addEventListener('click', showCareerList);
+      const careerListBtn = document.getElementById('career-list-toggle');
+      careerListBtn.addEventListener('click', async function(e) {
+        if (typeof getSubscriptionStatus === 'function') {
+          const status = await getSubscriptionStatus();
+          if (!status || !status.subscription) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Career List is a Pro feature. Subscribe to Path Pal Scholar Pro to unlock. Go to Account to subscribe.');
+            window.location.href = '/account.html';
+            return;
+          }
+        }
+        showCareerList();
+      });
+      // Lock Career List button for non-Pro (visual)
+      (async function() {
+        if (typeof getSubscriptionStatus !== 'function') return;
+        const status = await getSubscriptionStatus();
+        if (!status || !status.subscription && careerListBtn) {
+          careerListBtn.style.opacity = '0.7';
+          careerListBtn.style.position = 'relative';
+          careerListBtn.innerHTML = '<img src="/media/icons/Lock256x256.png" alt="Lock" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.35rem;"> Career List';
+          careerListBtn.title = 'Pro feature — Subscribe to unlock';
+        }
+      })();
     });
 
     // Legacy career data (keeping for backward compatibility if needed)
