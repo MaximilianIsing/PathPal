@@ -458,19 +458,23 @@ header {
   margin: 0;
 }
 
-/* Pro: golden "Path Pal" text in header + green rounded background for readability */
+/* Pro: golden "Path Pal" text in header + light green rounded background for readability */
 .logo.pro h1 {
   color: #d4af37;
 }
 .logo.pro a {
-  background: var(--primary-green);
+  background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #8b6914 100%);
   color: inherit;
-  padding: 0.35rem 0.75rem;
-  border-radius: 12px;
-  margin: -0.35rem 0;
+  padding: 0.3rem 0.1rem;
+  border-radius: 10px;
+  margin: -0.3rem 0;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .logo.pro a:hover {
-  background: var(--primary-green);
+  background: linear-gradient(135deg, #e0bc45 0%, #c49210 50%, #9a7518 100%);
   opacity: 0.95;
 }
 .logo.pro img {

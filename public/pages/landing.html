@@ -9,7 +9,20 @@
   <link rel="icon" type="image/png" href="/media/logo/logo128x128.png">
   <link rel="apple-touch-icon" href="/media/AppIcon.png">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="preload" as="video" href="/media/background/landing.webm" type="video/webm">
   <meta name="theme-color" content="#0d8c79">
+  <script>
+    // Pre-fill landing-video cache so signup/login get the video from cache (no re-fetch or stutter)
+    (function() {
+      var path = '/media/background/landing.webm';
+      var url = (typeof location !== 'undefined' && location.origin) ? location.origin + path : path;
+      if ('caches' in window) {
+        fetch(path, { method: 'GET' }).then(function(r) {
+          if (r.ok) return caches.open('landing-video').then(function(c) { return c.put(url, r); });
+        }).catch(function() {});
+      }
+    })();
+  </script>
   <script>
     // Check if device is mobile based on screen resolution and aspect ratio
     function isMobileByScreen() {

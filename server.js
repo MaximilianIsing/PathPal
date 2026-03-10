@@ -1543,8 +1543,8 @@ if (SignedDataVerifier && Environment) {
   const needAppId = environment === Environment.PRODUCTION;
   if (bundleId && fs.existsSync(certPath) && (!needAppId || (appAppleId && !isNaN(appAppleId)))) {
     try {
-      let certBuf = fs.readFileSync(certPath);
-      // Library expects DER Buffer. Handle PEM, base64-pasted, or raw DER.
+      let certBuf = fs.readFileSync(certPath, null);
+      // Normalize to DER Buffer, then pass as PEM so X509Certificate doesn't throw "no start line"
       if (certBuf[0] !== 0x30) {
         const str = certBuf.toString('utf8').trim();
         if (str.includes('-----BEGIN CERTIFICATE-----')) {
@@ -1555,7 +1555,8 @@ if (SignedDataVerifier && Environment) {
         }
       }
       if (certBuf[0] !== 0x30) throw new Error('Certificate is not valid DER or PEM');
-      appleVerifier = new SignedDataVerifier([certBuf], false, environment, bundleId, appAppleId);
+      const pem = '-----BEGIN CERTIFICATE-----\n' + certBuf.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END CERTIFICATE-----';
+      appleVerifier = new SignedDataVerifier([pem], false, environment, bundleId, appAppleId);
       console.log('[Apple webhook] JWS verification enabled for', bundleId, environment);
     } catch (e) {
       console.warn('[Apple webhook] Verifier init failed:', e.message);
@@ -1642,6 +1643,39 @@ function parseCSVValue(value) {
     value = value.replace(/""/g, '"');
   }
   return value;
+}
+
+const ACCOUNTS_HEADERS = ['user_id', 'name', 'grade', 'zipcode', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'subscription', 'subscribed_at', 'created_at', 'updated_at'];
+
+function formatAccountAsCsvRow(account) {
+  const headers = ACCOUNTS_HEADERS;
+  const row = headers.map(header => {
+    let value = account[header];
+    if (header === 'majors' || header === 'interests' || header === 'ap_courses' || header === 'activities' || header === 'academic_courses') {
+      if (Array.isArray(value)) value = JSON.stringify(value);
+      else if (value && typeof value === 'object') value = JSON.stringify(value);
+      else value = '[]';
+    } else {
+      if (header === 'rating') value = (value !== null && value !== undefined && value !== '') ? String(value) : '';
+      else value = value || '';
+    }
+    if (header === 'weighted' || header === 'test_optional' || header === 'subscription') {
+      value = value === true || value === 'true' ? 'true' : 'false';
+    }
+    return escapeCSV(value);
+  });
+  return row.join(',');
+}
+
+/** Append a single account row to accounts.csv (used on signup to avoid read-modify-write races). */
+function appendAccountToCsv(account) {
+  const dir = path.dirname(ACCOUNTS_CSV_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(ACCOUNTS_CSV_PATH)) {
+    fs.writeFileSync(ACCOUNTS_CSV_PATH, ACCOUNTS_HEADERS.join(',') + '\n', 'utf8');
+  }
+  const line = formatAccountAsCsvRow(account) + '\n';
+  fs.appendFileSync(ACCOUNTS_CSV_PATH, line, 'utf8');
 }
 
 // Read all accounts from CSV
@@ -1770,8 +1804,14 @@ function readAccounts() {
 // Write accounts to CSV
 function writeAccounts(accounts) {
   try {
-    const headers = ['user_id', 'name', 'grade', 'zipcode', 'academic_type', 'gpa', 'weighted', 'academic_courses', 'test_optional', 'sat', 'act', 'psat', 'majors', 'ap_courses', 'activities', 'interests', 'career_goals', 'rating', 'subscription', 'subscribed_at', 'created_at', 'updated_at'];
-    
+    const headers = ACCOUNTS_HEADERS;
+    const dir = path.dirname(ACCOUNTS_CSV_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(ACCOUNTS_CSV_PATH)) {
+      fs.writeFileSync(ACCOUNTS_CSV_PATH, headers.join(',') + '\n', 'utf8');
+    }
     let csv = headers.join(',') + '\n';
     
     accounts.forEach(account => {
@@ -2183,36 +2223,47 @@ app.post('/api/auth/signup', async (req, res) => {
     };
 
     logins.push(newLogin);
-    
-    if (writeLogins(logins)) {
-      // Also create an entry in accounts.csv for this user
-      const accounts = readAccounts();
-      accounts.push({
-        user_id: userId,
-        name: '',
-        grade: '',
-        academic_type: 'gpa',
-        gpa: '',
-        weighted: true,
-        academic_courses: [],
-        test_optional: false,
-        sat: '',
-        act: '',
-        psat: '',
-        majors: [],
-        ap_courses: [],
-        activities: [],
-        interests: [],
-        career_goals: '',
-        rating: null,
-        subscription: false,
-        subscribed_at: '',
-        created_at: now,
-        updated_at: now
-      });
-      writeAccounts(accounts);
-      
-      // Send welcome email
+
+    // Write accounts.csv first so we never have a login without an account
+    const newAccount = {
+      user_id: userId,
+      name: '',
+      grade: '',
+      zipcode: '',
+      academic_type: 'gpa',
+      gpa: '',
+      weighted: true,
+      academic_courses: [],
+      test_optional: false,
+      sat: '',
+      act: '',
+      psat: '',
+      majors: [],
+      ap_courses: [],
+      activities: [],
+      interests: [],
+      career_goals: '',
+      rating: null,
+      subscription: false,
+      subscribed_at: '',
+      created_at: now,
+      updated_at: now
+    };
+    try {
+      appendAccountToCsv(newAccount);
+      console.log('[Signup] Appended account for', userId, 'to', ACCOUNTS_CSV_PATH);
+    } catch (accountsErr) {
+      console.error('Signup: failed to append account to accounts.csv:', accountsErr);
+      console.error('Signup: ACCOUNTS_CSV_PATH=', ACCOUNTS_CSV_PATH);
+      return res.status(500).json({ success: false, error: 'Failed to create account (storage error). Please try again.' });
+    }
+
+    if (!writeLogins(logins)) {
+      console.error('Signup: writeLogins failed after accounts were written. ACCOUNTS_CSV_PATH=', ACCOUNTS_CSV_PATH);
+      return res.status(500).json({ success: false, error: 'Failed to create account' });
+    }
+
+    // Send welcome email
       const userEmail = email.toLowerCase().trim();
       const emailSubject = 'Welcome to Path Pal!';
       const emailHtml = `
@@ -2269,16 +2320,13 @@ app.post('/api/auth/signup', async (req, res) => {
           </div>
         </div>
       `;
-      
-      // Send email (don't wait for it to complete)
-      sendEmail(userEmail, emailSubject, emailHtml).catch(err => {
-        console.error('Failed to send welcome email:', err);
-      });
-      
-      res.json({ success: true, userId: userId });
-    } else {
-      res.status(500).json({ success: false, error: 'Failed to create account' });
-    }
+
+    // Send email (don't wait for it to complete)
+    sendEmail(userEmail, emailSubject, emailHtml).catch(err => {
+      console.error('Failed to send welcome email:', err);
+    });
+
+    res.json({ success: true, userId: userId });
   } catch (error) {
     console.error('Sign up error:', error);
     res.status(500).json({ success: false, error: 'An error occurred' });

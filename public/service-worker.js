@@ -35,8 +35,33 @@ self.addEventListener('install', (event) => {
   );
 });
 
+const LANDING_VIDEO_URL = '/media/background/landing.webm';
+const LANDING_VIDEO_CACHE = 'landing-video';
+
 // Fetch event - use stale-while-revalidate for faster updates
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+  const isLandingVideo = url.includes('landing.webm');
+
+  // For the intro video: serve from dedicated cache so signup/login get it without re-fetch (avoids Range-request cache mismatch)
+  if (isLandingVideo && event.request.method === 'GET') {
+    event.respondWith(
+      caches.open(LANDING_VIDEO_CACHE).then((cache) => {
+        return cache.match(new Request(url, { method: 'GET' })).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((networkResponse) => {
+            if (networkResponse.ok && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              cache.put(new Request(url, { method: 'GET' }), clone).catch(() => {});
+            }
+            return networkResponse;
+          });
+        });
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -78,7 +103,7 @@ self.addEventListener('activate', (event) => {
         // Delete old caches
         Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && cacheName !== LANDING_VIDEO_CACHE) {
               return caches.delete(cacheName);
             }
           })
