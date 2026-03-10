@@ -57,3 +57,6 @@ news-key.txt
 serve-pc.txt
 stripe-keys.txt
 grant-key.txt
+
+# Apple root cert (add as secret file on server; do not commit)
+AppleRootCA-G3.cer

@@ -161,6 +161,32 @@
         <button class="btn-primary" onclick="handleSignOut()" style="width: 100%; margin-top: 1rem;">Sign Out</button>
       </div>
 
+      <!-- Change Email Section -->
+      <div id="change-email-section" class="card" style="margin-bottom: 1.5rem;">
+        <h3>Change Email</h3>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">Update the email for your account. Requires your current password and a verification code sent to the new email.</p>
+        <div id="change-email-step-1">
+          <div class="form-group">
+            <label>Current password</label>
+            <input type="password" id="change-email-password" placeholder="Enter your current password">
+          </div>
+          <div class="form-group">
+            <label>New email</label>
+            <input type="email" id="change-email-new" placeholder="Enter your new email address">
+          </div>
+          <button type="button" class="btn-primary" id="change-email-send-btn" style="width: 100%; margin-top: 0.5rem;">Send verification code</button>
+        </div>
+        <div id="change-email-step-2" style="display: none;">
+          <p style="color: var(--text-dark); margin-bottom: 0.75rem; font-size: 0.9rem;">A verification code has been sent to your new email.</p>
+          <div class="form-group">
+            <label>Verification code</label>
+            <input type="text" id="change-email-code" placeholder="Enter 6-digit code" maxlength="6" style="text-align: center; letter-spacing: 4px;">
+          </div>
+          <button type="button" class="btn-primary" id="change-email-confirm-btn" style="width: 100%; margin-top: 0.5rem;">Confirm change</button>
+          <button type="button" class="btn-primary" id="change-email-cancel-btn" style="width: 100%; margin-top: 0.5rem; background: #95a5a6; border-color: #95a5a6;">Cancel</button>
+        </div>
+      </div>
+
       <!-- Reset Password Section -->
       <div id="reset-password-section" class="card" style="margin-bottom: 1.5rem;">
         <h3>Reset Password</h3>
@@ -232,6 +258,7 @@
       const emailDisplay = document.getElementById('user-email-display');
       const resetPasswordSection = document.getElementById('reset-password-section');
       const deleteAccountSection = document.getElementById('delete-account-section');
+      const changeEmailSection = document.getElementById('change-email-section');
       const proSignupSection = document.querySelector('.pro-signup-section');
       const proGuestMessage = document.querySelector('.pro-guest-message');
       
@@ -240,6 +267,7 @@
         emailDisplay.textContent = 'Guest User';
         if (resetPasswordSection) resetPasswordSection.style.display = 'none';
         if (deleteAccountSection) deleteAccountSection.style.display = 'none';
+        if (changeEmailSection) changeEmailSection.style.display = 'none';
         if (proGuestMessage) proGuestMessage.style.display = 'block';
         // pro-signup-section stays hidden
         return;
@@ -253,6 +281,7 @@
         emailDisplay.textContent = 'Unable to load email';
         if (resetPasswordSection) resetPasswordSection.style.display = 'none';
         if (deleteAccountSection) deleteAccountSection.style.display = 'none';
+        if (changeEmailSection) changeEmailSection.style.display = 'none';
       }
       
       // Show subscription section only for logged-in users who are not already subscribers
@@ -495,6 +524,104 @@
       btn.textContent = 'Send Verification Code';
       showNotification('Account deletion cancelled', 'info');
     }
+
+    // ----- Change Email -----
+    async function handleChangeEmailSendCode() {
+      const userId = getCurrentUserId();
+      if (!userId) {
+        showNotification('You must be logged in', 'error');
+        return;
+      }
+      const password = document.getElementById('change-email-password').value;
+      const newEmail = document.getElementById('change-email-new').value.trim();
+      if (!password) {
+        showNotification('Please enter your current password', 'error');
+        return;
+      }
+      if (!newEmail || !newEmail.includes('@')) {
+        showNotification('Please enter a valid new email address', 'error');
+        return;
+      }
+      const btn = document.getElementById('change-email-send-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      try {
+        const passwordHash = await hashPassword(password);
+        const res = await fetch('/api/account/change-email/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, password_hash: passwordHash, new_email: newEmail })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showNotification('Verification code sent to your new email', 'success');
+          document.getElementById('change-email-step-1').style.display = 'none';
+          document.getElementById('change-email-step-2').style.display = 'block';
+          document.getElementById('change-email-code').value = '';
+          document.getElementById('change-email-code').focus();
+        } else {
+          showNotification(data.error || 'Failed to send code', 'error');
+        }
+      } catch (e) {
+        showNotification('An error occurred. Please try again.', 'error');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Send verification code';
+    }
+
+    async function handleChangeEmailConfirm() {
+      const userId = getCurrentUserId();
+      if (!userId) {
+        showNotification('You must be logged in', 'error');
+        return;
+      }
+      const code = document.getElementById('change-email-code').value.trim();
+      if (!code) {
+        showNotification('Please enter the verification code', 'error');
+        return;
+      }
+      const btn = document.getElementById('change-email-confirm-btn');
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+      try {
+        const res = await fetch('/api/account/change-email/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, code })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showNotification('Email updated successfully', 'success');
+          document.getElementById('user-email-display').textContent = data.email;
+          document.getElementById('change-email-step-2').style.display = 'none';
+          document.getElementById('change-email-step-1').style.display = 'block';
+          document.getElementById('change-email-password').value = '';
+          document.getElementById('change-email-new').value = '';
+          document.getElementById('change-email-code').value = '';
+        } else {
+          showNotification(data.error || 'Failed to update email', 'error');
+        }
+      } catch (e) {
+        showNotification('An error occurred. Please try again.', 'error');
+      }
+      btn.disabled = false;
+      btn.textContent = 'Confirm change';
+    }
+
+    function handleChangeEmailCancel() {
+      document.getElementById('change-email-step-2').style.display = 'none';
+      document.getElementById('change-email-step-1').style.display = 'block';
+      document.getElementById('change-email-code').value = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sendBtn = document.getElementById('change-email-send-btn');
+      const confirmBtn = document.getElementById('change-email-confirm-btn');
+      const cancelBtn = document.getElementById('change-email-cancel-btn');
+      if (sendBtn) sendBtn.addEventListener('click', handleChangeEmailSendCode);
+      if (confirmBtn) confirmBtn.addEventListener('click', handleChangeEmailConfirm);
+      if (cancelBtn) cancelBtn.addEventListener('click', handleChangeEmailCancel);
+    });
 
     function handleSignOut() {
       signOut();

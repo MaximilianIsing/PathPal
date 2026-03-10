@@ -4,6 +4,15 @@ const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
+let SignedDataVerifier = null;
+let Environment = null;
+try {
+  const apple = require('@apple/app-store-server-library');
+  SignedDataVerifier = apple.SignedDataVerifier;
+  Environment = apple.Environment;
+} catch (e) {
+  // Optional: install @apple/app-store-server-library and add Apple root cert to verify webhooks
+}
 const { rateStudent, getAdmissionOdds } = require('./rate-system');
 const { fetchCollegeData, checkApiHealth } = require('./get-data');
 
@@ -1449,6 +1458,7 @@ const LOGINS_CSV_PATH = path.join(storageDir, 'logins.csv');
 const PROFILE_PICTURES_CSV_PATH = path.join(storageDir, 'profile_pictures.csv');
 const PASSWORD_RESETS_CSV_PATH = path.join(storageDir, 'password_resets.csv');
 const ACCOUNT_DELETION_CODES_CSV_PATH = path.join(storageDir, 'account_deletion_codes.csv');
+const EMAIL_CHANGE_CODES_CSV_PATH = path.join(storageDir, 'email_change_codes.csv');
 const COUNSELOR_CSV_PATH = path.join(storageDir, 'counselor.csv');
 const TRANSCRIPT_UPLOADS_CSV_PATH = path.join(storageDir, 'transcript_uploads.csv');
 const APPLE_SUBSCRIPTION_EVENTS_PATH = path.join(storageDir, 'apple_subscription_events.csv');
@@ -1488,10 +1498,44 @@ if (!fs.existsSync(ACCOUNT_DELETION_CODES_CSV_PATH)) {
   fs.writeFileSync(ACCOUNT_DELETION_CODES_CSV_PATH, header, 'utf8');
 }
 
+// Initialize email change codes CSV if it doesn't exist
+if (!fs.existsSync(EMAIL_CHANGE_CODES_CSV_PATH)) {
+  const header = 'user_id,new_email,change_code,expires_at,created_at\n';
+  fs.writeFileSync(EMAIL_CHANGE_CODES_CSV_PATH, header, 'utf8');
+}
+
 // Initialize counselor messages CSV if it doesn't exist
 if (!fs.existsSync(COUNSELOR_CSV_PATH)) {
   const header = 'timestamp,user_id,direction,message\n';
   fs.writeFileSync(COUNSELOR_CSV_PATH, header, 'utf8');
+}
+
+// Apple webhook JWS verifier (optional). Set APPLE_BUNDLE_ID, APPLE_APP_ID (Production), APPLE_ENVIRONMENT (Production|Sandbox|Xcode), APPLE_ROOT_CA_PATH.
+let appleVerifier = null;
+if (SignedDataVerifier && Environment) {
+  const bundleId = process.env.APPLE_BUNDLE_ID;
+  const appAppleIdRaw = process.env.APPLE_APP_ID;
+  const appAppleId = appAppleIdRaw ? parseInt(appAppleIdRaw, 10) : undefined;
+  const envName = (process.env.APPLE_ENVIRONMENT || 'Production').toLowerCase();
+  let environment = Environment.PRODUCTION;
+  if (envName === 'sandbox') environment = Environment.SANDBOX;
+  else if (envName === 'xcode') environment = Environment.XCODE;
+  else if (envName === 'localtesting') environment = Environment.LOCAL_TESTING;
+  const certPath = process.env.APPLE_ROOT_CA_PATH || path.join(__dirname, 'AppleRootCA-G3.cer');
+  const needAppId = environment === Environment.PRODUCTION;
+  if (bundleId && fs.existsSync(certPath) && (!needAppId || (appAppleId && !isNaN(appAppleId)))) {
+    try {
+      const rootCert = fs.readFileSync(certPath);
+      appleVerifier = new SignedDataVerifier([rootCert], false, environment, bundleId, appAppleId);
+      console.log('[Apple webhook] JWS verification enabled for', bundleId, environment);
+    } catch (e) {
+      console.warn('[Apple webhook] Verifier init failed:', e.message);
+    }
+  } else {
+    if (!bundleId) console.warn('[Apple webhook] APPLE_BUNDLE_ID not set — JWS will not be verified.');
+    if (!fs.existsSync(certPath)) console.warn('[Apple webhook] Apple root cert not found at', certPath, '— Add AppleRootCA-G3.cer to project root or set APPLE_ROOT_CA_PATH.');
+    if (environment === Environment.PRODUCTION && (!appAppleIdRaw || isNaN(parseInt(appAppleIdRaw, 10)))) console.warn('[Apple webhook] APPLE_APP_ID required for Production — JWS will not be verified.');
+  }
 }
 
 // Initialize transcript uploads CSV if it doesn't exist
@@ -2312,6 +2356,140 @@ function writeAccountDeletionCodes(codes) {
   }
 }
 
+// Email change verification: read/write
+function readEmailChangeCodes() {
+  try {
+    if (!fs.existsSync(EMAIL_CHANGE_CODES_CSV_PATH)) return [];
+    const csvText = fs.readFileSync(EMAIL_CHANGE_CODES_CSV_PATH, 'utf8');
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+    const headers = parseCSVLine(lines[0]);
+    const codes = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length >= headers.length) {
+        const code = {};
+        headers.forEach((h, idx) => { code[h] = values[idx] || ''; });
+        codes.push(code);
+      }
+    }
+    return codes;
+  } catch (e) {
+    console.error('Error reading email change codes:', e);
+    return [];
+  }
+}
+
+function writeEmailChangeCodes(codes) {
+  try {
+    const headers = ['user_id', 'new_email', 'change_code', 'expires_at', 'created_at'];
+    let csv = headers.join(',') + '\n';
+    codes.forEach(code => {
+      const row = headers.map(h => {
+        let v = (code[h] || '').toString();
+        if (v.includes(',') || v.includes('"') || v.includes('\n')) v = '"' + v.replace(/"/g, '""') + '"';
+        return v;
+      });
+      csv += row.join(',') + '\n';
+    });
+    fs.writeFileSync(EMAIL_CHANGE_CODES_CSV_PATH, csv, 'utf8');
+    return true;
+  } catch (e) {
+    console.error('Error writing email change codes:', e);
+    return false;
+  }
+}
+
+// Request email change: requires password + new email, sends verification code to new email
+app.post('/api/account/change-email/send-code', async (req, res) => {
+  try {
+    const { user_id, password_hash, new_email } = req.body || {};
+    if (!user_id || !password_hash || !new_email) {
+      return res.status(400).json({ success: false, error: 'user_id, password_hash, and new_email are required' });
+    }
+    const newEmail = new_email.toString().toLowerCase().trim();
+    if (!newEmail.includes('@')) {
+      return res.status(400).json({ success: false, error: 'Please enter a valid email address' });
+    }
+    const logins = readLogins();
+    const login = logins.find(l => l.user_id === user_id);
+    if (!login) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    if (login.password_hash !== password_hash) {
+      return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+    }
+    if (login.email === newEmail) {
+      return res.status(400).json({ success: false, error: 'New email is the same as your current email' });
+    }
+    const existing = logins.find(l => l.email === newEmail);
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'That email is already in use by another account' });
+    }
+    const code = generateResetCode();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+    const codes = readEmailChangeCodes().filter(c => c.user_id !== user_id);
+    codes.push({
+      user_id,
+      new_email: newEmail,
+      change_code: code,
+      expires_at: expiresAt.toISOString(),
+      created_at: now.toISOString()
+    });
+    writeEmailChangeCodes(codes);
+    if (emailTransporter) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #0d8c79;">Change your Path Pal email</h2>
+          <p>You requested to change the email for your Path Pal account. Use this code to confirm:</p>
+          <p style="font-size: 1.2em; font-weight: bold; color: #0d8c79; margin: 1.5em 0;">${code}</p>
+          <p>This code expires in 15 minutes. If you didn't request this change, you can ignore this email.</p>
+        </div>
+      `;
+      await sendEmail(newEmail, 'Path Pal – Verify your new email', emailHtml);
+    } else {
+      return res.status(500).json({ success: false, error: 'Email service is not configured. Please contact support.' });
+    }
+    res.json({ success: true, message: 'Verification code sent to your new email' });
+  } catch (error) {
+    console.error('Change email send-code error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
+// Confirm email change with code
+app.post('/api/account/change-email/confirm', (req, res) => {
+  try {
+    const { user_id, code } = req.body || {};
+    if (!user_id || !code) {
+      return res.status(400).json({ success: false, error: 'user_id and code are required' });
+    }
+    const codes = readEmailChangeCodes();
+    const record = codes.find(c => c.user_id === user_id && c.change_code === code.trim());
+    if (!record) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired verification code' });
+    }
+    const expiresAt = new Date(record.expires_at);
+    if (new Date() > expiresAt) {
+      writeEmailChangeCodes(codes.filter(c => !(c.user_id === user_id && c.change_code === code.trim())));
+      return res.status(400).json({ success: false, error: 'Verification code has expired. Please request a new code.' });
+    }
+    const logins = readLogins();
+    const idx = logins.findIndex(l => l.user_id === user_id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    logins[idx].email = record.new_email;
+    writeLogins(logins);
+    writeEmailChangeCodes(codes.filter(c => c.user_id !== user_id));
+    res.json({ success: true, message: 'Email updated successfully', email: record.new_email });
+  } catch (error) {
+    console.error('Change email confirm error:', error);
+    res.status(500).json({ success: false, error: 'An error occurred' });
+  }
+});
+
 // Forgot password endpoint
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
@@ -2432,24 +2610,6 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 // Get user email by user_id
-// Return the requesting user's ID (client sends user_id; we validate and return it)
-app.get('/api/user/me', (req, res) => {
-  try {
-    const { user_id } = req.query;
-    if (!user_id) {
-      return res.status(400).json({ success: false, error: 'user_id is required' });
-    }
-    const account = getAccount(user_id);
-    if (!account) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-    res.json({ success: true, user_id: user_id });
-  } catch (error) {
-    console.error('Get user me error:', error);
-    res.status(500).json({ success: false, error: 'An error occurred' });
-  }
-});
-
 app.get('/api/user/email', (req, res) => {
   try {
     const { user_id } = req.query;
@@ -2516,7 +2676,7 @@ app.get('/api/apple/subscription-notification', (req, res) => {
   res.status(405).set('Allow', 'POST').send('Method Not Allowed: use POST with signedPayload (App Store Server Notifications V2).');
 });
 
-app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
+app.post('/api/apple/subscription-notification', express.json(), async (req, res) => {
   // Always respond 200 quickly so Apple doesn't retry
   res.status(200).send();
 
@@ -2531,16 +2691,16 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
     console.error('[Apple webhook] Debug log error:', e);
   }
 
-  // Apple sends JSON with key "signedPayload" (V2); accept raw JWS string or alternate keys
+  const b = req.body || {};
   let signedPayload = null;
   if (req.body && typeof req.body === 'object') {
     signedPayload = req.body.signedPayload || req.body.signed_payload || req.body.payload || null;
   } else if (typeof req.body === 'string' && req.body.includes('.')) {
     signedPayload = req.body;
   }
+
   if (!signedPayload) {
-    // App-reported payload: { userID, transactionID, originalTransactionID, productID } — only proof we use to grant Pro
-    const b = req.body || {};
+    // No JWS: app-reported only — no verification
     const userId = (b.userID || b.user_id || b.appAccountToken || '').toString().trim();
     const hasProof = (b.transactionID != null) || (b.originalTransactionID != null) || (b.productID != null);
     if (userId && hasProof) {
@@ -2554,74 +2714,135 @@ app.post('/api/apple/subscription-notification', express.json(), (req, res) => {
           fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
         }
         fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
-        console.log('[Apple webhook] Pro granted for user', userId, 'productID=', b.productID);
+        console.log('[Apple webhook] Pro granted for user', userId, 'productID=', b.productID, '(unverified, no signedPayload)');
       }
     } else {
       const keys = req.body && typeof req.body === 'object' ? Object.keys(req.body) : [];
-      console.warn('[Apple webhook] Ignored: no signedPayload and no valid app payload (need userID + transactionID/originalTransactionID/productID). Keys:', keys.length ? keys.join(', ') : '(none)');
+      console.warn('[Apple webhook] Ignored: no signedPayload and no valid app payload. Keys:', keys.length ? keys.join(', ') : '(none)');
     }
     return;
   }
-  try {
-    // ---- Maximum debugging: raw and decoded JWS ----
-    console.log('[Apple webhook] signedPayload (raw) length:', typeof signedPayload === 'string' ? signedPayload.length : 0);
-    console.log('[Apple webhook] signedPayload (raw) full:', typeof signedPayload === 'string' ? signedPayload : JSON.stringify(signedPayload));
 
+  try {
+    const now = new Date().toISOString();
+    const bodyUserID = (b.userID || b.user_id || '').toString().trim();
+
+    // 1) If verifier is configured, try to verify the JWS (notification or transaction)
+    if (appleVerifier && typeof signedPayload === 'string') {
+      // 1a) Try as V2 server notification (from Apple’s servers)
+      try {
+        const decoded = await appleVerifier.verifyAndDecodeNotification(signedPayload);
+        const notificationType = decoded.notificationType || '';
+        const subtype = decoded.subtype || '';
+        const notificationUUID = decoded.notificationUUID || '';
+        let appAccountToken = null;
+        let originalTransactionId = null;
+        const data = decoded.data || {};
+        if (data.signedTransactionInfo) {
+          const txDecoded = await appleVerifier.verifyAndDecodeTransaction(data.signedTransactionInfo);
+          appAccountToken = txDecoded.appAccountToken || null;
+          originalTransactionId = txDecoded.originalTransactionId != null ? String(txDecoded.originalTransactionId) : null;
+        }
+        const eventRow = [now, notificationUUID, notificationType, subtype, appAccountToken || '', originalTransactionId || ''].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+        if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+          fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n', 'utf8');
+        }
+        fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+        if (appAccountToken && typeof appAccountToken === 'string') {
+          const userId = appAccountToken.trim();
+          const account = getAccount(userId);
+          if (account) {
+            if (APPLE_NOTIFICATION_TYPES_ACTIVE.has(notificationType)) {
+              saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+              console.log('[Apple webhook] Subscription activated for user', userId, '(verified V2 notification)');
+            } else if (APPLE_NOTIFICATION_TYPES_INACTIVE.has(notificationType)) {
+              saveAccount({ user_id: userId, subscription: false, subscribed_at: account.subscribed_at || '' });
+              console.log('[Apple webhook] Subscription deactivated for user', userId, '(verified V2 notification)');
+            }
+          }
+        }
+        return;
+      } catch (_) {
+        // Not a V2 notification; try as signed transaction (app-sent)
+      }
+
+      // 1b) Try as signed transaction (app sends StoreKit transaction JWS + userID)
+      try {
+        const txDecoded = await appleVerifier.verifyAndDecodeTransaction(signedPayload);
+        const productId = (txDecoded.productId || '').toString();
+        const bundleIdDecoded = (txDecoded.bundleId || '').toString();
+        const userId = (txDecoded.appAccountToken || bodyUserID || '').toString().trim();
+        if (!userId) {
+          console.warn('[Apple webhook] Verified transaction but no user (appAccountToken or userID in body)');
+          return;
+        }
+        const account = getAccount(userId);
+        if (account) {
+          saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+          const eventRow = [now, '', 'SIGNED_TRANSACTION', '', userId, String(txDecoded.originalTransactionId || txDecoded.transactionId || '')].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+          if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+            fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n', 'utf8');
+          }
+          fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+          console.log('[Apple webhook] Pro granted for user', userId, 'productID=', productId, 'bundleId=', bundleIdDecoded, '(verified signed transaction)');
+        }
+        return;
+      } catch (verifyErr) {
+        console.warn('[Apple webhook] JWS verification failed — notification rejected:', verifyErr.message);
+        return;
+      }
+    }
+
+    // 2) No verifier: decode only and accept transaction-shaped payload with body.userID
     const payload = decodeJwsPayload(signedPayload);
     if (!payload) {
       console.warn('[Apple webhook] Could not decode signedPayload');
       return;
     }
-    console.log('[Apple webhook] decoded payload FULL:', JSON.stringify(payload, null, 2));
+    console.log('[Apple webhook] decoded payload (verifier not configured):', JSON.stringify(payload, null, 2));
 
-    const notificationType = payload.notificationType || '';
-    const subtype = payload.subtype || '';
-    const notificationUUID = payload.notificationUUID || '';
-    const data = payload.data || {};
-    let appAccountToken = null;
-    let originalTransactionId = null;
-    if (data.signedTransactionInfo) {
-      const txPayload = decodeJwsPayload(data.signedTransactionInfo);
-      if (txPayload) {
-        console.log('[Apple webhook] decoded signedTransactionInfo FULL:', JSON.stringify(txPayload, null, 2));
-        appAccountToken = txPayload.appAccountToken || null;
-        originalTransactionId = txPayload.originalTransactionId != null ? String(txPayload.originalTransactionId) : null;
+    const isNotification = payload.notificationType != null && payload.data != null;
+    if (isNotification) {
+      const notificationType = payload.notificationType || '';
+      const data = payload.data || {};
+      let appAccountToken = null;
+      if (data.signedTransactionInfo) {
+        const txPayload = decodeJwsPayload(data.signedTransactionInfo);
+        if (txPayload) appAccountToken = txPayload.appAccountToken || null;
       }
-    }
-    if (data.signedRenewalInfo) {
-      const renewalPayload = decodeJwsPayload(data.signedRenewalInfo);
-      if (renewalPayload) {
-        console.log('[Apple webhook] decoded signedRenewalInfo FULL:', JSON.stringify(renewalPayload, null, 2));
+      const eventRow = [now, payload.notificationUUID || '', notificationType, payload.subtype || '', appAccountToken || '', ''].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+      if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+        fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n', 'utf8');
       }
-    }
-
-    const now = new Date().toISOString();
-    const eventsHeader = 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n';
-    const eventRow = [
-      now,
-      notificationUUID,
-      notificationType,
-      subtype,
-      appAccountToken || '',
-      originalTransactionId || ''
-    ].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
-    if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
-      fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventsHeader, 'utf8');
-    }
-    fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
-    console.log('[Apple webhook] JWS event:', notificationType, subtype, 'appAccountToken=', appAccountToken || 'none', 'originalTransactionId=', originalTransactionId || 'none');
-
-    if (appAccountToken && typeof appAccountToken === 'string') {
-      const userId = appAccountToken.trim();
-      const account = getAccount(userId);
-      if (account) {
-        if (APPLE_NOTIFICATION_TYPES_ACTIVE.has(notificationType)) {
-          saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
-          console.log('[Apple webhook] Subscription activated for user', userId);
-        } else if (APPLE_NOTIFICATION_TYPES_INACTIVE.has(notificationType)) {
-          saveAccount({ user_id: userId, subscription: false, subscribed_at: account.subscribed_at || '' });
-          console.log('[Apple webhook] Subscription deactivated for user', userId);
+      fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+      if (appAccountToken && typeof appAccountToken === 'string') {
+        const userId = appAccountToken.trim();
+        const account = getAccount(userId);
+        if (account) {
+          if (APPLE_NOTIFICATION_TYPES_ACTIVE.has(notificationType)) {
+            saveAccount({ user_id: userId, subscription: true, subscribed_at: now });
+            console.log('[Apple webhook] Subscription activated for user', userId, '(unverified)');
+          } else if (APPLE_NOTIFICATION_TYPES_INACTIVE.has(notificationType)) {
+            saveAccount({ user_id: userId, subscription: false, subscribed_at: account.subscribed_at || '' });
+            console.log('[Apple webhook] Subscription deactivated for user', userId, '(unverified)');
+          }
         }
+      }
+      return;
+    }
+
+    // Transaction-shaped payload (bundleId, productId): use body.userID and grant Pro (unverified)
+    const hasTransactionShape = payload.bundleId != null && payload.productId != null;
+    if (hasTransactionShape && bodyUserID) {
+      const account = getAccount(bodyUserID);
+      if (account) {
+        saveAccount({ user_id: bodyUserID, subscription: true, subscribed_at: now });
+        const eventRow = [now, '', 'SIGNED_TRANSACTION', '', bodyUserID, String(payload.originalTransactionId || payload.transactionId || '')].map(v => (String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : v)).join(',') + '\n';
+        if (!fs.existsSync(APPLE_SUBSCRIPTION_EVENTS_PATH)) {
+          fs.writeFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, 'received_at,notification_uuid,notification_type,subtype,app_account_token,original_transaction_id\n', 'utf8');
+        }
+        fs.appendFileSync(APPLE_SUBSCRIPTION_EVENTS_PATH, eventRow, 'utf8');
+        console.log('[Apple webhook] Pro granted for user', bodyUserID, 'productID=', payload.productId, '(unverified, no verifier configured)');
       }
     }
   } catch (error) {
