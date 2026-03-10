@@ -1525,8 +1525,19 @@ if (SignedDataVerifier && Environment) {
   const needAppId = environment === Environment.PRODUCTION;
   if (bundleId && fs.existsSync(certPath) && (!needAppId || (appAppleId && !isNaN(appAppleId)))) {
     try {
-      const rootCert = fs.readFileSync(certPath);
-      appleVerifier = new SignedDataVerifier([rootCert], false, environment, bundleId, appAppleId);
+      let certBuf = fs.readFileSync(certPath);
+      // Library expects DER Buffer. Handle PEM, base64-pasted, or raw DER.
+      if (certBuf[0] !== 0x30) {
+        const str = certBuf.toString('utf8').trim();
+        if (str.includes('-----BEGIN CERTIFICATE-----')) {
+          const base64 = str.replace(/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/g, '');
+          certBuf = Buffer.from(base64, 'base64');
+        } else if (/^[A-Za-z0-9+/=]+$/.test(str)) {
+          certBuf = Buffer.from(str, 'base64');
+        }
+      }
+      if (certBuf[0] !== 0x30) throw new Error('Certificate is not valid DER or PEM');
+      appleVerifier = new SignedDataVerifier([certBuf], false, environment, bundleId, appAppleId);
       console.log('[Apple webhook] JWS verification enabled for', bundleId, environment);
     } catch (e) {
       console.warn('[Apple webhook] Verifier init failed:', e.message);
