@@ -458,13 +458,13 @@ header {
   margin: 0;
 }
 
-/* Pro: golden "Path Pal" text in header + light green rounded background for readability */
+/* Pro: gold gradient header badge; white text for contrast */
 .logo.pro h1 {
-  color: #d4af37;
+  color: #ffffff;
 }
 .logo.pro a {
   background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #8b6914 100%);
-  color: inherit;
+  color: #ffffff;
   padding: 0.3rem 0.1rem;
   border-radius: 10px;
   margin: -0.3rem 0;

@@ -180,10 +180,45 @@
             color: var(--white);
           }
         </style>
+        <style>
+          .next-steps-loading {
+            padding: 0.5rem 0 0.25rem;
+          }
+          .next-steps-loading-phrase {
+            transition: opacity 0.4s ease;
+            min-height: 1.45em;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin: 0;
+          }
+          .next-steps-loading-track {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 1rem;
+          }
+          .next-steps-loading-fill {
+            height: 100%;
+            width: 35%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--primary-green), #2db8a3);
+            animation: nextStepsBarSweep 1.8s ease-in-out infinite;
+          }
+          @keyframes nextStepsBarSweep {
+            0% { transform: translateX(-120%); }
+            100% { transform: translateX(320%); }
+          }
+        </style>
 
         <div class="form-group">
           <label>Additional Activities/Internships</label>
           <textarea id="sim-activities" rows="3" placeholder="List new activities or improvements"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Additional Information</label>
+          <textarea id="sim-additional-info" rows="3" placeholder="Optional: grade trends, rigor, awards, other notes"></textarea>
         </div>
 
         <button class="btn btn-primary" onclick="calculateSimulation()" style="width: 100%; margin-top: 1rem;">
@@ -666,7 +701,8 @@
         gpa: document.getElementById('sim-gpa').value || currentProfile.gpa,
         sat: selectedTestType === 'SAT' ? (newTestScore || currentProfile.sat) : currentProfile.sat,
         act: selectedTestType === 'ACT' ? (newTestScore || currentProfile.act) : currentProfile.act,
-        activities: document.getElementById('sim-activities').value || currentProfile.activities
+        activities: document.getElementById('sim-activities').value || currentProfile.activities,
+        additionalNotes: document.getElementById('sim-additional-info').value.trim()
       };
 
       // Calculate rating for simulated profile
@@ -779,9 +815,57 @@
       simulatedProfile = null;
       loadCurrentProfile();
       document.getElementById('sim-activities').value = '';
+      document.getElementById('sim-additional-info').value = '';
       document.getElementById('sim-test-score').value = '';
       document.getElementById('simulation-results').innerHTML = '';
       document.getElementById('next-steps').style.display = 'none';
+    }
+
+    const NEXT_STEPS_LOADING_PHRASES = [
+      'Analyzing your simulation…',
+      'Comparing your profile to what colleges look for…',
+      'Turning numbers into actionable advice…',
+      'Drafting your personalized next steps…',
+      'Almost there…'
+    ];
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    /** Renders **bold** segments as <strong>; escape everything else. */
+    function formatNextStepLineToHtml(line) {
+      let t = escapeHtml(line.trim());
+      t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      return t;
+    }
+
+    function startNextStepsLoadingUI(contentEl) {
+      contentEl.innerHTML = `
+        <div class="next-steps-loading" id="next-steps-loading-root">
+          <p class="next-steps-loading-phrase" id="next-steps-loading-phrase">${escapeHtml(NEXT_STEPS_LOADING_PHRASES[0])}</p>
+          <div class="next-steps-loading-track" role="progressbar" aria-label="Loading">
+            <div class="next-steps-loading-fill"></div>
+          </div>
+        </div>`;
+      const phraseEl = document.getElementById('next-steps-loading-phrase');
+      let phraseIndex = 0;
+      const cycle = () => {
+        if (!phraseEl || !document.getElementById('next-steps-loading-root')) return;
+        phraseEl.style.opacity = '0';
+        setTimeout(() => {
+          if (!phraseEl || !document.getElementById('next-steps-loading-root')) return;
+          phraseIndex = (phraseIndex + 1) % NEXT_STEPS_LOADING_PHRASES.length;
+          phraseEl.textContent = NEXT_STEPS_LOADING_PHRASES[phraseIndex];
+          phraseEl.style.opacity = '1';
+        }, 220);
+      };
+      const timer = setInterval(cycle, 2400);
+      return () => {
+        clearInterval(timer);
+      };
     }
 
     async function loadNextSteps() {
@@ -789,7 +873,7 @@
       container.style.display = 'block';
       
       const content = document.getElementById('next-steps-content');
-      content.innerHTML = '<p class="loading">Analyzing results...</p>';
+      const stopLoading = startNextStepsLoadingUI(content);
 
       try {
         const changes = [];
@@ -815,15 +899,26 @@
         
         if (simulatedProfile.activities) changes.push('added new activities');
 
-        const message = `Based on these changes to my profile: ${changes.join(', ')}, what should I focus on next to maximize my admission chances? Provide 3-5 specific, actionable recommendations.`;
+        let changeDesc = changes.length ? changes.join(', ') : 'no changes to GPA or test scores in the simulator';
+        const notes = (simulatedProfile.additionalNotes || '').trim();
+        if (notes) {
+          changeDesc += `. Additional information: ${notes}`;
+        }
+
+        const message = `Based on these changes to my profile: ${changeDesc}, what should I focus on next to maximize my admission chances? Provide 3-5 specific, actionable recommendations.`;
         
         const response = await sendChatMessage(message);
+        stopLoading();
         const steps = response.message.split('\n').filter(line => line.trim());
         
         content.innerHTML = '<ul style="list-style: none; padding: 0;">' + 
-          steps.map(step => `<li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">• ${step.trim().replace(/^[-•]\s*/, '')}</li>`).join('') + 
+          steps.map(step => {
+            const cleaned = step.trim().replace(/^[-•]\s*/, '');
+            return `<li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); line-height: 1.45;">• ${formatNextStepLineToHtml(cleaned)}</li>`;
+          }).join('') + 
           '</ul>';
       } catch (error) {
+        stopLoading();
         content.innerHTML = '<p style="color: var(--text-light);">Unable to load next steps at this time.</p>';
       }
     }

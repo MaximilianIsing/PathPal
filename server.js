@@ -19,7 +19,20 @@ const { fetchCollegeData, checkApiHealth } = require('./get-data');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+let stripeClient = null;
+try {
+  if (STRIPE_SECRET_KEY) {
+    stripeClient = require('stripe')(STRIPE_SECRET_KEY);
+  }
+} catch (e) {
+  console.warn('[Stripe] Could not load stripe package:', e.message);
+}
+
 app.use(cors());
+// Stripe webhooks require raw body for signature verification — must run before express.json()
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 app.use(express.json({ limit: '50mb' })); // Increase limit for transcript images
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -1910,6 +1923,96 @@ function saveAccount(accountData) {
   }
   
   return writeAccounts(accounts);
+}
+
+/**
+ * Stripe webhook (POST /api/stripe/webhook). Requires raw body — registered before express.json().
+ * Env: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_... from Dashboard → Webhooks → endpoint).
+ * Pass Path Pal user_id via Checkout Session client_reference_id or metadata.user_id / app_user_id.
+ * For subscriptions, set the same metadata on the Subscription object in Stripe (or it propagates from Checkout).
+ */
+function handleStripeWebhook(req, res) {
+  if (!stripeClient || !STRIPE_WEBHOOK_SECRET) {
+    console.warn('[Stripe] Webhook called but STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET is missing');
+    return res.status(503).send('Stripe webhook not configured');
+  }
+  const sig = req.headers['stripe-signature'];
+  if (!sig) {
+    return res.status(400).send('Missing stripe-signature');
+  }
+  let event;
+  try {
+    event = stripeClient.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('[Stripe] Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  const nowIso = new Date().toISOString();
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const userId = session.client_reference_id || session.metadata?.user_id || session.metadata?.app_user_id;
+        if (!userId) {
+          console.warn('[Stripe] checkout.session.completed: no user_id — set client_reference_id or metadata.user_id on Checkout / Payment Link');
+          break;
+        }
+        if (!getAccount(userId)) {
+          console.warn('[Stripe] checkout.session.completed: no account for user_id', userId);
+          break;
+        }
+        saveAccount({ user_id: userId, subscription: true, subscribed_at: nowIso });
+        console.log('[Stripe] Pro granted (checkout.session.completed)', userId);
+        break;
+      }
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        const userId = sub.metadata?.user_id || sub.metadata?.app_user_id;
+        if (!userId) {
+          console.warn('[Stripe] customer.subscription.updated: no metadata.user_id on subscription');
+          break;
+        }
+        if (!getAccount(userId)) {
+          console.warn('[Stripe] customer.subscription.updated: no account for user_id', userId);
+          break;
+        }
+        const active = sub.status === 'active' || sub.status === 'trialing';
+        const acc = getAccount(userId);
+        saveAccount({
+          user_id: userId,
+          subscription: active,
+          subscribed_at: active ? (acc.subscribed_at || nowIso) : (acc.subscribed_at || '')
+        });
+        console.log('[Stripe] Subscription updated', userId, sub.status, 'active=', active);
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        const userId = sub.metadata?.user_id || sub.metadata?.app_user_id;
+        if (!userId) {
+          console.warn('[Stripe] customer.subscription.deleted: no metadata.user_id on subscription');
+          break;
+        }
+        const acc = getAccount(userId);
+        if (!acc) {
+          console.warn('[Stripe] customer.subscription.deleted: no account for user_id', userId);
+          break;
+        }
+        saveAccount({ user_id: userId, subscription: false, subscribed_at: acc.subscribed_at || '' });
+        console.log('[Stripe] Pro revoked (subscription deleted)', userId);
+        break;
+      }
+      default:
+        console.log('[Stripe] Unhandled event type:', event.type);
+    }
+  } catch (handlerErr) {
+    console.error('[Stripe] Webhook handler error:', handlerErr);
+    return res.status(500).json({ error: 'Webhook handler failed' });
+  }
+
+  return res.json({ received: true });
 }
 
 // Generate unique user ID

@@ -31,7 +31,7 @@ async function getSubscriptionStatus() {
   }
 }
 
-// When user is Pro: switch app icon (mobile), header logo to Pro version, and golden "Path Pal" text
+// When user is Pro: header logo to Pro version and gold-gradient "Path Pal" badge (tab/favicon stays default for all users)
 document.addEventListener('DOMContentLoaded', async () => {
   if (typeof getCurrentUserId !== 'function') return;
   const userId = getCurrentUserId();
@@ -41,14 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!res.ok) return;
     const data = await res.json();
     if (!data.subscription) return;
-    // App icon (mobile)
-    if (isMobileDevice()) {
-      const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-      if (appleIcon) appleIcon.href = '/media/AppIconPro.png';
-      const icon = document.querySelector('link[rel="icon"]');
-      if (icon) icon.href = '/media/AppIconPro.png';
-    }
-    // Header logo: Pro image + golden "Path Pal" text
+    // Header logo: Pro image + gold-gradient badge (white text in CSS .logo.pro)
     const headerLogo = document.querySelector('header .logo');
     if (headerLogo) {
       const img = headerLogo.querySelector('img');
